@@ -1,4 +1,4 @@
-package org.globalnames.matcher
+package org.globalnames.microservices.matcher
 
 import thriftscala.MatcherService
 import thriftscala.MatcherService.FindMatches

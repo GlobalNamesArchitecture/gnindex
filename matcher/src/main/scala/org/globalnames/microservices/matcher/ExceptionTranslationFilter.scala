@@ -1,4 +1,4 @@
-package org.globalnames.matcher
+package org.globalnames.microservices.matcher
 
 import com.twitter.finagle.{Service, TimeoutException}
 import com.twitter.finatra.thrift.thriftscala.ClientErrorCause.RequestTimeout

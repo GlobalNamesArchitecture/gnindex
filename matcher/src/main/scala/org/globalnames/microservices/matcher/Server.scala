@@ -1,4 +1,4 @@
-package org.globalnames.matcher
+package org.globalnames.microservices.matcher
 
 import com.twitter.finatra.thrift.ThriftServer
 import com.twitter.finatra.thrift.routing.ThriftRouter
