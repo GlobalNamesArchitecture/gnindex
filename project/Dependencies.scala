@@ -43,7 +43,7 @@ object Dependencies {
   )
   val testDeps = Seq(library.scalatest)
 
-  val idlDependencies: Seq[ModuleID] = Seq(library.finatra)
+  val commonDependencies: Seq[ModuleID] = Seq(library.finatra)
 
   val indexDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
 

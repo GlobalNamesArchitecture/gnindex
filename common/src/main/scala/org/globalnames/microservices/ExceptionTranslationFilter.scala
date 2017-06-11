@@ -1,4 +1,4 @@
-package org.globalnames.microservices.matcher
+package org.globalnames.microservices
 
 import com.twitter.finagle.{Service, TimeoutException}
 import com.twitter.finatra.thrift.thriftscala.ClientErrorCause.RequestTimeout
@@ -13,7 +13,7 @@ import javax.inject.Singleton
 @Singleton
 class ExceptionTranslationFilter
   extends ThriftFilter
-    with Logging {
+     with Logging {
 
   override def apply[T, U](request: ThriftRequest[T],
                            service: Service[ThriftRequest[T], U]): Future[U] = {

@@ -1,5 +1,6 @@
 package org.globalnames
-package microservices.matcher
+package microservices
+package matcher
 
 import com.twitter.finatra.thrift.ThriftServer
 import com.twitter.finatra.thrift.filters._

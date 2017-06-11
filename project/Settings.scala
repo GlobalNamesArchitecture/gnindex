@@ -90,7 +90,7 @@ object Settings {
     fork in IntegrationTest := true
   )
 
-  lazy val idlSettings = Seq(
+  lazy val commonSettings = Seq(
     scroogeThriftDependencies in Compile := Seq("finatra-thrift_2.11")
   )
 
