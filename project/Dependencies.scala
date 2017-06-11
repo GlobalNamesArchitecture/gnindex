@@ -11,9 +11,15 @@ object Dependencies {
     val mockito = "1.10.19"
     val scalatest = "3.0.3"
     val liblevenshtein = "3.0.0"
+    val scalaz = "7.1.7"
+    val typesafeConfig = "1.3.1"
+    val gnmatcher = "0.1.2-20170612_2200-SNAPSHOT"
   }
 
   lazy val library = new {
+    val gnmatcher      = "org.globalnames"               %% "gnmatcher"       % version.gnmatcher
+    val scalaz         = "org.scalaz"                    %% "scalaz-core"     % version.scalaz
+    val typesafeConfig = "com.typesafe"                  %  "config"          % version.typesafeConfig
     val liblevenshtein = "com.github.universal-automata" %  "liblevenshtein"  % version.liblevenshtein
     val finatra        = "com.twitter"                   %% "finatra-thrift"  % version.finatra
     val logback        = "ch.qos.logback"                %  "logback-classic" % version.logback
@@ -29,18 +35,21 @@ object Dependencies {
 
   val finatraDeps = Seq(library.finatra, library.logback)
   val finatraTestDeps = Seq(
+    library.junit,  library.mockito, library.guice,
     library.twitterInjApp, library.twitterInjCor, library.twitterInjMod, library.twitterInjSer,
     library.finatra % Test classifier "tests",
     library.twitterInjApp classifier "tests", library.twitterInjCor classifier "tests",
     library.twitterInjMod classifier "tests", library.twitterInjSer classifier "tests"
   )
-  val testDeps = Seq(library.junit, library.scalatest, library.mockito, library.guice)
+  val testDeps = Seq(library.scalatest)
 
   val idlDependencies: Seq[ModuleID] = Seq(library.finatra)
 
   val indexDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
 
-  val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
+  val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
+    library.gnmatcher, library.scalaz, library.typesafeConfig
+  )
 
   val indexGraphqlDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
 

@@ -1,15 +1,16 @@
-package org.globalnames.microservices.matcher
+package org.globalnames
+package microservices.matcher
 
 import com.twitter.finatra.thrift.ThriftServer
-import com.twitter.finatra.thrift.routing.ThriftRouter
 import com.twitter.finatra.thrift.filters._
-
-object ServerMain extends Server
+import com.twitter.finatra.thrift.routing.ThriftRouter
 
 class Server extends ThriftServer {
   override val name = "matcher-server"
 
-  override def configureThrift(router: ThriftRouter) {
+  override val modules = Seq(MatcherModule)
+
+  override def configureThrift(router: ThriftRouter): Unit = {
     router
       .filter[LoggingMDCFilter]
       .filter[TraceIdMDCFilter]
@@ -20,3 +21,5 @@ class Server extends ThriftServer {
       .add[MatcherController]
   }
 }
+
+object ServerMain extends Server
