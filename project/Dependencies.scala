@@ -14,10 +14,12 @@ object Dependencies {
     val scalaz = "7.1.7"
     val typesafeConfig = "1.3.1"
     val gnmatcher = "0.1.2-20170612_2200-SNAPSHOT"
+    val gnresolver = "0.1.2-20170612_2300-SNAPSHOT"
   }
 
   lazy val library = new {
     val gnmatcher      = "org.globalnames"               %% "gnmatcher"       % version.gnmatcher
+    val gnresolver     = "org.globalnames"               %% "gnresolver"      % version.gnresolver
     val scalaz         = "org.scalaz"                    %% "scalaz-core"     % version.scalaz
     val typesafeConfig = "com.typesafe"                  %  "config"          % version.typesafeConfig
     val liblevenshtein = "com.github.universal-automata" %  "liblevenshtein"  % version.liblevenshtein
@@ -45,7 +47,9 @@ object Dependencies {
 
   val commonDependencies: Seq[ModuleID] = Seq(library.finatra)
 
-  val indexDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
+  val indexDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
+    library.gnresolver
+  )
 
   val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
     library.gnmatcher, library.scalaz, library.typesafeConfig
