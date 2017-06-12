@@ -12,7 +12,6 @@ object Dependencies {
     val scalatest = "3.0.3"
     val liblevenshtein = "3.0.0"
     val scalaz = "7.1.7"
-    val typesafeConfig = "1.3.1"
     val gnmatcher = "0.1.2-20170612_2200-SNAPSHOT"
     val gnresolver = "0.1.2-20170612_2300-SNAPSHOT"
   }
@@ -21,7 +20,6 @@ object Dependencies {
     val gnmatcher      = "org.globalnames"               %% "gnmatcher"       % version.gnmatcher
     val gnresolver     = "org.globalnames"               %% "gnresolver"      % version.gnresolver
     val scalaz         = "org.scalaz"                    %% "scalaz-core"     % version.scalaz
-    val typesafeConfig = "com.typesafe"                  %  "config"          % version.typesafeConfig
     val liblevenshtein = "com.github.universal-automata" %  "liblevenshtein"  % version.liblevenshtein
     val finatra        = "com.twitter"                   %% "finatra-thrift"  % version.finatra
     val logback        = "ch.qos.logback"                %  "logback-classic" % version.logback
@@ -52,7 +50,7 @@ object Dependencies {
   )
 
   val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
-    library.gnmatcher, library.scalaz, library.typesafeConfig
+    library.gnmatcher, library.scalaz
   )
 
   val indexGraphqlDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
