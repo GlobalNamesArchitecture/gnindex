@@ -54,7 +54,7 @@ object Dependencies {
 
   val commonDependencies: Seq[ModuleID] = Seq(library.finatraThrift)
 
-  val indexDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
+  val nameResolverDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
     library.twitterBijectionCore, library.twitterBijectionUtil,
     library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
   )
@@ -63,6 +63,6 @@ object Dependencies {
     library.gnmatcher, library.scalaz
   )
 
-  val indexGraphqlDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
+  val apiDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
 
 }

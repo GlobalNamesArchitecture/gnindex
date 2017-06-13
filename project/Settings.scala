@@ -97,7 +97,7 @@ object Settings {
     scroogeThriftDependencies in Compile := Seq("finatra-thrift_2.11")
   )
 
-  lazy val indexGraphqlSettings = Seq(
+  lazy val apiSettings = Seq(
     assemblyJarName in assembly := "microservices-" + version.value + ".jar",
     test in assembly := {},
     target in assembly := file(baseDirectory.value + "/../bin/"),
@@ -123,7 +123,7 @@ object Settings {
   }
   lazy val databaseUser = sys.env.getOrElse("DB_USER", "postgres")
   lazy val databasePassword = sys.env.getOrElse("DB_USER_PASS", "")
-  lazy val indexSettings = slickCodegenSettings ++ Seq(
+  lazy val nameResolverSettings = slickCodegenSettings ++ Seq(
     slickCodegenDatabaseUrl := databaseUrl,
     slickCodegenDatabaseUser := databaseUser,
     slickCodegenDatabasePassword := databasePassword,
