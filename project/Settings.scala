@@ -47,6 +47,15 @@ object Settings {
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "org.globalnames.matcher",
 
+    test in assembly := {},
+    target in assembly := file(baseDirectory.value + "/../bin/"),
+    assemblyMergeStrategy in assembly := {
+      case "logback.xml" => MergeStrategy.last
+      case PathList("META-INF", xs@_*) => MergeStrategy.discard
+      case n if n.startsWith("reference.conf") => MergeStrategy.concat
+      case _ => MergeStrategy.first
+    },
+
     javaOptions ++= Seq(
       "-Dlog.service.output=/dev/stderr",
       "-Dlog.access.output=/dev/stderr")
@@ -81,7 +90,8 @@ object Settings {
 
   val noPublishingSettings = Seq(
     publishArtifact := false,
-    publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo"))))
+    publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
+  )
 
   lazy val testSettings = Seq(
     fork in Test := false,
@@ -97,24 +107,16 @@ object Settings {
     scroogeThriftDependencies in Compile := Seq("finatra-thrift_2.11")
   )
 
+  //////////////////
+  // API settings //
+  //////////////////
   lazy val apiSettings = Seq(
-    assemblyJarName in assembly := "microservices-" + version.value + ".jar",
-    test in assembly := {},
-    target in assembly := file(baseDirectory.value + "/../bin/"),
-    assemblyOption in assembly := (assemblyOption in assembly).value.copy(
-      includeScala = false,
-      includeDependency = true),
-    assemblyMergeStrategy in assembly := {
-      case "logback.xml" => MergeStrategy.last
-      case PathList("META-INF", xs@_*) => MergeStrategy.discard
-      case n if n.startsWith("reference.conf") => MergeStrategy.concat
-      case _ => MergeStrategy.first
-    }
+    assemblyJarName in assembly := "gnindexapi-" + version.value + ".jar"
   )
 
-  ////////////////////
-  // Index settings //
-  ////////////////////
+  ///////////////////////////
+  // NameResolver settings //
+  ///////////////////////////
   lazy val databaseUrl = {
     val host = sys.env.getOrElse("DB_HOST", "localhost")
     val port = sys.env.getOrElse("DB_PORT", "5432")
@@ -124,6 +126,8 @@ object Settings {
   lazy val databaseUser = sys.env.getOrElse("DB_USER", "postgres")
   lazy val databasePassword = sys.env.getOrElse("DB_USER_PASS", "")
   lazy val nameResolverSettings = slickCodegenSettings ++ Seq(
+    assemblyJarName in assembly := "gnnameresolver-" + version.value + ".jar",
+
     slickCodegenDatabaseUrl := databaseUrl,
     slickCodegenDatabaseUser := databaseUser,
     slickCodegenDatabasePassword := databasePassword,
@@ -151,6 +155,11 @@ object Settings {
     sourceGenerators in Compile += slickCodegen.taskValue
   )
 
-  lazy val matcherSettings = Seq()
+  //////////////////////
+  // Matcher settings //
+  //////////////////////
+  lazy val matcherSettings = Seq(
+    assemblyJarName in assembly := "gnmatcher-" + version.value + ".jar"
+  )
 
 }
