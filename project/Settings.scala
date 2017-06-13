@@ -5,6 +5,9 @@ import com.typesafe.sbt.SbtPgp.autoImport._
 import com.twitter.scrooge.ScroogeSBT.autoImport._
 import sbtbuildinfo.BuildInfoKey
 import sbtbuildinfo.BuildInfoKeys._
+import slick.codegen.SourceCodeGenerator
+import slick.{ model => m }
+import com.github.tototoshi.sbt.slick.CodegenPlugin._
 
 object Settings {
 
@@ -109,7 +112,44 @@ object Settings {
     }
   )
 
-  lazy val indexSettings = Seq()
+  ////////////////////
+  // Index settings //
+  ////////////////////
+  lazy val databaseUrl = {
+    val host = sys.env.getOrElse("DB_HOST", "localhost")
+    val port = sys.env.getOrElse("DB_PORT", "5432")
+    val database = sys.env.getOrElse("DB_DATABASE", "development")
+    s"jdbc:postgresql://$host:$port/$database"
+  }
+  lazy val databaseUser = sys.env.getOrElse("DB_USER", "postgres")
+  lazy val databasePassword = sys.env.getOrElse("DB_USER_PASS", "")
+  lazy val indexSettings = slickCodegenSettings ++ Seq(
+    slickCodegenDatabaseUrl := databaseUrl,
+    slickCodegenDatabaseUser := databaseUser,
+    slickCodegenDatabasePassword := databasePassword,
+    slickCodegenDriver := slick.driver.PostgresDriver,
+    slickCodegenJdbcDriver := "org.postgresql.Driver",
+    slickCodegenOutputPackage := "org.globalnames.microservices.index.dao",
+    slickCodegenExcludedTables := Seq("schema_version"),
+    slickCodegenCodeGenerator := { (model:  m.Model) =>
+      new SourceCodeGenerator(model) {
+        override def code =
+          s"""import com.github.tototoshi.slick.PostgresJodaSupport._
+             |import org.joda.time.DateTime
+             |${super.code}""".stripMargin
+        override def Table = new Table(_) {
+          override def Column = new Column(_) {
+            override def rawType = model.tpe match {
+              case "java.sql.Timestamp" => "DateTime" // kill j.s.Timestamp
+              case _ => super.rawType
+            }
+          }
+        }
+      }
+    },
+
+    sourceGenerators in Compile += slickCodegen.taskValue
+  )
 
   lazy val matcherSettings = Seq()
 
