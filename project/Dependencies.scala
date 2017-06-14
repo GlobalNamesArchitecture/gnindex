@@ -4,6 +4,7 @@ import Keys._
 object Dependencies {
 
   lazy val version = new {
+    val sangria = "1.2.2"
     val finatra = "2.11.0"
     val guice = "4.1.0"
     val junit = "4.12"
@@ -31,6 +32,8 @@ object Dependencies {
     val liblevenshtein       = "com.github.universal-automata" %  "liblevenshtein"    % version.liblevenshtein
     val finatraThrift        = "com.twitter"                   %% "finatra-thrift"    % version.finatra
     val finatraHttp          = "com.twitter"                   %% "finatra-http"      % version.finatra
+    val sangria              = "org.sangria-graphql"           %% "sangria"           % version.sangria
+    val sangriaSpray         = "org.sangria-graphql"           %% "sangria-spray-json" % "1.0.0"
     val logback              = "ch.qos.logback"                %  "logback-classic"   % version.logback
     val guice                = "com.google.inject.extensions"  %  "guice-testlib"     % version.guice          % Test
     val scalatest            = "org.scalatest"                 %% "scalatest"         % version.scalatest      % Test
@@ -63,6 +66,8 @@ object Dependencies {
     library.gnmatcher, library.scalaz
   )
 
-  val apiDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
+  val apiDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
+    library.finatraHttp, library.sangria, library.sangriaSpray
+  )
 
 }
