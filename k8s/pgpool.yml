@@ -1,0 +1,79 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gnresolver-pgpool
+  namespace: gn
+  labels:
+    app: gnresolver
+    tier: backend
+    type: load-balancer
+spec:
+  type: NodePort
+  ports:
+    - port: 5432
+      targetPort: 5432
+      nodePort: 30111
+  selector:
+    app: gnresolver
+    tier: backend
+    type: load-balancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: gnresolver-pgpool
+  namespace: gn
+  labels:
+    app: gnresolver
+    tier: backend
+    type: load-balancer
+spec:
+  replicas: 2
+  template:
+    metadata:
+      name: database-pgpool
+      labels:
+        app: gnresolver
+        tier: backend
+        type: load-balancer
+    spec:
+      containers:
+      - name: database-pgpool
+        image: paunin/postgresql-cluster-pgpool
+        ports:
+          - containerPort: 5432
+        env:
+          # pcp
+          - name: "PCP_USER"
+            valueFrom:
+              secretKeyRef:
+                name: gnresolver
+                key: db.pool.pcp.user
+          - name: "PCP_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                name: gnresolver
+                key: db.pool.pcp.password
+
+          # Cluster configs  to hearbit checks
+          - name: "CHECK_USER"
+            valueFrom:
+              secretKeyRef:
+                name: gnresolver
+                key: db.cluster.replication.user
+          - name: "CHECK_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                name: gnresolver
+                key: db.cluster.replication.user.password
+          - name: "DB_USERS"
+            valueFrom:
+              secretKeyRef:
+                name: gnresolver
+                key: db.pool.users
+          - name: "BACKENDS"
+            valueFrom:
+              configMapKeyRef:
+                name: gnresolver
+                key: db.pool.backends
