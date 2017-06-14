@@ -1,4 +1,4 @@
-#@namespace scala org.globalnames.microservices.matcher.thriftscala
+#@namespace scala org.globalnames.index.matcher.thriftscala
 
 include "finatra-thrift/finatra_thrift_exceptions.thrift"
 

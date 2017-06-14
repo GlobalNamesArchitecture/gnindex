@@ -1,5 +1,5 @@
 package org.globalnames
-package microservices.matcher
+package index.matcher
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}

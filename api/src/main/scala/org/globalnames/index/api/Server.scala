@@ -1,6 +1,4 @@
-package org.globalnames
-package microservices
-package api
+package org.globalnames.index.api
 
 import com.twitter.finagle.http.{Request, Response}
 import com.twitter.finatra.http.HttpServer

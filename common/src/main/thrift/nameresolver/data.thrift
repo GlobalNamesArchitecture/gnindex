@@ -1,16 +1,16 @@
-#@namespace scala org.globalnames.microservices.index.nameresolve.thriftscala
+#@namespace scala org.globalnames.index.nameresolver.thriftscala
 
 include "finatra-thrift/finatra_thrift_exceptions.thrift"
 
 const i32 nameStringsMaxCount = 1000
 
-struct NameRequest {
+struct NameInput {
     1: string value
     2: optional string suppliedId
 }
 
 struct Request {
-    1: list<NameRequest> names
+    1: list<NameInput> names
     2: optional list<i32> dataSourceIds
     3: i32 page = 0
     4: i32 perPage = nameStringsMaxCount

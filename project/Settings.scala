@@ -133,7 +133,7 @@ object Settings {
     slickCodegenDatabasePassword := databasePassword,
     slickCodegenDriver := slick.driver.PostgresDriver,
     slickCodegenJdbcDriver := "org.postgresql.Driver",
-    slickCodegenOutputPackage := "org.globalnames.microservices.index.dao",
+    slickCodegenOutputPackage := "org.globalnames.index.nameresolver.dao",
     slickCodegenExcludedTables := Seq("schema_version"),
     slickCodegenCodeGenerator := { (model:  m.Model) =>
       new SourceCodeGenerator(model) {

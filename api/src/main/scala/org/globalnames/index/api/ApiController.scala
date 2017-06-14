@@ -1,5 +1,5 @@
 package org.globalnames
-package microservices
+package index
 package api
 
 import javax.inject.{Inject, Singleton}

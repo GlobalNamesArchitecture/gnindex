@@ -1,5 +1,6 @@
 package org.globalnames
-package microservices.matcher
+package index
+package matcher
 
 import javax.inject.{Singleton, Inject}
 
@@ -8,7 +9,7 @@ import com.twitter.finatra.thrift.internal.ThriftMethodService
 import com.twitter.util.Future
 import thriftscala.{MatcherResult, MatcherService}
 import thriftscala.MatcherService.FindMatches
-import matcher.Matcher
+import org.globalnames.matcher.Matcher
 
 @Singleton
 class MatcherController @Inject()(matcher: Matcher)

@@ -1,5 +1,5 @@
 package org.globalnames
-package microservices
+package index
 package nameresolver
 
 import java.nio.charset.StandardCharsets
@@ -9,8 +9,8 @@ import com.google.inject.Stage
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import nameresolver.nameresolve.thriftscala.Response
-import nameresolver.thriftscala.IndexService
+import nameresolver.thriftscala.Response
+import nameresolver.thriftscala.{Service => NameResolverService}
 import matcher.{MatcherModule, Server => MatcherServer}
 
 class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
@@ -43,8 +43,8 @@ class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
     )
   )
 
-  val client: IndexService[Future] =
-    server.thriftClient[IndexService[Future]](clientId = "client123")
+  val client: NameResolverService[Future] =
+    server.thriftClient[NameResolverService[Future]](clientId = "client123")
 
   "server#startup" in {
     server.assertHealthy()

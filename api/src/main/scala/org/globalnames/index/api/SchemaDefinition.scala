@@ -1,4 +1,4 @@
-package org.globalnames.microservices.api
+package org.globalnames.index.api
 
 import sangria.schema._
 

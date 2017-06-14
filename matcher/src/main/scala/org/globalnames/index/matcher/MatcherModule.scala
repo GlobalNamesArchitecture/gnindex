@@ -1,11 +1,12 @@
 package org.globalnames
-package microservices.matcher
+package index
+package matcher
 
 import java.io.File
 import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
 import com.twitter.inject.TwitterModule
-import matcher.Matcher
+import org.globalnames.matcher.Matcher
 
 import scala.io.Source
 

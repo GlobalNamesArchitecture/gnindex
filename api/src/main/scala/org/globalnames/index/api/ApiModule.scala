@@ -1,12 +1,12 @@
 package org.globalnames
-package microservices
+package index
 package api
 
 import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
 import com.twitter.finagle.ThriftMux
 import com.twitter.inject.TwitterModule
-import nameresolver.thriftscala.IndexService
+import nameresolver.thriftscala.{Service => NameResolverService}
 
 import scala.util.Properties
 
@@ -19,7 +19,7 @@ object ApiModule extends TwitterModule {
 
   @Singleton
   @Provides
-  def provideMatcherClient: IndexService.FutureIface =
-    ThriftMux.client.newIface[IndexService.FutureIface](nameresolverServiceAddress())
+  def provideMatcherClient: NameResolverService.FutureIface =
+    ThriftMux.client.newIface[NameResolverService.FutureIface](nameresolverServiceAddress())
 
 }

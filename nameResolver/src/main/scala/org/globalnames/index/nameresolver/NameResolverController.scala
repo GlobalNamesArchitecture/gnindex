@@ -1,18 +1,19 @@
 package org.globalnames
-package microservices.nameresolver
+package index
+package nameresolver
 
 import javax.inject.{Inject, Singleton}
 
 import com.twitter.finatra.thrift.Controller
 import com.twitter.finatra.thrift.internal.ThriftMethodService
-import nameresolve.thriftscala.{Name, Response, Result}
-import thriftscala.IndexService
-import thriftscala.IndexService.NameResolve
+import nameresolver.thriftscala.{Name, Response, Result}
+import thriftscala.{Service => NameResolverService}
+import NameResolverService.NameResolve
 
 @Singleton
 class NameResolverController @Inject()(resolver: NameResolver)
   extends Controller
-     with IndexService.BaseServiceIface {
+     with NameResolverService.BaseServiceIface {
 
   override val nameResolve: ThriftMethodService[NameResolve.Args, Seq[Response]] =
     handle(NameResolve) { args: NameResolve.Args =>

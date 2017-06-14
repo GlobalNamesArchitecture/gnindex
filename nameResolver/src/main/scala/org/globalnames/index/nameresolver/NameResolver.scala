@@ -1,5 +1,5 @@
 package org.globalnames
-package microservices
+package index
 package nameresolver
 
 import javax.inject.{Inject, Singleton}
@@ -7,7 +7,6 @@ import javax.inject.{Inject, Singleton}
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.util.{Future => TwitterFuture}
-import dao.Tables
 import matcher.thriftscala.MatcherService
 import slick.jdbc.PostgresProfile.api._
 
@@ -26,10 +25,10 @@ class NameResolver @Inject()(database: Database,
     }
     val fuzzyMatchesFut = TwitterFuture.collect(fuzzyMatchesFuts).map { _.flatten }
 
-    val nameStringsFut: ScalaFuture[Seq[Tables.NameStringsRow]] =
+    val nameStringsFut: ScalaFuture[Seq[dao.Tables.NameStringsRow]] =
       database.run(dao.Tables.NameStrings.take(10).result)
     val databaseMatchesFut =
-      nameStringsFut.as[TwitterFuture[Seq[Tables.NameStringsRow]]]
+      nameStringsFut.as[TwitterFuture[Seq[dao.Tables.NameStringsRow]]]
                     .map { nameStrings => nameStrings.map { _.name } }
     for {
       fuzzyMatches <- fuzzyMatchesFut

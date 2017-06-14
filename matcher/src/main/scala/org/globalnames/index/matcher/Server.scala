@@ -1,15 +1,15 @@
 package org.globalnames
-package microservices
-package nameresolver
+package index
+package matcher
 
 import com.twitter.finatra.thrift.ThriftServer
 import com.twitter.finatra.thrift.filters._
 import com.twitter.finatra.thrift.routing.ThriftRouter
 
 class Server extends ThriftServer {
-  override val name = "index-server"
+  override val name = "matcher-server"
 
-  override val modules = Seq(NameResolverModule)
+  override val modules = Seq(MatcherModule)
 
   override def configureThrift(router: ThriftRouter): Unit = {
     router
@@ -19,7 +19,7 @@ class Server extends ThriftServer {
       .filter[AccessLoggingFilter]
       .filter[StatsFilter]
       .filter[ExceptionTranslationFilter]
-      .add[NameResolverController]
+      .add[MatcherController]
   }
 }
 

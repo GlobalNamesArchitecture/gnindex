@@ -1,5 +1,5 @@
 package org.globalnames
-package microservices
+package index
 package nameresolver
 
 import com.google.inject.{Provides, Singleton}
