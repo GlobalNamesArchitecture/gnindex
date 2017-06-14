@@ -1,6 +1,6 @@
 package org.globalnames
 package microservices
-package index
+package nameresolver
 
 import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
@@ -10,7 +10,7 @@ import matcher.thriftscala.MatcherService
 import slick.jdbc.PostgresProfile.api._
 import scala.util.Properties
 
-object IndexModule extends TwitterModule {
+object NameResolverModule extends TwitterModule {
   val matcherServiceAddress: Flag[String] = flag(
     name = "matcherServiceAddress",
     help = "Host and port of matcher service",

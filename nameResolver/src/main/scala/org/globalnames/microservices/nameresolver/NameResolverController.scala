@@ -1,5 +1,5 @@
 package org.globalnames
-package microservices.index
+package microservices.nameresolver
 
 import javax.inject.{Inject, Singleton}
 
@@ -10,7 +10,7 @@ import thriftscala.IndexService
 import thriftscala.IndexService.NameResolve
 
 @Singleton
-class IndexController @Inject()(resolver: Resolver)
+class NameResolverController @Inject()(resolver: NameResolver)
   extends Controller
      with IndexService.BaseServiceIface {
 

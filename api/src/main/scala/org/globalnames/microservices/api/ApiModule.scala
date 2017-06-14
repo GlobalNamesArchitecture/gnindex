@@ -6,7 +6,7 @@ import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
 import com.twitter.finagle.ThriftMux
 import com.twitter.inject.TwitterModule
-import org.globalnames.microservices.index.thriftscala.IndexService
+import nameresolver.thriftscala.IndexService
 
 import scala.util.Properties
 

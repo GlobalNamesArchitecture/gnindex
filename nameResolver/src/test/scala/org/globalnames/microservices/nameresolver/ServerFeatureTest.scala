@@ -1,6 +1,6 @@
 package org.globalnames
 package microservices
-package index
+package nameresolver
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -9,8 +9,8 @@ import com.google.inject.Stage
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import index.nameresolve.thriftscala.Response
-import index.thriftscala.IndexService
+import nameresolver.nameresolve.thriftscala.Response
+import nameresolver.thriftscala.IndexService
 import matcher.{MatcherModule, Server => MatcherServer}
 
 class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
@@ -39,7 +39,7 @@ class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
     twitterServer = new Server,
     stage = Stage.PRODUCTION,
     flags = Map(
-      IndexModule.matcherServiceAddress.name -> matcherServer.thriftHostAndPort
+      NameResolverModule.matcherServiceAddress.name -> matcherServer.thriftHostAndPort
     )
   )
 
