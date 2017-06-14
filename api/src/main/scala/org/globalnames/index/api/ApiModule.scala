@@ -6,7 +6,7 @@ import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
 import com.twitter.finagle.ThriftMux
 import com.twitter.inject.TwitterModule
-import nameresolver.thriftscala.{Service => NameResolverService}
+import thrift.nameresolver.{Service => NameResolverService}
 
 import scala.util.Properties
 

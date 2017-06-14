@@ -7,7 +7,7 @@ import javax.inject.{Inject, Singleton}
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.util.{Future => TwitterFuture}
-import matcher.thriftscala.MatcherService
+import thrift.matcher.MatcherService
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global

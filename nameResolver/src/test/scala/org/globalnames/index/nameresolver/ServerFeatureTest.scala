@@ -9,8 +9,8 @@ import com.google.inject.Stage
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import nameresolver.thriftscala.Response
-import nameresolver.thriftscala.{Service => NameResolverService}
+import thrift.nameresolver.Response
+import thrift.nameresolver.{Service => NameResolverService}
 import matcher.{MatcherModule, Server => MatcherServer}
 
 class ServerFeatureTest extends SpecConfig with FeatureTestMixin {

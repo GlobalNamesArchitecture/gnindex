@@ -4,8 +4,8 @@ package api
 
 import javax.inject.Inject
 
-import nameresolver.thriftscala.Service
+import thrift.nameresolver.{Service => NameResolverService}
 
-class Repository @Inject() (nameResolverClient: Service.FutureIface) {
+class Repository @Inject() (nameResolverClient: NameResolverService.FutureIface) {
 
 }

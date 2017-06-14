@@ -6,9 +6,8 @@ import javax.inject.{Inject, Singleton}
 
 import com.twitter.finatra.thrift.Controller
 import com.twitter.finatra.thrift.internal.ThriftMethodService
-import nameresolver.thriftscala.{Name, Response, Result}
-import thriftscala.{Service => NameResolverService}
-import NameResolverService.NameResolve
+import thrift.nameresolver.{Name, Response, Result, Service => NameResolverService}
+import thrift.nameresolver.Service.NameResolve
 
 @Singleton
 class NameResolverController @Inject()(resolver: NameResolver)

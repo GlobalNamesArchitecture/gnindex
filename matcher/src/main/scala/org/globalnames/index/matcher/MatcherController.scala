@@ -7,8 +7,8 @@ import javax.inject.{Singleton, Inject}
 import com.twitter.finatra.thrift.Controller
 import com.twitter.finatra.thrift.internal.ThriftMethodService
 import com.twitter.util.Future
-import thriftscala.{MatcherResult, MatcherService}
-import thriftscala.MatcherService.FindMatches
+import thrift.matcher.{MatcherResult, MatcherService}
+import thrift.matcher.MatcherService.FindMatches
 import org.globalnames.matcher.Matcher
 
 @Singleton

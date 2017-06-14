@@ -1,5 +1,6 @@
 package org.globalnames
-package index.matcher
+package index
+package matcher
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -7,7 +8,7 @@ import java.nio.file.{Files, Path}
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import thriftscala.{MatcherService, MatcherResult}
+import thrift.matcher.{MatcherService, MatcherResult}
 
 class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
 
