@@ -6,7 +6,7 @@ import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
 import com.twitter.finagle.ThriftMux
 import com.twitter.inject.TwitterModule
-import thrift.matcher.MatcherService
+import thrift.matcher.{Service => MatcherService}
 import slick.jdbc.PostgresProfile.api._
 import scala.util.Properties
 

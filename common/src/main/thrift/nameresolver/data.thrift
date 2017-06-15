@@ -1,6 +1,7 @@
 #@namespace scala org.globalnames.index.thrift.nameresolver
 
 include "finatra-thrift/finatra_thrift_exceptions.thrift"
+include "../data.thrift"
 
 const i32 nameStringsMaxCount = 1000
 
@@ -11,13 +12,15 @@ struct NameInput {
 
 struct Request {
     1: list<NameInput> names
-    2: optional list<i32> dataSourceIds
+    2: list<i32> dataSourceIds = []
     3: i32 page = 0
     4: i32 perPage = nameStringsMaxCount
+    5: bool withSurrogates = false
+    6: bool withVernaculars = false
 }
 
 struct Name {
-    1: string uuid
+    1: data.Uuid uuid
     2: string value
 }
 

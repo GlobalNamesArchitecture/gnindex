@@ -8,7 +8,7 @@ import java.nio.file.{Files, Path}
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import thrift.matcher.{MatcherService, MatcherResult}
+import thrift.matcher.{Service => MatcherService, Result => MatcherResult}
 
 class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
 
