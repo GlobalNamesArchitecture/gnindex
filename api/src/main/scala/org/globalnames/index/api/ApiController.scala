@@ -38,7 +38,7 @@ class ApiController @Inject()(repository: Repository) extends Controller {
           operationName = graphqlRequest.operation
         )
         graphqlExecution.as[TwitterFuture[JsValue]]
-                        .map { v => response.ok(v) }
+                        .map { v => response.ok.json(v.prettyPrint) }
 
       case util.Failure(error) =>
         response.badRequest(error.getMessage)
