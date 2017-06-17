@@ -8,6 +8,7 @@ import sbtbuildinfo.BuildInfoKeys._
 import slick.codegen.SourceCodeGenerator
 import slick.{ model => m }
 import com.github.tototoshi.sbt.slick.CodegenPlugin._
+import spray.revolver.RevolverPlugin.autoImport._
 
 object Settings {
 
@@ -151,8 +152,9 @@ object Settings {
         }
       }
     },
+    sourceGenerators in Compile += slickCodegen.taskValue,
 
-    sourceGenerators in Compile += slickCodegen.taskValue
+    Revolver.enableDebugging(port = 5006, suspend = false)
   )
 
   //////////////////////
