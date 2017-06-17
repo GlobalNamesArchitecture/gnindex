@@ -19,16 +19,13 @@ ENV LC_ALL en_US.UTF-8
 RUN mkdir /app
 WORKDIR /app
 
-ENV ASSEMBLY_JAR="gnmatcher-${VERSION}.jar"
+ENV ASSEMBLY_JAR="gnindexapi-${VERSION}.jar"
 ARG ASSEMBLY_PATH="https://github.com/GlobalNamesArchitecture/gnindex/releases/download/snapshot/${ASSEMBLY_JAR}"
 ADD ${ASSEMBLY_PATH} /app/
-
-ARG CANONICAL_NAMES_FILE_PATH="http://opendata.globalnames.org/staging/canonical_names.txt"
-ADD ${CANONICAL_NAMES_FILE_PATH} /app/
 
 CMD bash -c "java -cp '.' -server -Xms16g -Xmx32g -XX:PermSize=512m \
                   -XX:MaxPermSize=512m -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled \
                   -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 \
                   -XX:+ScavengeBeforeFullGC -XX:+CMSScavengeBeforeRemark \
                   -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=dump-$(date +"%Y-%m-%d").hprof \
-                  -jar ${ASSEMBLY_JAR} -names-path=/app/canonical_names_part.txt"
+                  -jar ${ASSEMBLY_JAR}"
