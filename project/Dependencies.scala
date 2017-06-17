@@ -17,11 +17,13 @@ object Dependencies {
     val slick = "3.2.0"
     val jodaMapper = "2.3.0"
     val postgres = "9.4-1206-jdbc42"
+    val gnparser = "0.4.1"
     val gnmatcher = "0.1.2-20170612_2200-SNAPSHOT"
     val twitterBijection = "0.9.5"
   }
 
   lazy val library = new {
+    val gnparser             = "org.globalnames"               %% "gnparser"           % version.gnparser
     val gnmatcher            = "org.globalnames"               %% "gnmatcher"          % version.gnmatcher
     val twitterBijectionCore = "com.twitter"                   %% "bijection-core"     % version.twitterBijection
     val twitterBijectionUtil = "com.twitter"                   %% "bijection-util"     % version.twitterBijection
@@ -64,7 +66,7 @@ object Dependencies {
   )
 
   val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
-    library.gnmatcher, library.scalaz
+    library.gnparser, library.gnmatcher, library.scalaz
   )
 
   val apiDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(

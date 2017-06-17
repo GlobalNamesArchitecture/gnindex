@@ -9,8 +9,7 @@ import com.google.inject.Stage
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import thrift.nameresolver.Response
-import thrift.nameresolver.{Service => NameResolverService}
+import thrift.nameresolver.{Service => NameResolverService, Request}
 import matcher.{MatcherModule, Server => MatcherServer}
 
 class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
@@ -51,7 +50,8 @@ class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
   }
 
   "server#nameResolve" in {
-    val responses: Seq[Response] = client.nameResolve(Seq()).value
+    val request = Request(names = Seq())
+    val responses = client.nameResolve(request).value
     responses.head.total should be > 0
   }
 }
