@@ -19,6 +19,7 @@ import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future => ScalaFuture}
 import scalaz.syntax.std.boolean._
+import scalaz.syntax.std.option._
 
 @Singleton
 class NameResolverFactory @Inject()(database: Database,
@@ -27,6 +28,9 @@ class NameResolverFactory @Inject()(database: Database,
   private val EmptyUuid = UuidGenerator.generate("")
 
   case class NameInputParsed(nameInput: NameInput, parsed: SNResult)
+  case class NameMaterialisationRequest(
+    name: NameInputParsed,
+    query: Query[T.NameStrings, T.NameStringsRow, Seq])
 
   class NameResolver(request: Request) {
     private val takeCount: Int = request.perPage.min(1000).max(0)
@@ -83,11 +87,10 @@ class NameResolverFactory @Inject()(database: Database,
 
     // NB: perPage == 5, query = sn.input.verbatim.some
     protected def materializeNameStringsSequence(
-      nameStringsQueries: Seq[Query[T.NameStrings, T.NameStringsRow, Seq]]):
-        ScalaFuture[Seq[Response]] = {
+      nameStringsQueries: Seq[NameMaterialisationRequest]): ScalaFuture[Seq[Response]] = {
 
-      val resultsQuerySeq = nameStringsQueries.map { nsq =>
-        val qrySurrogated = queryWithSurrogates(nsq)
+      val resultsQuerySeq = nameStringsQueries.map { nmr =>
+        val qrySurrogated = queryWithSurrogates(nmr.query)
         val qryVernacularized = queryWithVernaculars(qrySurrogated.drop(dropCount).take(takeCount))
         for {
           data <- qryVernacularized.result
@@ -102,7 +105,8 @@ class NameResolverFactory @Inject()(database: Database,
 
       val resultsPerNameFut = database.run(DBIO.sequence(resultsQuerySeq))
       val responses = resultsPerNameFut.map { resultsPerName =>
-        resultsPerName.map { case (resultsMap, total) =>
+        resultsPerName.zip(nameStringsQueries)
+                      .map { case ((resultsMap, total), nmr) =>
           val results = resultsMap.keys.map { case (ns, nsi, ds) =>
             val canonicalNameOpt =
               for { canId <- ns.canonicalUuid; canName <- ns.canonical }
@@ -110,7 +114,9 @@ class NameResolverFactory @Inject()(database: Database,
             Result(name = Name(uuid = Uuid(ns.id.toString), value = ns.name),
                    canonicalName = canonicalNameOpt)
           }.toSeq
-          Response(total = total, results = results)
+          Response(total = total, results = results,
+                   suppliedId = nmr.name.nameInput.suppliedId,
+                   suppliedInput = nmr.name.nameInput.value.some)
         }
       }
       responses
@@ -122,11 +128,13 @@ class NameResolverFactory @Inject()(database: Database,
            .map { namesPortion =>
              val namePortionQry = namesPortion.map { name =>
                val canonicalUuid = name.parsed.canonizedUuid().map { _.id }.getOrElse(EmptyUuid)
-               if (canonicalUuid == EmptyUuid) {
-                 T.NameStrings.filter { ns => ns.id === name.parsed.preprocessorResult.id }
-               } else {
-                 exactNamesQuery(name.parsed.preprocessorResult.id, canonicalUuid)
-               }
+               val qry =
+                 if (canonicalUuid == EmptyUuid) {
+                   T.NameStrings.filter { ns => ns.id === name.parsed.preprocessorResult.id }
+                 } else {
+                   exactNamesQuery(name.parsed.preprocessorResult.id, canonicalUuid)
+                 }
+               NameMaterialisationRequest(name, qry)
              }
              materializeNameStringsSequence(namePortionQry)
            }

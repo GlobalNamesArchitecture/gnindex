@@ -3,9 +3,20 @@ package index
 package api
 
 import sangria.schema._
-import thrift.nameresolver.{Name, Result, Response}
+import sangria.marshalling.sprayJson._
+import spray.json.{DefaultJsonProtocol, _}
+import thrift.nameresolver.{Name, NameInput, Result, Response}
 
-object SchemaDefinition {
+object SchemaDefinition extends DefaultJsonProtocol {
+  /*
+  implicit object NameRequestFormat extends RootJsonFormat[NameInput] {
+    def write(ni: NameInput) = JsObject("value" -> JsString(ni.value),
+                                        "suppliedId" -> ni.suppliedId.map { x => JsString(x) })
+  }
+  */
+  implicit val nameRequestFormat: RootJsonFormat[NameInput] =
+    jsonFormat(NameInput.apply, "value", "suppliedId")
+
   val NameOT = ObjectType(
     "Name", fields[Unit, Name](
         Field("id", IDType, resolve = _.value.uuid.uuidString)
@@ -23,11 +34,17 @@ object SchemaDefinition {
   val ResponseOT = ObjectType(
     "Response", fields[Unit, Response](
         Field("total", IntType, None, resolve = _.value.total)
+      , Field("suppliedInput", OptionType(StringType), None, resolve = _.value.suppliedInput)
+      , Field("suppliedId", OptionType(StringType), None, resolve = _.value.suppliedId)
       , Field("results", ListType(ResultItemOT), None, resolve = _.value.results)
     )
   )
 
-  val NamesRequestArg = Argument("names", ListInputType(StringType))
+  val NameRequestIOT = InputObjectType[NameInput]("name", List(
+      InputField("value", StringType)
+    , InputField("suppliedId", OptionInputType(StringType))
+  ))
+  val NamesRequestArg = Argument("names", ListInputType(NameRequestIOT))
 
   val QueryTypeOT = ObjectType(
     "Query", fields[Repository, Unit](

@@ -11,9 +11,8 @@ import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 
 class Repository @Inject() (nameResolverClient: NameResolverService.FutureIface) {
-  def nameResolver(names: Seq[String]): ScalaFuture[Seq[Response]] = {
-    val nameInputs = names.map { n => NameInput(value = n) }
-    val req = Request(names = nameInputs)
+  def nameResolver(namesInput: Seq[NameInput]): ScalaFuture[Seq[Response]] = {
+    val req = Request(namesInput)
     nameResolverClient.nameResolve(req).as[ScalaFuture[Seq[Response]]]
   }
 }
