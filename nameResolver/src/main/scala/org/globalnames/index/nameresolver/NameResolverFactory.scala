@@ -26,10 +26,17 @@ class NameResolverFactory @Inject()(database: Database,
   private val NameStringsPerFuture = 200
   private val EmptyUuid = UuidGenerator.generate("")
 
+  case class NameInputParsed(nameInput: NameInput, parsed: SNResult)
+
   class NameResolver(request: Request) {
     private val takeCount: Int = request.perPage.min(1000).max(0)
     private val dropCount: Int = (request.page * request.perPage).max(0)
-    private val names: Seq[NameInput] = request.names
+    private val namesParsed: Vector[NameInputParsed] =
+      request.names.toVector.map { ni =>
+        val capital = capitalize(ni.value)
+        NameInputParsed(nameInput = ni.copy(value = capital),
+                        parsed = SNP.fromString(capital))
+      }
 
     private def exactNamesQuery(nameUuid: Rep[UUID], canonicalNameUuid: Rep[UUID]) = {
       T.NameStrings.filter { ns => ns.id === nameUuid || ns.canonicalUuid === canonicalNameUuid }
@@ -37,10 +44,6 @@ class NameResolverFactory @Inject()(database: Database,
 
     private def exactNamesQueryWildcard(query: Rep[String]) = {
       T.NameStrings.filter { ns => ns.name.like(query) || ns.canonical.like(query) }
-    }
-
-    private def clean(nameInput: NameInput): NameInput = {
-      nameInput.copy(value = capitalize(nameInput.value))
     }
 
     private def queryWithSurrogates(
@@ -110,15 +113,15 @@ class NameResolverFactory @Inject()(database: Database,
     }
 
     private[NameResolverFactory] def queryExactMatchesByUuid(): Seq[ScalaFuture[Seq[Response]]] = {
-      names.map { clean }.grouped(NameStringsPerFuture).toSeq
+      namesParsed
+           .grouped(NameStringsPerFuture).toSeq
            .map { namesPortion =>
              val namePortionQry = namesPortion.map { name =>
-               val sciName = SNP.fromString(name.value)
-               val canonicalUuid = sciName.canonizedUuid().map { _.id }.getOrElse(EmptyUuid)
+               val canonicalUuid = name.parsed.canonizedUuid().map { _.id }.getOrElse(EmptyUuid)
                if (canonicalUuid == EmptyUuid) {
-                 T.NameStrings.filter { ns => ns.id === sciName.preprocessorResult.id }
+                 T.NameStrings.filter { ns => ns.id === name.parsed.preprocessorResult.id }
                } else {
-                 exactNamesQuery(sciName.preprocessorResult.id, canonicalUuid)
+                 exactNamesQuery(name.parsed.preprocessorResult.id, canonicalUuid)
                }
              }
              materializeNameStringsSequence(namePortionQry)
@@ -128,8 +131,11 @@ class NameResolverFactory @Inject()(database: Database,
 
   def resolveExact(request: Request): TwitterFuture[Seq[Response]] = {
     val nameRequest = new NameResolver(request)
-    val exactMatchesByUuid = nameRequest.queryExactMatchesByUuid()
-    val responsesFut = ScalaFuture.sequence(exactMatchesByUuid).map { _.flatten }
+    val exactMatchesByUuid =
+      ScalaFuture.sequence(nameRequest.queryExactMatchesByUuid())
+                 .map { _.flatten }
+
+    val responsesFut = exactMatchesByUuid
     responsesFut.as[TwitterFuture[Seq[Response]]]
   }
 }
