@@ -104,7 +104,11 @@ class NameResolverFactory @Inject()(database: Database,
       val responses = resultsPerNameFut.map { resultsPerName =>
         resultsPerName.map { case (resultsMap, total) =>
           val results = resultsMap.keys.map { case (ns, nsi, ds) =>
-            Result(name = Name(uuid = Uuid(ns.id.toString), value = ns.name))
+            val canonicalNameOpt =
+              for { canId <- ns.canonicalUuid; canName <- ns.canonical }
+                yield Name(uuid = Uuid(canId.toString), value = canName)
+            Result(name = Name(uuid = Uuid(ns.id.toString), value = ns.name),
+                   canonicalName = canonicalNameOpt)
           }.toSeq
           Response(total = total, results = results)
         }
