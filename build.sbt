@@ -1,5 +1,6 @@
 import Dependencies._
 import Settings._
+import com.github.tototoshi.sbt.slick.CodegenPlugin
 
 lazy val common = (project in file("common"))
     .settings(noPublishingSettings: _*)
@@ -15,6 +16,7 @@ lazy val matcher = (project in file("matcher"))
     .settings(libraryDependencies ++= matcherDependencies)
 
 lazy val nameResolver = (project in file("nameResolver"))
+    .enablePlugins(CodegenPlugin)
     .dependsOn(common, matcher)
     .settings(publishingSettings: _*)
     .settings(Settings.settings: _*)

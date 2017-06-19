@@ -7,7 +7,7 @@ import sbtbuildinfo.BuildInfoKey
 import sbtbuildinfo.BuildInfoKeys._
 import slick.codegen.SourceCodeGenerator
 import slick.{ model => m }
-import com.github.tototoshi.sbt.slick.CodegenPlugin._
+import com.github.tototoshi.sbt.slick.CodegenPlugin.autoImport._
 import spray.revolver.RevolverPlugin.autoImport._
 
 object Settings {
@@ -126,7 +126,7 @@ object Settings {
   }
   lazy val databaseUser = sys.env.getOrElse("DB_USER", "postgres")
   lazy val databasePassword = sys.env.getOrElse("DB_USER_PASS", "")
-  lazy val nameResolverSettings = slickCodegenSettings ++ Seq(
+  lazy val nameResolverSettings = Seq(
     assemblyJarName in assembly := "gnnameresolver-" + version.value + ".jar",
 
     slickCodegenDatabaseUrl := databaseUrl,
