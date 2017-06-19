@@ -12,7 +12,7 @@ import com.twitter.util.{Future => TwitterFuture}
 import thrift.matcher.{Service => MatcherService}
 import slick.jdbc.PostgresProfile.api._
 import dao.{ Tables => T }
-import thrift.nameresolver.{Name, NameInput, Request, Response, Result}
+import thrift.nameresolver.{MatchType, MatchKind, Name, NameInput, Request, Response, Result}
 import thrift.Uuid
 import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
 
@@ -27,11 +27,11 @@ class NameResolverFactory @Inject()(database: Database,
   private val NameStringsPerFuture = 200
   private val EmptyUuid = UuidGenerator.generate("")
 
+  type NameStringsQuery = Query[T.NameStrings, T.NameStringsRow, Seq]
   case class NameInputParsed(nameInput: NameInput, parsed: SNResult)
   case class RequestResponse(request: NameInputParsed, response: Response)
-  case class NameMaterialisationRequest(
-    name: NameInputParsed,
-    query: Query[T.NameStrings, T.NameStringsRow, Seq])
+  case class DBResult(name: Name, canonicalName: Option[Name])
+  case class DBResults(total: Int, results: Vector[DBResult])
 
   class NameResolver(request: Request) {
     private val takeCount: Int = request.perPage.min(1000).max(0)
@@ -52,7 +52,7 @@ class NameResolverFactory @Inject()(database: Database,
     }
 
     private
-    def queryWithSurrogates(nameStringsQuery: Query[T.NameStrings, T.NameStringsRow, Seq]) = {
+    def queryWithSurrogates(nameStringsQuery: NameStringsQuery) = {
       val nameStringsQuerySurrogates =
         if (request.withSurrogates) nameStringsQuery
         else nameStringsQuery.filter { ns => ns.surrogate.isEmpty || !ns.surrogate }
@@ -88,10 +88,10 @@ class NameResolverFactory @Inject()(database: Database,
 
     // NB: perPage == 5, query = sn.input.verbatim.some
     protected def materializeNameStringsSequence(
-      nameStringsQueries: Seq[NameMaterialisationRequest]): ScalaFuture[Seq[RequestResponse]] = {
+      nameStringsQueries: Seq[NameStringsQuery]): ScalaFuture[Seq[DBResults]] = {
 
-      val resultsQuerySeq = nameStringsQueries.map { nmr =>
-        val qrySurrogated = queryWithSurrogates(nmr.query)
+      val resultsQuerySeq = nameStringsQueries.map { nsq =>
+        val qrySurrogated = queryWithSurrogates(nsq)
         val qryVernacularized = queryWithVernaculars(qrySurrogated.drop(dropCount).take(takeCount))
         for {
           data <- qryVernacularized.result
@@ -112,35 +112,59 @@ class NameResolverFactory @Inject()(database: Database,
             val canonicalNameOpt =
               for { canId <- ns.canonicalUuid; canName <- ns.canonical }
                 yield Name(uuid = Uuid(canId.toString), value = canName)
-            Result(name = Name(uuid = Uuid(ns.id.toString), value = ns.name),
-                   canonicalName = canonicalNameOpt)
-          }.toSeq
-          val response = Response(total = total, results = results,
-                                  suppliedId = nmr.name.nameInput.suppliedId,
-                                  suppliedInput = nmr.name.nameInput.value.some)
-          RequestResponse(nmr.name, response)
+            DBResult(name = Name(uuid = Uuid(ns.id.toString), value = ns.name),
+                     canonicalName = canonicalNameOpt)
+          }
+          DBResults(total = total, results = results.toVector)
         }
       }
       result
     }
 
     private[NameResolverFactory]
-    def queryExactMatchesByUuid(): Seq[ScalaFuture[Seq[RequestResponse]]] = {
-      namesParsed
+    def queryExactMatchesByUuid(): ScalaFuture[Seq[RequestResponse]] = {
+      val dbResultsChunksFuts = namesParsed
            .grouped(NameStringsPerFuture).toSeq
            .map { namesPortion =>
              val namePortionQry = namesPortion.map { name =>
                val canonicalUuid = name.parsed.canonizedUuid().map { _.id }.getOrElse(EmptyUuid)
-               val qry =
+               val qry: NameStringsQuery =
                  if (canonicalUuid == EmptyUuid) {
                    T.NameStrings.filter { ns => ns.id === name.parsed.preprocessorResult.id }
                  } else {
                    exactNamesQuery(name.parsed.preprocessorResult.id, canonicalUuid)
                  }
-               NameMaterialisationRequest(name, qry)
+               qry
              }
              materializeNameStringsSequence(namePortionQry)
            }
+
+      ScalaFuture.sequence(dbResultsChunksFuts).map { dbResultssChunks =>
+        val dbResultss = dbResultssChunks.flatten.toVector
+        dbResultss.zip(namesParsed).map { case (dbResults, nameParsed) =>
+          val results = dbResults.results.map { dbResult =>
+            val matchKind =
+              if (dbResult.name.uuid.uuidString ==
+                    nameParsed.parsed.preprocessorResult.id.toString) {
+                MatchKind.ExactNameMatchByUUID
+              } else if (dbResult.canonicalName.isDefined &&
+                       nameParsed.parsed.canonizedUuid().isDefined &&
+                       dbResult.canonicalName.get.uuid.uuidString ==
+                         nameParsed.parsed.canonizedUuid().get.id.toString) {
+                MatchKind.ExactCanonicalNameMatchByUUID
+              } else {
+                MatchKind.Unknown
+              }
+            Result(name = dbResult.name, canonicalName = dbResult.canonicalName,
+                   matchType = MatchType(matchKind))
+          }
+          val response = Response(total = dbResults.total,
+                                  results = results,
+                                  suppliedId = nameParsed.nameInput.suppliedId,
+                                  suppliedInput = nameParsed.nameInput.value.some)
+          RequestResponse(request = nameParsed, response)
+        }
+      }
     }
 
     private[NameResolverFactory]
@@ -150,8 +174,7 @@ class NameResolverFactory @Inject()(database: Database,
 
     private [NameResolverFactory] def resolveExact(): ScalaFuture[Seq[Response]] = {
       val exactMatchesByUuidFut =
-        ScalaFuture.sequence(queryExactMatchesByUuid()).flatMap { namesChunks =>
-          val names = namesChunks.flatten.toVector
+        queryExactMatchesByUuid().flatMap { names =>
           val (exactMatchesByUuid, exactUnmatchesByUuid) =
             names.partition { resp => resp.response.results.nonEmpty }
           val (unmatched, unmatchedNotParsed) = exactUnmatchesByUuid.partition { reqResp =>

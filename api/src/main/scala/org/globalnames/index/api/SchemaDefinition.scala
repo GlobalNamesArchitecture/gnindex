@@ -5,17 +5,18 @@ package api
 import sangria.schema._
 import sangria.marshalling.sprayJson._
 import spray.json.{DefaultJsonProtocol, _}
-import thrift.nameresolver.{Name, NameInput, Result, Response}
+import thrift.nameresolver.{MatchType, Name, NameInput, Result, Response}
 
 object SchemaDefinition extends DefaultJsonProtocol {
-  /*
-  implicit object NameRequestFormat extends RootJsonFormat[NameInput] {
-    def write(ni: NameInput) = JsObject("value" -> JsString(ni.value),
-                                        "suppliedId" -> ni.suppliedId.map { x => JsString(x) })
-  }
-  */
+
   implicit val nameRequestFormat: RootJsonFormat[NameInput] =
     jsonFormat(NameInput.apply, "value", "suppliedId")
+
+  val MatchTypeOT = ObjectType(
+    "MatchType", fields[Unit, MatchType](
+        Field("kind", StringType, resolve = _.value.kind.name)
+    )
+  )
 
   val NameOT = ObjectType(
     "Name", fields[Unit, Name](
@@ -28,6 +29,7 @@ object SchemaDefinition extends DefaultJsonProtocol {
     "ResultItem", fields[Unit, Result](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(NameOT), resolve = _.value.canonicalName)
+      , Field("matchType", MatchTypeOT, resolve = _.value.matchType)
     )
   )
 

@@ -24,9 +24,27 @@ struct Name {
     2: string value
 }
 
+enum MatchKind {
+    UUIDLookup,
+    ExactNameMatchByUUID,
+    ExactNameMatchByString,
+    ExactCanonicalNameMatchByUUID,
+    ExactCanonicalNameMatchByString,
+    FuzzyCanonicalMatch,
+    FuzzyPartialMatch,
+    ExactMatchPartialByGenus,
+    ExactPartialMatch,
+    Unknown
+}
+
+struct MatchType {
+    1: MatchKind kind
+}
+
 struct Result {
     1: Name name
     2: optional Name canonicalName
+    3: MatchType matchType
 }
 
 struct Response {
