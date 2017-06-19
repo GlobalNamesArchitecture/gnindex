@@ -7,8 +7,13 @@ struct Result {
     2: i16 distance
 }
 
+struct Response {
+    1: string input
+    2: list<Result> results
+}
+
 service Service {
-    list<Result> findMatches(1: string word) throws (
+    list<Response> findMatches(1: list<string> words) throws (
         1: finatra_thrift_exceptions.ClientError clientError,
         2: finatra_thrift_exceptions.ServerError serverError
     )

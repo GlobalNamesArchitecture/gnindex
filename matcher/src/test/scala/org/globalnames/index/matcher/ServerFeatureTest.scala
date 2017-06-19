@@ -8,7 +8,7 @@ import java.nio.file.{Files, Path}
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import thrift.matcher.{Service => MatcherService, Result => MatcherResult}
+import thrift.matcher.{Service => MatcherService, Result, Response }
 
 class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
 
@@ -39,9 +39,11 @@ class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
   }
 
   "service#respond to ping" in {
-    client.findMatches("Abacetus cyclomoXX").value should contain only (
-      MatcherResult("Abacetus cyclomus", 3),
-      MatcherResult("Abacetus cyclomous", 2)
-    )
+    val word = "Abacetus cyclomoXX"
+    client.findMatches(Seq(word)).value should contain only
+      Response(input = word, results = Seq(
+        Result("Abacetus cyclomus", 3),
+        Result("Abacetus cyclomous", 2)
+      ))
   }
 }
