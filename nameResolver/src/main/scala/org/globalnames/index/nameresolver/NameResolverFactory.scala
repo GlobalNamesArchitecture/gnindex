@@ -31,7 +31,10 @@ class NameResolver private[nameresolver](request: Request,
   type NameStringsQuery = Query[T.NameStrings, T.NameStringsRow, Seq]
   case class NameInputParsed(nameInput: NameInput, parsed: SNResult)
   case class RequestResponse(request: NameInputParsed, response: Response)
-  case class DBResult(name: Name, canonicalName: Option[Name])
+  case class DBResult(nameString: T.NameStringsRow,
+                      nameStringIndex: T.NameStringIndicesRow,
+                      dataSource: T.DataSourcesRow,
+                      vernaculars: Seq[(T.VernacularStringIndicesRow, T.VernacularStringsRow)])
   case class DBResults(total: Int, results: Vector[DBResult])
   case class CanonicalNameSplit(name: NameInputParsed, parts: List[String]) {
     val isOriginalCanonical: Boolean = {
@@ -54,6 +57,18 @@ class NameResolver private[nameresolver](request: Request,
       NameInputParsed(nameInput = ni.copy(value = capital),
                       parsed = SNP.fromString(capital))
     }
+
+  private def createResult(dbResult: DBResult, matchType: MatchType): Result = {
+    val canonicalNameOpt =
+      for { canId <- dbResult.nameString.canonicalUuid
+            canName <- dbResult.nameString.canonical }
+        yield Name(uuid = Uuid(canId.toString), value = canName)
+    Result(name = Name(uuid = Uuid(dbResult.nameString.id.toString),
+                       value = dbResult.nameString.name),
+           canonicalName = canonicalNameOpt,
+           matchType = matchType
+    )
+  }
 
   private def exactNamesQuery(nameUuid: Rep[UUID], canonicalNameUuid: Rep[UUID]) = {
     T.NameStrings.filter { ns => ns.id === nameUuid || ns.canonicalUuid === canonicalNameUuid }
@@ -111,22 +126,15 @@ class NameResolver private[nameresolver](request: Request,
       } yield {
         val dataGroupedWithVernaculars =
           data.groupBy { case (name, _) => name }
-              .mapValues { values => values.map { case (_, vernacs) => vernacs } }
+              .mapValues { _.flatMap { case (_, vernaculars) => vernaculars } }
         (dataGroupedWithVernaculars, total)
       }
     }
 
     val resultsPerNameFut = database.run(DBIO.sequence(resultsQuerySeq))
     val result = resultsPerNameFut.map { resultsPerName =>
-      resultsPerName.zip(nameStringsQueries)
-                    .map { case ((resultsMap, total), nmr) =>
-        val results = resultsMap.keys.map { case (ns, nsi, ds) =>
-          val canonicalNameOpt =
-            for { canId <- ns.canonicalUuid; canName <- ns.canonical }
-              yield Name(uuid = Uuid(canId.toString), value = canName)
-          DBResult(name = Name(uuid = Uuid(ns.id.toString), value = ns.name),
-                   canonicalName = canonicalNameOpt)
-        }
+      resultsPerName.map { case (resultsMap, total) =>
+        val results = resultsMap.map { case ((ns, nsi, ds), vrns) => DBResult(ns, nsi, ds, vrns) }
         DBResults(total = total, results = results.toVector)
       }
     }
@@ -155,19 +163,17 @@ class NameResolver private[nameresolver](request: Request,
       dbResultss.zip(namesParsed).map { case (dbResults, nameParsed) =>
         val results = dbResults.results.map { dbResult =>
           val matchKind =
-            if (dbResult.name.uuid.uuidString ==
-                  nameParsed.parsed.preprocessorResult.id.toString) {
+            if (dbResult.nameString.id == nameParsed.parsed.preprocessorResult.id) {
               MatchKind.ExactNameMatchByUUID
-            } else if (dbResult.canonicalName.isDefined &&
-                     nameParsed.parsed.canonizedUuid().isDefined &&
-                     dbResult.canonicalName.get.uuid.uuidString ==
-                       nameParsed.parsed.canonizedUuid().get.id.toString) {
+            } else if (dbResult.nameString.canonicalUuid.isDefined &&
+                       nameParsed.parsed.canonizedUuid().isDefined &&
+                       dbResult.nameString.canonicalUuid.get ==
+                         nameParsed.parsed.canonizedUuid().get.id) {
               MatchKind.ExactCanonicalNameMatchByUUID
             } else {
               MatchKind.Unknown
             }
-          Result(name = dbResult.name, canonicalName = dbResult.canonicalName,
-                 matchType = MatchType(matchKind))
+          createResult(dbResult, MatchType(matchKind))
         }
         val response = Response(total = dbResults.total,
                                 results = results,
@@ -256,8 +262,7 @@ class NameResolver private[nameresolver](request: Request,
           dbResultsss.zip(fuzzyResultsNonEmpty).flatMap { case (dbResultss, fuzzyResults) =>
             dbResultss.zip(fuzzyResults.results).map { case (dbResults, fuzzyResult) =>
               val results = dbResults.results.map { dbResult =>
-                Result(name = dbResult.name, canonicalName = dbResult.canonicalName,
-                       matchType = fuzzyResult.matchType)
+                createResult(dbResult, fuzzyResult.matchType)
               }
               val response =
                 Response(total = dbResults.total,
