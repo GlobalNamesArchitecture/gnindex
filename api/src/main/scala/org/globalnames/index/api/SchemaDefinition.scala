@@ -29,6 +29,7 @@ object SchemaDefinition extends DefaultJsonProtocol {
     "ResultItem", fields[Unit, Result](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(NameOT), resolve = _.value.canonicalName)
+      , Field("taxonId", StringType, resolve = _.value.taxonId)
       , Field("matchType", MatchTypeOT, resolve = _.value.matchType)
     )
   )

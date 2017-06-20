@@ -45,6 +45,7 @@ struct Result {
     1: Name name
     2: optional Name canonicalName
     3: MatchType matchType
+    4: string taxonId
 }
 
 struct Response {

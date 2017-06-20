@@ -66,6 +66,7 @@ class NameResolver private[nameresolver](request: Request,
     Result(name = Name(uuid = Uuid(dbResult.nameString.id.toString),
                        value = dbResult.nameString.name),
            canonicalName = canonicalNameOpt,
+           taxonId = dbResult.nameStringIndex.taxonId,
            matchType = matchType
     )
   }
