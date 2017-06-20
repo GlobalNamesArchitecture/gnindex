@@ -31,4 +31,4 @@ CMD bash -c "java -cp '.' -server -Xms16g -Xmx32g -XX:PermSize=512m \
                   -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 \
                   -XX:+ScavengeBeforeFullGC -XX:+CMSScavengeBeforeRemark \
                   -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=dump-$(date +"%Y-%m-%d").hprof \
-                  -jar ${ASSEMBLY_JAR} -names-path=/app/canonical_names_part.txt"
+                  -jar ${ASSEMBLY_JAR} -names-path=/app/canonical_names.txt"

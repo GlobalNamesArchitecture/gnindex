@@ -19,7 +19,7 @@ object ApiModule extends TwitterModule {
 
   @Singleton
   @Provides
-  def provideMatcherClient: NameResolverService.FutureIface =
+  def provideNameResolverClient: NameResolverService.FutureIface =
     ThriftMux.client.newIface[NameResolverService.FutureIface](nameresolverServiceAddress())
 
 }
