@@ -4,7 +4,7 @@ include "finatra-thrift/finatra_thrift_exceptions.thrift"
 
 struct Result {
     1: string value
-    2: i16 distance
+    2: i32 distance
 }
 
 struct Response {

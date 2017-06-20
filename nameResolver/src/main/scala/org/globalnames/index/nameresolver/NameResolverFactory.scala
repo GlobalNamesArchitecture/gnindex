@@ -21,8 +21,11 @@ import scala.concurrent.{Future => ScalaFuture}
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 
-class NameResolver private[nameresolver](request: Request, database: Database) {
+class NameResolver private[nameresolver](request: Request,
+                                         database: Database,
+                                         matcherClient: MatcherService.FutureIface) {
   private val NameStringsPerFuture = 200
+  private val FuzzyMatchLimit = 5
   private val EmptyUuid = UuidGenerator.generate("")
 
   type NameStringsQuery = Query[T.NameStrings, T.NameStringsRow, Seq]
@@ -30,6 +33,18 @@ class NameResolver private[nameresolver](request: Request, database: Database) {
   case class RequestResponse(request: NameInputParsed, response: Response)
   case class DBResult(name: Name, canonicalName: Option[Name])
   case class DBResults(total: Int, results: Vector[DBResult])
+  case class CanonicalNameSplit(name: NameInputParsed, parts: List[String]) {
+    val isOriginalCanonical: Boolean = {
+      name.parsed.canonized().exists { can => can.length == parts.map(_.length + 1).sum - 1 }
+    }
+    def shortenParts: CanonicalNameSplit = {
+      this.copy(parts = this.parts.dropRight(1))
+    }
+  }
+  case class FuzzyResult(value: String, distance: Int, matchType: MatchType) {
+    val uuid: UUID = UuidGenerator.generate(value)
+  }
+  case class FuzzyResults(canonicalNameSplit: CanonicalNameSplit, results: Seq[FuzzyResult])
 
   private val takeCount: Int = request.perPage.min(1000).max(0)
   private val dropCount: Int = (request.page * request.perPage).max(0)
@@ -163,8 +178,102 @@ class NameResolver private[nameresolver](request: Request, database: Database) {
     }
   }
 
-  def fuzzyMatch(names: Seq[RequestResponse]): ScalaFuture[Seq[RequestResponse]] = {
-    ScalaFuture.successful(names)
+  def fuzzyMatchCanonicalParts(canonicalNameSplits: Seq[CanonicalNameSplit]):
+        ScalaFuture[Seq[FuzzyResults]] = {
+    val (originalOrNonUninomialCanonicals, partialByGenusCanonicals) =
+      canonicalNameSplits.partition { canonicalNameSplit =>
+        canonicalNameSplit.isOriginalCanonical || canonicalNameSplit.parts.size > 1
+      }
+
+    val partialByGenusFuzzyResults =
+      partialByGenusCanonicals.map { canonicalNameSplit =>
+        val fuzzyResults = canonicalNameSplit.parts.map { part =>
+          FuzzyResult(value = part,
+                      distance = 0,
+                      matchType = MatchType(kind = MatchKind.ExactMatchPartialByGenus))
+        }
+        FuzzyResults(canonicalNameSplit = canonicalNameSplit,
+                     results = fuzzyResults)
+      }
+
+    val originalOrNonUninomialFuzzyResultssFut = {
+      val inputNames = originalOrNonUninomialCanonicals.map { _.parts.mkString(" ") }
+      val fuzzyResultssFut = matcherClient.findMatches(inputNames).map { matcherResponses =>
+        matcherResponses.zip(originalOrNonUninomialCanonicals).map { case (response, canNamSplit) =>
+          val fuzzyResults =
+            if (response.results.size > FuzzyMatchLimit) Seq()
+            else {
+              response.results.map { result =>
+                val matchKind =
+                  if (canNamSplit.isOriginalCanonical) {
+                    if (result.distance == 0) MatchKind.ExactCanonicalNameMatchByUUID
+                    else MatchKind.FuzzyCanonicalMatch
+                  } else {
+                    if (result.distance == 0) MatchKind.ExactPartialMatch
+                    else MatchKind.FuzzyPartialMatch
+                  }
+                FuzzyResult(value = result.value,
+                            distance = result.distance,
+                            matchType = MatchType(kind = matchKind))
+              }
+            }
+            FuzzyResults(canonicalNameSplit = canNamSplit,
+                         results = fuzzyResults)
+        }
+      }
+      fuzzyResultssFut
+    }
+
+    originalOrNonUninomialFuzzyResultssFut.map { _ ++ partialByGenusFuzzyResults }
+                                          .as[ScalaFuture[Seq[FuzzyResults]]]
+  }
+
+  def fuzzyMatch(canonicalNameSplits: Seq[CanonicalNameSplit]):
+      ScalaFuture[Seq[RequestResponse]] = {
+    val (canonicalNameSplitsNonEmpty, canonicalNameSplitsEmpty) =
+      canonicalNameSplits.partition { _.parts.nonEmpty }
+    val emptyMatches = canonicalNameSplitsEmpty.map { cnp =>
+      val response = Response(total = 0,
+                              suppliedId = cnp.name.nameInput.suppliedId,
+                              suppliedInput = cnp.name.nameInput.value.some)
+      RequestResponse(request = cnp.name, response = response)
+    }
+    if (canonicalNameSplitsNonEmpty.isEmpty) {
+      ScalaFuture.successful(emptyMatches)
+    } else {
+      fuzzyMatchCanonicalParts(canonicalNameSplitsNonEmpty).flatMap { fuzzyResultss =>
+        val (fuzzyResultsNonEmpty, fuzzyResultsEmpty) =
+          fuzzyResultss.partition { _.results.nonEmpty }
+        val canonicalNameSplitsShorted = fuzzyResultsEmpty.map { _.canonicalNameSplit.shortenParts }
+
+        val dbResultssFuts = fuzzyResultsNonEmpty.map { fuzzyResults =>
+          val namesPortionQry = fuzzyResults.results.map { fuzzyResult =>
+            T.NameStrings.filter { ns => ns.canonicalUuid === fuzzyResult.uuid }
+          }
+          materializeNameStringsSequence(namesPortionQry)
+        }
+        val requestResponsesFut = ScalaFuture.sequence(dbResultssFuts).map { dbResultsss =>
+          dbResultsss.zip(fuzzyResultsNonEmpty).flatMap { case (dbResultss, fuzzyResults) =>
+            dbResultss.zip(fuzzyResults.results).map { case (dbResults, fuzzyResult) =>
+              val results = dbResults.results.map { dbResult =>
+                Result(name = dbResult.name, canonicalName = dbResult.canonicalName,
+                       matchType = fuzzyResult.matchType)
+              }
+              val response =
+                Response(total = dbResults.total,
+                         results = results,
+                         suppliedId = fuzzyResults.canonicalNameSplit.name.nameInput.suppliedId,
+                         suppliedInput = fuzzyResults.canonicalNameSplit.name.nameInput.value.some)
+              RequestResponse(request = fuzzyResults.canonicalNameSplit.name, response)
+            }
+          }
+        }
+        for {
+          requestResponses <- requestResponsesFut
+          restFuzzyResponses <- fuzzyMatch(canonicalNameSplitsShorted)
+        } yield requestResponses ++ restFuzzyResponses ++ emptyMatches
+      }
+    }
   }
 
   def resolveExact(): ScalaFuture[Seq[Response]] = {
@@ -176,7 +285,11 @@ class NameResolver private[nameresolver](request: Request, database: Database) {
           reqResp.request.parsed.canonizedUuid().isDefined
         }
 
-        val fuzzyMatchesFut = fuzzyMatch(unmatched)
+        val canonicalNameSplits = unmatched.map { reqResp =>
+          CanonicalNameSplit(name = reqResp.request,
+                             parts = reqResp.request.nameInput.value.split(' ').toList)
+        }
+        val fuzzyMatchesFut = fuzzyMatch(canonicalNameSplits)
 
         for (fuzzyMatches <- fuzzyMatchesFut) yield {
           val reqResps = exactMatchesByUuid ++ fuzzyMatches ++ unmatchedNotParsed
@@ -192,7 +305,7 @@ class NameResolverFactory @Inject()(database: Database,
                                     matcherClient: MatcherService.FutureIface) {
 
   def resolveExact(request: Request): TwitterFuture[Seq[Response]] = {
-    val nameRequest = new NameResolver(request, database)
+    val nameRequest = new NameResolver(request, database, matcherClient)
     nameRequest.resolveExact().as[TwitterFuture[Seq[Response]]]
   }
 
