@@ -50,9 +50,10 @@ struct Classification {
 struct Result {
     1: Name name
     2: optional Name canonicalName
-    3: MatchType matchType
-    4: string taxonId
-    5: Classification classification
+    3: bool synonym
+    4: MatchType matchType
+    5: string taxonId
+    6: Classification classification
 }
 
 struct Response {

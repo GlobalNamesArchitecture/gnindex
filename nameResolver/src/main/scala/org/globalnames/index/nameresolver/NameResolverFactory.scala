@@ -65,14 +65,27 @@ class NameResolver private[nameresolver](request: Request,
       for { canId <- dbResult.nameString.canonicalUuid
             canName <- dbResult.nameString.canonical }
         yield Name(uuid = Uuid(canId.toString), value = canName)
+
     val classification = Classification(
       path = dbResult.nameStringIndex.classificationPath,
       pathIds = dbResult.nameStringIndex.classificationPathIds,
       pathRanks = dbResult.nameStringIndex.classificationPathRanks
     )
+
+    val synonym = {
+      val classificationPathIdsSeq =
+        dbResult.nameStringIndex.classificationPathIds.map { _.fastSplit('|') }.getOrElse(List())
+      if (classificationPathIdsSeq.nonEmpty) {
+        dbResult.nameStringIndex.taxonId != classificationPathIdsSeq.last
+      } else if (dbResult.nameStringIndex.acceptedTaxonId.isDefined) {
+        dbResult.nameStringIndex.taxonId != dbResult.nameStringIndex.acceptedTaxonId.get
+      } else true
+    }
+
     Result(name = Name(uuid = Uuid(dbResult.nameString.id.toString),
                        value = dbResult.nameString.name),
            canonicalName = canonicalNameOpt,
+           synonym = synonym,
            taxonId = dbResult.nameStringIndex.taxonId,
            matchType = matchType,
            classification = classification

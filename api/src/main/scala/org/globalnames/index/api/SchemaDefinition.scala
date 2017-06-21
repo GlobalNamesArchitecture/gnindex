@@ -37,6 +37,7 @@ object SchemaDefinition extends DefaultJsonProtocol {
     "ResultItem", fields[Unit, Result](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(NameOT), resolve = _.value.canonicalName)
+      , Field("synonym", BooleanType, resolve = _.value.synonym)
       , Field("taxonId", StringType, resolve = _.value.taxonId)
       , Field("classification", ClassificationOT, resolve = _.value.classification)
       , Field("matchType", MatchTypeOT, resolve = _.value.matchType)
@@ -56,6 +57,7 @@ object SchemaDefinition extends DefaultJsonProtocol {
       InputField("value", StringType)
     , InputField("suppliedId", OptionInputType(StringType))
   ))
+
   val NamesRequestArg = Argument("names", ListInputType(NameRequestIOT))
 
   val QueryTypeOT = ObjectType(
