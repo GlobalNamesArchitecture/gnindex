@@ -5,7 +5,7 @@ package api
 import sangria.schema._
 import sangria.marshalling.sprayJson._
 import spray.json.{DefaultJsonProtocol, _}
-import thrift.nameresolver.{MatchType, Name, NameInput, Result, Response}
+import thrift.nameresolver._
 
 object SchemaDefinition extends DefaultJsonProtocol {
 
@@ -25,11 +25,20 @@ object SchemaDefinition extends DefaultJsonProtocol {
     )
   )
 
+  val ClassificationOT = ObjectType(
+    "Classification", fields[Unit, Classification](
+        Field("path", OptionType(StringType), resolve = _.value.path)
+      , Field("pathIds", OptionType(StringType), resolve = _.value.pathIds)
+      , Field("pathRanks", OptionType(StringType), resolve = _.value.pathRanks)
+    )
+  )
+
   val ResultItemOT = ObjectType(
     "ResultItem", fields[Unit, Result](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(NameOT), resolve = _.value.canonicalName)
       , Field("taxonId", StringType, resolve = _.value.taxonId)
+      , Field("classification", ClassificationOT, resolve = _.value.classification)
       , Field("matchType", MatchTypeOT, resolve = _.value.matchType)
     )
   )

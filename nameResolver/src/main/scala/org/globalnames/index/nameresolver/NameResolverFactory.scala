@@ -12,7 +12,7 @@ import com.twitter.util.{Future => TwitterFuture}
 import thrift.matcher.{Service => MatcherService}
 import slick.jdbc.PostgresProfile.api._
 import dao.{ Tables => T }
-import thrift.nameresolver.{MatchType, MatchKind, Name, NameInput, Request, Response, Result}
+import thrift.nameresolver._
 import thrift.Uuid
 import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
 
@@ -63,11 +63,17 @@ class NameResolver private[nameresolver](request: Request,
       for { canId <- dbResult.nameString.canonicalUuid
             canName <- dbResult.nameString.canonical }
         yield Name(uuid = Uuid(canId.toString), value = canName)
+    val classification = Classification(
+      path = dbResult.nameStringIndex.classificationPath,
+      pathIds = dbResult.nameStringIndex.classificationPathIds,
+      pathRanks = dbResult.nameStringIndex.classificationPathRanks
+    )
     Result(name = Name(uuid = Uuid(dbResult.nameString.id.toString),
                        value = dbResult.nameString.name),
            canonicalName = canonicalNameOpt,
            taxonId = dbResult.nameStringIndex.taxonId,
-           matchType = matchType
+           matchType = matchType,
+           classification = classification
     )
   }
 
