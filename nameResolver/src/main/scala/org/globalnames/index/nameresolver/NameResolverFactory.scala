@@ -5,17 +5,19 @@ package nameresolver
 import javax.inject.{Inject, Singleton}
 import java.util.UUID
 
+import akka.http.impl.util._
 import org.apache.commons.lang3.StringUtils.capitalize
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.util.{Future => TwitterFuture}
 import thrift.matcher.{Service => MatcherService}
 import slick.jdbc.PostgresProfile.api._
-import dao.{ Tables => T }
+import dao.{Tables => T}
 import thrift.nameresolver._
 import thrift.Uuid
 import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
 
+import scala.collection.immutable.LinearSeq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future => ScalaFuture}
 import scalaz.syntax.std.boolean._
@@ -36,7 +38,7 @@ class NameResolver private[nameresolver](request: Request,
                       dataSource: T.DataSourcesRow,
                       vernaculars: Seq[(T.VernacularStringIndicesRow, T.VernacularStringsRow)])
   case class DBResults(total: Int, results: Vector[DBResult])
-  case class CanonicalNameSplit(name: NameInputParsed, parts: List[String]) {
+  case class CanonicalNameSplit(name: NameInputParsed, parts: LinearSeq[String]) {
     val isOriginalCanonical: Boolean = {
       name.parsed.canonized().exists { can => can.length == parts.map(_.length + 1).sum - 1 }
     }
@@ -299,7 +301,7 @@ class NameResolver private[nameresolver](request: Request,
 
         val canonicalNameSplits = unmatched.map { reqResp =>
           CanonicalNameSplit(name = reqResp.request,
-                             parts = reqResp.request.nameInput.value.split(' ').toList)
+                             parts = reqResp.request.nameInput.value.fastSplit(' '))
         }
         val fuzzyMatchesFut = fuzzyMatch(canonicalNameSplits)
 
