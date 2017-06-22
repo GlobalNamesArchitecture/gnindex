@@ -15,6 +15,8 @@ object SchemaDefinition extends DefaultJsonProtocol {
   val MatchTypeOT = ObjectType(
     "MatchType", fields[Unit, MatchType](
         Field("kind", StringType, resolve = _.value.kind.name)
+      , Field("score", IntType, resolve = _.value.score)
+      , Field("editDistance", IntType, resolve = _.value.editDistance)
     )
   )
 

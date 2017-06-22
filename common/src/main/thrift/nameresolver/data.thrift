@@ -39,6 +39,8 @@ enum MatchKind {
 
 struct MatchType {
     1: MatchKind kind
+    2: i32 editDistance
+    3: i32 score
 }
 
 struct Classification {

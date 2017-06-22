@@ -13,6 +13,7 @@ import com.twitter.util.{Future => TwitterFuture}
 import thrift.matcher.{Service => MatcherService}
 import slick.jdbc.PostgresProfile.api._
 import dao.{Tables => T}
+import MatchTypeScores._
 import thrift.nameresolver._
 import thrift.Uuid
 import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
@@ -199,7 +200,7 @@ class NameResolver private[nameresolver](request: Request,
             } else {
               MatchKind.Unknown
             }
-          createResult(dbResult, MatchType(matchKind))
+          createResult(dbResult, createMatchType(matchKind))
         }
         val response = Response(total = dbResults.total,
                                 results = results,
@@ -222,7 +223,7 @@ class NameResolver private[nameresolver](request: Request,
         val fuzzyResults = canonicalNameSplit.parts.map { part =>
           FuzzyResult(value = part,
                       distance = 0,
-                      matchType = MatchType(kind = MatchKind.ExactMatchPartialByGenus))
+                      matchType = createMatchType(MatchKind.ExactMatchPartialByGenus))
         }
         FuzzyResults(canonicalNameSplit = canonicalNameSplit,
                      results = fuzzyResults)
@@ -246,7 +247,7 @@ class NameResolver private[nameresolver](request: Request,
                   }
                 FuzzyResult(value = result.value,
                             distance = result.distance,
-                            matchType = MatchType(kind = matchKind))
+                            matchType = createMatchType(matchKind))
               }
             }
             FuzzyResults(canonicalNameSplit = canNamSplit,
