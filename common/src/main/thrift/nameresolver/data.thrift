@@ -37,6 +37,20 @@ enum MatchKind {
     Unknown
 }
 
+struct AuthorScore {
+    1: string authorshipInput
+    2: string authorshipMatch
+    3: double value
+}
+
+struct Score {
+    1: optional i32 nameType
+    2: AuthorScore authorScore
+    3: i32 parsingQuality
+    4: optional double value
+    5: optional string message
+}
+
 struct MatchType {
     1: MatchKind kind
     2: i32 editDistance
@@ -58,9 +72,14 @@ struct Result {
     6: Classification classification
 }
 
+struct ResultScored {
+    1: Result result
+    2: Score score
+}
+
 struct Response {
     1: i32 total
     2: optional string suppliedInput
     3: optional string suppliedId
-    4: list<Result> results
+    4: list<ResultScored> results
 }

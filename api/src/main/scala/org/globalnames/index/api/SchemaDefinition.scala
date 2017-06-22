@@ -27,6 +27,24 @@ object SchemaDefinition extends DefaultJsonProtocol {
     )
   )
 
+  val AuthorScoreOT = ObjectType(
+    "AuthorScore", fields[Unit, AuthorScore](
+        Field("authorshipInput", StringType, resolve = _.value.authorshipInput)
+      , Field("authorshipMatch", StringType, resolve = _.value.authorshipMatch)
+      , Field("value", FloatType, resolve = _.value.value)
+    )
+  )
+
+  val ScoreOT = ObjectType(
+    "Score", fields[Unit, Score](
+        Field("nameType", OptionType(IntType), resolve = _.value.nameType)
+      , Field("authorScore", AuthorScoreOT, resolve = _.value.authorScore)
+      , Field("parsingQuality", IntType, resolve = _.value.parsingQuality)
+      , Field("value", OptionType(FloatType), resolve = _.value.value)
+      , Field("message", OptionType(StringType), resolve = _.value.message)
+    )
+  )
+
   val ClassificationOT = ObjectType(
     "Classification", fields[Unit, Classification](
         Field("path", OptionType(StringType), resolve = _.value.path)
@@ -36,13 +54,14 @@ object SchemaDefinition extends DefaultJsonProtocol {
   )
 
   val ResultItemOT = ObjectType(
-    "ResultItem", fields[Unit, Result](
-        Field("name", NameOT, resolve = _.value.name)
-      , Field("canonicalName", OptionType(NameOT), resolve = _.value.canonicalName)
-      , Field("synonym", BooleanType, resolve = _.value.synonym)
-      , Field("taxonId", StringType, resolve = _.value.taxonId)
-      , Field("classification", ClassificationOT, resolve = _.value.classification)
-      , Field("matchType", MatchTypeOT, resolve = _.value.matchType)
+    "ResultItem", fields[Unit, ResultScored](
+        Field("name", NameOT, resolve = _.value.result.name)
+      , Field("canonicalName", OptionType(NameOT), resolve = _.value.result.canonicalName)
+      , Field("synonym", BooleanType, resolve = _.value.result.synonym)
+      , Field("taxonId", StringType, resolve = _.value.result.taxonId)
+      , Field("classification", ClassificationOT, resolve = _.value.result.classification)
+      , Field("matchType", MatchTypeOT, resolve = _.value.result.matchType)
+      , Field("score", ScoreOT, resolve = _.value.score)
     )
   )
 

@@ -6,7 +6,7 @@ import javax.inject.{Inject, Singleton}
 import java.util.UUID
 
 import akka.http.impl.util._
-import org.apache.commons.lang3.StringUtils.capitalize
+import org.apache.commons.lang3.StringUtils
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.util.{Future => TwitterFuture}
@@ -50,7 +50,9 @@ object NameResolver {
   }
   case class FuzzyResults(canonicalNameSplit: CanonicalNameSplit, results: Seq[FuzzyResult])
 
-  private def createResult(dbResult: DBResult, matchType: MatchType): Result = {
+  private def createResult(nameInputParsed: NameInputParsed,
+                           dbResult: DBResult,
+                           matchType: MatchType): ResultScored = {
     val canonicalNameOpt =
       for { canId <- dbResult.nameString.canonicalUuid
             canName <- dbResult.nameString.canonical }
@@ -72,14 +74,17 @@ object NameResolver {
       } else true
     }
 
-    Result(name = Name(uuid = Uuid(dbResult.nameString.id.toString),
-                       value = dbResult.nameString.name),
-           canonicalName = canonicalNameOpt,
-           synonym = synonym,
-           taxonId = dbResult.nameStringIndex.taxonId,
-           matchType = matchType,
-           classification = classification
-    )
+    val result =
+      Result(name = Name(uuid = Uuid(dbResult.nameString.id.toString),
+                         value = dbResult.nameString.name),
+             canonicalName = canonicalNameOpt,
+             synonym = synonym,
+             taxonId = dbResult.nameStringIndex.taxonId,
+             matchType = matchType,
+             classification = classification
+      )
+    val score = ResultScores.compute(nameInputParsed.parsed, result)
+    ResultScored(result, score)
   }
 }
 
@@ -92,7 +97,7 @@ class NameResolver private[nameresolver](request: Request,
   private val dropCount: Int = (request.page * request.perPage).max(0)
   private val namesParsed: Vector[NameInputParsed] =
     request.names.toVector.map { ni =>
-      val capital = capitalize(ni.value)
+      val capital = StringUtils.capitalize(ni.value)
       NameInputParsed(nameInput = ni.copy(value = capital),
                       parsed = SNP.fromString(capital))
     }
@@ -200,7 +205,7 @@ class NameResolver private[nameresolver](request: Request,
             } else {
               MatchKind.Unknown
             }
-          createResult(dbResult, createMatchType(matchKind))
+          createResult(nameParsed, dbResult, createMatchType(matchKind))
         }
         val response = Response(total = dbResults.total,
                                 results = results,
@@ -289,7 +294,7 @@ class NameResolver private[nameresolver](request: Request,
           dbResultsss.zip(fuzzyResultsNonEmpty).flatMap { case (dbResultss, fuzzyResults) =>
             dbResultss.zip(fuzzyResults.results).map { case (dbResults, fuzzyResult) =>
               val results = dbResults.results.map { dbResult =>
-                createResult(dbResult, fuzzyResult.matchType)
+                createResult(fuzzyResults.canonicalNameSplit.name, dbResult, fuzzyResult.matchType)
               }
               val response =
                 Response(total = dbResults.total,
