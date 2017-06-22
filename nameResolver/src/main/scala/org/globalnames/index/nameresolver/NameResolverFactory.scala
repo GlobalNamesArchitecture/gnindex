@@ -23,9 +23,7 @@ import scala.concurrent.{Future => ScalaFuture}
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 
-class NameResolver private[nameresolver](request: Request,
-                                         database: Database,
-                                         matcherClient: MatcherService.FutureIface) {
+object NameResolver {
   private val NameStringsPerFuture = 200
   private val FuzzyMatchLimit = 5
   private val EmptyUuid = UuidGenerator.generate("")
@@ -50,15 +48,6 @@ class NameResolver private[nameresolver](request: Request,
     val uuid: UUID = UuidGenerator.generate(value)
   }
   case class FuzzyResults(canonicalNameSplit: CanonicalNameSplit, results: Seq[FuzzyResult])
-
-  private val takeCount: Int = request.perPage.min(1000).max(0)
-  private val dropCount: Int = (request.page * request.perPage).max(0)
-  private val namesParsed: Vector[NameInputParsed] =
-    request.names.toVector.map { ni =>
-      val capital = capitalize(ni.value)
-      NameInputParsed(nameInput = ni.copy(value = capital),
-                      parsed = SNP.fromString(capital))
-    }
 
   private def createResult(dbResult: DBResult, matchType: MatchType): Result = {
     val canonicalNameOpt =
@@ -91,6 +80,21 @@ class NameResolver private[nameresolver](request: Request,
            classification = classification
     )
   }
+}
+
+class NameResolver private[nameresolver](request: Request,
+                                         database: Database,
+                                         matcherClient: MatcherService.FutureIface) {
+  import NameResolver._
+
+  private val takeCount: Int = request.perPage.min(1000).max(0)
+  private val dropCount: Int = (request.page * request.perPage).max(0)
+  private val namesParsed: Vector[NameInputParsed] =
+    request.names.toVector.map { ni =>
+      val capital = capitalize(ni.value)
+      NameInputParsed(nameInput = ni.copy(value = capital),
+                      parsed = SNP.fromString(capital))
+    }
 
   private def exactNamesQuery(nameUuid: Rep[UUID], canonicalNameUuid: Rep[UUID]) = {
     T.NameStrings.filter { ns => ns.id === nameUuid || ns.canonicalUuid === canonicalNameUuid }
