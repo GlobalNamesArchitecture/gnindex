@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: gnmatcher
-          image: gnames/gnmatcher:0.1.0-20170613_2300-SNAPSHOT
+          image: gnames/gnmatcher:0.1.0-20170619_2200-SNAPSHOT
           ports:
             - containerPort: 9999
               name: thrift-api

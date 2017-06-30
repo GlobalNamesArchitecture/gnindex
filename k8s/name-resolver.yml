@@ -2,63 +2,51 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: gnresolver-api
+  name: gnnameresolver
   namespace: gn
   labels:
-    app: gnresolver
+    app: gnnameresolver
     tier: frontend
 spec:
   type: NodePort
   ports:
-    - port: 9001
-      targetPort: 9001
-      nodePort: 31663
+    - port: 9999
+      name: thrift-api
+      targetPort: 9999
+    - port: 9990
+      name: http-admin
+      targetPort: 9990
   selector:
-    app: gnresolver
+    app: gnnameresolver
     tier: frontend
     type: api
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: gnresolver-api
+  name: gnnameresolver
   namespace: gn
 spec:
-  replicas: 1
+  replicas: 3
   template:
     metadata:
-      name: gnresolver-api
+      name: gnnameresolver
       labels:
-        app: gnresolver
+        app: gnnameresolver
         tier: frontend
         type: api
     spec:
       containers:
-        - name: gnresolver
-          image: gnames/gnresolver:0.1.0-734b4ba_20170517_1330-SNAPSHOT
-          readinessProbe:
-            httpGet:
-              path: /api/version
-              port: 9001
-            initialDelaySeconds: 600
-            timeoutSeconds: 3
-          livenessProbe:
-            httpGet:
-              path: /api/version
-              port: 9001
-            initialDelaySeconds: 600
-            timeoutSeconds: 3
+        - name: gnnameresolver
+          image: gnames/gnnameresolver:0.1.0-20170622_1700-SNAPSHOT
+          ports:
+            - containerPort: 9999
+              name: thrift-api
+            - containerPort: 9990
+              name: http-admin
           env:
-            - name: RUN_MODE
-              valueFrom:
-                configMapKeyRef:
-                  name: gnresolver
-                  key: app.environment
-            - name: RACK_ENV
-              valueFrom:
-                configMapKeyRef:
-                  name: gnresolver
-                  key: app.environment
+            - name: MATCHER_ADDRESS
+              value: gnmatcher-api
             - name: DB_HOST
               value: gnresolver-pgpool
             - name: DB_PORT
@@ -81,6 +69,4 @@ spec:
                 secretKeyRef:
                   name: gnresolver
                   key: db.user.password
-          ports:
-            - containerPort: 9001
-              name: http-api
+ 
