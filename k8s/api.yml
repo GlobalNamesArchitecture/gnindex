@@ -10,9 +10,12 @@ metadata:
 spec:
   type: NodePort
   ports:
-    - port: 9001
-      targetPort: 9001
-      nodePort: 31663
+    - port: 8888
+      name: thrift-api
+      targetPort: 8888
+    - port: 9990
+      name: http-admin
+      targetPort: 9990
   selector:
     app: gnresolver
     tier: frontend
@@ -35,52 +38,21 @@ spec:
     spec:
       containers:
         - name: gnresolver
-          image: gnames/gnresolver:0.1.0-734b4ba_20170517_1330-SNAPSHOT
+          image: gnames/gnindexapi:0.1.0-20170704_1800-SNAPSHOT
           readinessProbe:
             httpGet:
-              path: /api/version
-              port: 9001
+              path: /admin/ping
+              port: 9999
             initialDelaySeconds: 600
             timeoutSeconds: 3
           livenessProbe:
             httpGet:
-              path: /api/version
-              port: 9001
+              path: /admin/ping
+              port: 9999
             initialDelaySeconds: 600
             timeoutSeconds: 3
-          env:
-            - name: RUN_MODE
-              valueFrom:
-                configMapKeyRef:
-                  name: gnresolver
-                  key: app.environment
-            - name: RACK_ENV
-              valueFrom:
-                configMapKeyRef:
-                  name: gnresolver
-                  key: app.environment
-            - name: DB_HOST
-              value: gnresolver-pgpool
-            - name: DB_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: gnresolver
-                  key: db.port
-            - name: DB_DATABASE
-              valueFrom:
-                configMapKeyRef:
-                  name: gnresolver
-                  key: db.database
-            - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: gnresolver
-                  key: db.user
-            - name: DB_USER_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: gnresolver
-                  key: db.user.password
           ports:
-            - containerPort: 9001
-              name: http-api
+            - containerPort: 8888
+              name: thrift-api
+            - containerPort: 9990
+              name: http-admin
