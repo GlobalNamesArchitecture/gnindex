@@ -112,7 +112,8 @@ object Settings {
   // API settings //
   //////////////////
   lazy val apiSettings = Seq(
-    assemblyJarName in assembly := "gnindexapi-" + version.value + ".jar"
+    assemblyJarName in assembly := "gnindexapi-" + version.value + ".jar",
+    Revolver.enableDebugging(port = 5007, suspend = false)
   )
 
   ///////////////////////////
