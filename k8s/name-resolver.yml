@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: gnnameresolver
-          image: gnames/gnnameresolver:0.1.0-20170622_1700-SNAPSHOT
+          image: gnames/gnnameresolver:0.1.0-20170704_1800-SNAPSHOT
           ports:
             - containerPort: 9999
               name: thrift-api
