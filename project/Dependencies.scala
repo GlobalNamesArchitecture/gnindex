@@ -1,11 +1,10 @@
 import sbt._
-import Keys._
 
 object Dependencies {
 
   lazy val version = new {
     val sangria = "1.2.2"
-    val sangriaSprayJson = "1.0.0"
+    val sangriaJackson = "1.0.0"
     val finatra = "2.11.0"
     val guice = "4.1.0"
     val junit = "4.12"
@@ -14,6 +13,7 @@ object Dependencies {
     val scalatest = "3.0.3"
     val liblevenshtein = "3.0.0"
     val scalaz = "7.1.7"
+    val json4sJackson = "3.5.2"
     val slick = "3.2.0"
     val jodaMapper = "2.3.0"
     val postgres = "9.4-1206-jdbc42"
@@ -23,29 +23,31 @@ object Dependencies {
   }
 
   lazy val library = new {
-    val gnparser             = "org.globalnames"               %% "gnparser"           % version.gnparser
-    val gnmatcher            = "org.globalnames"               %% "gnmatcher"          % version.gnmatcher
-    val twitterBijectionCore = "com.twitter"                   %% "bijection-core"     % version.twitterBijection
-    val twitterBijectionUtil = "com.twitter"                   %% "bijection-util"     % version.twitterBijection
-    val slick                = "com.typesafe.slick"            %% "slick"              % version.slick
-    val slickJodaMapper      = "com.github.tototoshi"          %% "slick-joda-mapper"  % version.jodaMapper
-    val hikariSlick          = "com.typesafe.slick"            %% "slick-hikaricp"     % version.slick
-    val postgresql           = "org.postgresql"                %  "postgresql"         % version.postgres
-    val scalaz               = "org.scalaz"                    %% "scalaz-core"        % version.scalaz
-    val liblevenshtein       = "com.github.universal-automata" %  "liblevenshtein"     % version.liblevenshtein
-    val finatraThrift        = "com.twitter"                   %% "finatra-thrift"     % version.finatra
-    val finatraHttp          = "com.twitter"                   %% "finatra-http"       % version.finatra
-    val sangria              = "org.sangria-graphql"           %% "sangria"            % version.sangria
-    val sangriaSpray         = "org.sangria-graphql"           %% "sangria-spray-json" % version.sangriaSprayJson
-    val logback              = "ch.qos.logback"                %  "logback-classic"    % version.logback
-    val guice                = "com.google.inject.extensions"  %  "guice-testlib"      % version.guice          % Test
-    val scalatest            = "org.scalatest"                 %% "scalatest"          % version.scalatest      % Test
-    val twitterInjApp        = "com.twitter"                   %% "inject-app"         % version.finatra        % Test
-    val twitterInjCor        = "com.twitter"                   %% "inject-core"        % version.finatra        % Test
-    val twitterInjMod        = "com.twitter"                   %% "inject-modules"     % version.finatra        % Test
-    val twitterInjSer        = "com.twitter"                   %% "inject-server"      % version.finatra        % Test
-    val mockito              = "org.mockito"                   %  "mockito-core"       % version.mockito        % Test
-    val junit                = "junit"                         %  "junit"              % version.junit          % Test
+    val gnparser             = "org.globalnames"                   %% "gnparser"                     % version.gnparser
+    val gnmatcher            = "org.globalnames"                   %% "gnmatcher"                    % version.gnmatcher
+    val twitterBijectionCore = "com.twitter"                       %% "bijection-core"               % version.twitterBijection
+    val twitterBijectionUtil = "com.twitter"                       %% "bijection-util"               % version.twitterBijection
+    val slick                = "com.typesafe.slick"                %% "slick"                        % version.slick
+    val slickJodaMapper      = "com.github.tototoshi"              %% "slick-joda-mapper"            % version.jodaMapper
+    val hikariSlick          = "com.typesafe.slick"                %% "slick-hikaricp"               % version.slick
+    val postgresql           = "org.postgresql"                    %  "postgresql"                   % version.postgres
+    val scalaz               = "org.scalaz"                        %% "scalaz-core"                  % version.scalaz
+    val liblevenshtein       = "com.github.universal-automata"     %  "liblevenshtein"               % version.liblevenshtein
+    val finatraThrift        = "com.twitter"                       %% "finatra-thrift"               % version.finatra
+    val finatraHttp          = "com.twitter"                       %% "finatra-http"                 % version.finatra
+    val finatraJackson       = "com.twitter"                       %% "finatra-jackson"              % version.finatra
+    val sangria              = "org.sangria-graphql"               %% "sangria"                      % version.sangria
+    val sangriaJackson       = "org.sangria-graphql"               %% "sangria-json4s-jackson"       % version.sangriaJackson
+    val json4sJackson        = "org.json4s"                        %% "json4s-jackson"               % version.json4sJackson
+    val logback              = "ch.qos.logback"                    %  "logback-classic"              % version.logback
+    val guice                = "com.google.inject.extensions"      %  "guice-testlib"                % version.guice          % Test
+    val scalatest            = "org.scalatest"                     %% "scalatest"                    % version.scalatest      % Test
+    val twitterInjApp        = "com.twitter"                       %% "inject-app"                   % version.finatra        % Test
+    val twitterInjCor        = "com.twitter"                       %% "inject-core"                  % version.finatra        % Test
+    val twitterInjMod        = "com.twitter"                       %% "inject-modules"               % version.finatra        % Test
+    val twitterInjSer        = "com.twitter"                       %% "inject-server"                % version.finatra        % Test
+    val mockito              = "org.mockito"                       %  "mockito-core"                 % version.mockito        % Test
+    val junit                = "junit"                             %  "junit"                        % version.junit          % Test
   }
 
   val finatraDeps = Seq(library.finatraThrift, library.logback)
@@ -70,7 +72,8 @@ object Dependencies {
   )
 
   val apiDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
-    library.finatraHttp, library.sangria, library.sangriaSpray
+    library.finatraHttp, library.finatraJackson,
+    library.sangria, library.sangriaJackson, library.json4sJackson
   )
 
 }

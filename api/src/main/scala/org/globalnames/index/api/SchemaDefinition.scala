@@ -3,14 +3,21 @@ package index
 package api
 
 import sangria.schema._
-import sangria.marshalling.sprayJson._
-import spray.json.{DefaultJsonProtocol, _}
+import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
 import thrift.nameresolver._
 
-object SchemaDefinition extends DefaultJsonProtocol {
+object SchemaDefinition {
+  implicit val nameInputFromInput = new FromInput[NameInput] {
+    val marshaller: CoercedScalaResultMarshaller = CoercedScalaResultMarshaller.default
 
-  implicit val nameRequestFormat: RootJsonFormat[NameInput] =
-    jsonFormat(NameInput.apply, "value", "suppliedId")
+    def fromResult(node: marshaller.Node): NameInput = {
+      val nodeMap = node.asInstanceOf[Map[String, Any]]
+      NameInput(
+        value = nodeMap("value").asInstanceOf[String],
+        suppliedId = nodeMap.get("suppliedId").flatMap { _.asInstanceOf[Option[String]] }
+      )
+    }
+  }
 
   val MatchTypeOT = ObjectType(
     "MatchType", fields[Unit, MatchType](

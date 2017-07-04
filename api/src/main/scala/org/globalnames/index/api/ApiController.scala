@@ -4,26 +4,34 @@ package api
 
 import javax.inject.{Inject, Singleton}
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.finagle.http.Request
 import com.twitter.finatra.http.Controller
 import com.twitter.util.{Future => TwitterFuture}
 import sangria.execution.Executor
-import sangria.marshalling.InputUnmarshaller
 import sangria.parser.{QueryParser => QueryParserSangria}
-import spray.json.JsValue
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import sangria.marshalling.sprayJson._
+import sangria.marshalling.json4s.jackson._
+
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
 
 case class GraphqlRequest(query: String,
-                          variables: Option[Map[String, Any]] = None,
-                          operation: Option[String] = None)
+                          variables: Option[JsonNode],
+                          operation: Option[JsonNode]) {
+  val variablesJson: JValue =
+    variables.map { fromJsonNode }.getOrElse(JObject())
+
+  val operationJson: Option[String] =
+    operation.map { fromJsonNode }.collect { case JString(op) => op }
+}
 
 @Singleton
 class ApiController @Inject()(repository: Repository) extends Controller {
-  get("/") { req: Request =>
+  get("/") { _: Request =>
     response.ok.json("ready")
   }
 
@@ -34,11 +42,11 @@ class ApiController @Inject()(repository: Repository) extends Controller {
           schema = SchemaDefinition.schema,
           queryAst = queryAst,
           userContext = repository,
-          variables = InputUnmarshaller.mapVars(graphqlRequest.variables.getOrElse(Map.empty)),
-          operationName = graphqlRequest.operation
+          variables = graphqlRequest.variablesJson,
+          operationName = graphqlRequest.operationJson
         )
-        graphqlExecution.as[TwitterFuture[JsValue]]
-                        .map { v => response.ok.json(v.prettyPrint) }
+        graphqlExecution.as[TwitterFuture[JValue]]
+                        .map { v => response.ok.json(compact(render(v))) }
 
       case util.Failure(error) =>
         response.badRequest(error.getMessage)
