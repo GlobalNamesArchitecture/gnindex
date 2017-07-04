@@ -1,17 +1,17 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: gnresolver
+  name: gnindex
   namespace: gn
   labels:
-    app: gnresolver
+    app: gnindex
 data:
   app.environment: production
-  db.cluster.name: gnresolver_cluster
-  db.cluster.replication.db: gnresolver_replica
-  db.database: gnresolver
+  db.cluster.name: gnindex_cluster
+  db.cluster.replication.db: gnindex_replica
+  db.database: gnindex
   db.port: "5432"
   db.pgdata: /var/lib/postgresql/data/pgdata
-  db.pool.backends: "0:gnresolver-db-master::::,1:gnresolver-db-slave1::::,2:gnresolver-db-slave2::::"
+  db.pool.backends: "0:gnindex-db-master::::,1:gnindex-db-slave1::::,2:gnindex-db-slave2::::"
   db.configs: "max_connections:200,shared_buffers:1GB,work_mem:128MB,maintenance_work_mem:1GB,wal_buffers:16MB,max_wal_size:1GB,min_wal_size:1GB,checkpoint_completion_target:0.7,effective_cache_size:1GB,default_statistics_target:100,wal_level:hot_standby,max_wal_senders:5,wal_keep_segments:5001,hot_standby:on"
   db.repmgr.timeout: 300

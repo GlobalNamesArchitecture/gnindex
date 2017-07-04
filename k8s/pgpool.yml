@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: gnresolver-pgpool
+  name: gnindex-pgpool
   namespace: gn
   labels:
-    app: gnresolver
+    app: gnindex
     tier: backend
     type: load-balancer
 spec:
@@ -15,17 +15,17 @@ spec:
       targetPort: 5432
       nodePort: 30111
   selector:
-    app: gnresolver
+    app: gnindex
     tier: backend
     type: load-balancer
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: gnresolver-pgpool
+  name: gnindex-pgpool
   namespace: gn
   labels:
-    app: gnresolver
+    app: gnindex
     tier: backend
     type: load-balancer
 spec:
@@ -34,7 +34,7 @@ spec:
     metadata:
       name: database-pgpool
       labels:
-        app: gnresolver
+        app: gnindex
         tier: backend
         type: load-balancer
     spec:
@@ -48,32 +48,32 @@ spec:
           - name: "PCP_USER"
             valueFrom:
               secretKeyRef:
-                name: gnresolver
+                name: gnindex
                 key: db.pool.pcp.user
           - name: "PCP_PASSWORD"
             valueFrom:
               secretKeyRef:
-                name: gnresolver
+                name: gnindex
                 key: db.pool.pcp.password
 
           # Cluster configs  to hearbit checks
           - name: "CHECK_USER"
             valueFrom:
               secretKeyRef:
-                name: gnresolver
+                name: gnindex
                 key: db.cluster.replication.user
           - name: "CHECK_PASSWORD"
             valueFrom:
               secretKeyRef:
-                name: gnresolver
+                name: gnindex
                 key: db.cluster.replication.user.password
           - name: "DB_USERS"
             valueFrom:
               secretKeyRef:
-                name: gnresolver
+                name: gnindex
                 key: db.pool.users
           - name: "BACKENDS"
             valueFrom:
               configMapKeyRef:
-                name: gnresolver
+                name: gnindex
                 key: db.pool.backends

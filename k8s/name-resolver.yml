@@ -48,25 +48,25 @@ spec:
             - name: MATCHER_ADDRESS
               value: gnmatcher-api
             - name: DB_HOST
-              value: gnresolver-pgpool
+              value: gnindex-pgpool
             - name: DB_PORT
               valueFrom:
                 configMapKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.port
             - name: DB_DATABASE
               valueFrom:
                 configMapKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.database
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.user
             - name: DB_USER_PASS
               valueFrom:
                 secretKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.user.password
  

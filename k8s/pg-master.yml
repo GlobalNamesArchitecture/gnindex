@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: gnresolver-db-master-service
+  name: gnindex-db-master-service
   namespace: gn
   labels:
-    app: gnresolver
+    app: gnindex
     tier: backend
     type: master
     node: "1"
@@ -15,7 +15,7 @@ spec:
     - port: 5432
       targetPort: 5432
   selector:
-    app: gnresolver
+    app: gnindex
     tier: backend
     type: master
     node: "1"
@@ -23,7 +23,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: gnresolver-db-master
+  name: gnindex-db-master
   namespace: gn
 spec:
   replicas: 1
@@ -31,18 +31,18 @@ spec:
     metadata:
       name: gresolver-db-master
       labels:
-        app: gnresolver
+        app: gnindex
         tier: backend
         type: master
         node: "1"
     spec:
       volumes:
-        - name: gnresolver-db-master-vol
+        - name: gnindex-db-master-vol
           persistentVolumeClaim:
-            claimName: gnresolver-pvc
+            claimName: gnindex-pvc
       containers:
         -
-          name: gnresolver-db-master
+          name: gnindex-db-master
           image: paunin/postgresql-cluster-pgsql
           env: # those variables are not secret as it's just initial state of DB
             -
@@ -53,40 +53,40 @@ spec:
               value: "node1"
             -
               name: "CLUSTER_NODE_NETWORK_NAME"
-              value: "gnresolver-db-master-service"
+              value: "gnindex-db-master-service"
             -
               name: "CONFIGS"
               valueFrom:
                 configMapKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.configs
             -
               name: "REPMGR_WAIT_POSTGRES_START_TIMEOUT"
               valueFrom:
                 configMapKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.repmgr.timeout
 
             # Work DB
             - name: "POSTGRES_DB"
               valueFrom:
                 configMapKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.database
             - name: "POSTGRES_USER"
               valueFrom:
                 secretKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.user
             - name: "POSTGRES_PASSWORD"
               valueFrom:
                 secretKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.user.password
             - name: "PGDATA"
               valueFrom:
                 configMapKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.pgdata
 
 
@@ -94,25 +94,25 @@ spec:
             - name: "CLUSTER_NAME"
               valueFrom:
                 configMapKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.cluster.name
             - name: "REPLICATION_DB"
               valueFrom:
                 configMapKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.cluster.replication.db
             - name: "REPLICATION_USER"
               valueFrom:
                 secretKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.cluster.replication.user
             - name: "REPLICATION_PASSWORD"
               valueFrom:
                 secretKeyRef:
-                  name: gnresolver
+                  name: gnindex
                   key: db.cluster.replication.user.password
           ports:
             - containerPort: 5432
           volumeMounts:
             - mountPath:  /var/lib/postgresql/data
-              name: gnresolver-db-master-vol
+              name: gnindex-db-master-vol

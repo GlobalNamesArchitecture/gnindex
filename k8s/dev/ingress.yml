@@ -1,13 +1,13 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: gnresolver-api
+  name: gnindex-api
   namespace: gn
   annotations:
     ingress.kubernetes.io/rewrite-target: /
 spec:
   backend:
-    serviceName: gnresolver-api
+    serviceName: gnindex-api
     servicePort: 80
   rules:
   - host: mini
@@ -15,5 +15,5 @@ spec:
       paths:
       - path: /
         backend:
-          serviceName: gnresolver-api
-          servicePort: 9001
+          serviceName: gnindex-api
+          servicePort: 8888
