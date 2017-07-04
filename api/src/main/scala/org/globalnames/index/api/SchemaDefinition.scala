@@ -74,18 +74,18 @@ object SchemaDefinition extends DefaultJsonProtocol {
     )
   )
 
+  val DataSourceIdsArg = Argument("dataSourceIds", OptionInputType(ListInputType(IntType)))
   val NameRequestIOT = InputObjectType[NameInput]("name", List(
       InputField("value", StringType)
     , InputField("suppliedId", OptionInputType(StringType))
   ))
-
   val NamesRequestArg = Argument("names", ListInputType(NameRequestIOT))
 
   val QueryTypeOT = ObjectType(
     "Query", fields[Repository, Unit](
       Field("nameResolver", ListType(ResponseOT),
-        arguments = List(NamesRequestArg),
-        resolve = ctx => ctx.withArgs(NamesRequestArg)(ctx.ctx.nameResolver)
+        arguments = List(NamesRequestArg, DataSourceIdsArg),
+        resolve = ctx => ctx.withArgs(NamesRequestArg, DataSourceIdsArg)(ctx.ctx.nameResolver)
       )
     )
   )
