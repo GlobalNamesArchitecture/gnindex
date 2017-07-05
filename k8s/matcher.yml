@@ -44,3 +44,15 @@ spec:
               name: thrift-api
             - containerPort: 9990
               name: http-admin
+          readinessProbe:
+            httpGet:
+              path: /admin/ping
+              port: 9990
+            initialDelaySeconds: 30
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /admin/ping
+              port: 9990
+            initialDelaySeconds: 300
+            timeoutSeconds: 3
