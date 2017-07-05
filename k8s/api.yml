@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: gnindex
-          image: gnames/gnindexapi:0.1.0-20170704_1800-SNAPSHOT
+          image: gnames/gnindexapi:0.1.0-20170710_1033_CDT-SNAPSHOT
           readinessProbe:
             httpGet:
               path: /admin/ping
