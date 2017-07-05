@@ -145,13 +145,12 @@ class NameResolver private[nameresolver](request: Request,
          }
   }
 
-  // NB: perPage == 5, query = sn.input.verbatim.some
   protected def materializeNameStringsSequence(
     nameStringsQueries: Seq[NameStringsQuery]): ScalaFuture[Seq[DBResults]] = {
 
     val resultsQuerySeq = nameStringsQueries.map { nsq =>
       val qrySurrogated = queryWithSurrogates(nsq)
-      val qryVernacularized = queryWithVernaculars(qrySurrogated.drop(dropCount).take(takeCount))
+      val qryVernacularized = queryWithVernaculars(qrySurrogated.drop(0).take(5)).drop(0).take(10)
       for {
         data <- qryVernacularized.result
         total <- qrySurrogated.size.result
