@@ -12,7 +12,7 @@ object Dependencies {
     val mockito = "1.10.19"
     val scalatest = "3.0.3"
     val liblevenshtein = "3.0.0"
-    val scalaz = "7.1.7"
+    val scalaz = "7.2.13"
     val json4sJackson = "3.5.2"
     val slick = "3.2.0"
     val jodaMapper = "2.3.0"
