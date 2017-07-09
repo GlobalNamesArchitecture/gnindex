@@ -19,24 +19,6 @@ struct Request {
     6: bool withVernaculars = false
 }
 
-struct Name {
-    1: data.Uuid uuid
-    2: string value
-}
-
-enum MatchKind {
-    UUIDLookup,
-    ExactNameMatchByUUID,
-    ExactNameMatchByString,
-    ExactCanonicalNameMatchByUUID,
-    ExactCanonicalNameMatchByString,
-    FuzzyCanonicalMatch,
-    FuzzyPartialMatch,
-    ExactMatchPartialByGenus,
-    ExactPartialMatch,
-    Unknown
-}
-
 struct AuthorScore {
     1: string authorshipInput
     2: string authorshipMatch
@@ -51,11 +33,7 @@ struct Score {
     5: optional string message
 }
 
-struct MatchType {
-    1: MatchKind kind
-    2: i32 editDistance
-    3: i32 score
-}
+
 
 struct Classification {
     1: optional string path
@@ -64,10 +42,10 @@ struct Classification {
 }
 
 struct Result {
-    1: Name name
-    2: optional Name canonicalName
+    1: data.Name name
+    2: optional data.Name canonicalName
     3: bool synonym
-    4: MatchType matchType
+    4: data.MatchType matchType
     5: string taxonId
     6: Classification classification
 }

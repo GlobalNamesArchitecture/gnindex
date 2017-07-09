@@ -6,7 +6,7 @@ import java.io.File
 import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
 import com.twitter.inject.TwitterModule
-import org.globalnames.matcher.Matcher
+import org.globalnames.{matcher => matcherlib}
 
 import scala.io.Source
 
@@ -22,11 +22,11 @@ object MatcherModule extends TwitterModule {
 
   @Singleton
   @Provides
-  def prodiveMatcher: Matcher = {
+  def prodiveMatcherLib: matcherlib.Matcher = {
     val names = namesFileKey().exists ?
       Source.fromFile(namesFileKey()).getLines.toVector |
       { logger.error("names files doesn't exist"); Vector.empty[String] }
-    Matcher(names)
+    matcherlib.Matcher(names)
   }
 
 }

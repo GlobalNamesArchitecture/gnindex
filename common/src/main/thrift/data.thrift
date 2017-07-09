@@ -9,3 +9,27 @@ struct Uuid {
    */
   1: required string uuidString
 }
+
+struct Name {
+    1: Uuid uuid
+    2: string value
+}
+
+enum MatchKind {
+    UUIDLookup,
+    ExactNameMatchByUUID,
+    ExactNameMatchByString,
+    ExactCanonicalNameMatchByUUID,
+    ExactCanonicalNameMatchByString,
+    FuzzyCanonicalMatch,
+    FuzzyPartialMatch,
+    ExactMatchPartialByGenus,
+    ExactPartialMatch,
+    Unknown
+}
+
+struct MatchType {
+    1: MatchKind kind
+    2: i32 editDistance
+    3: i32 score
+}

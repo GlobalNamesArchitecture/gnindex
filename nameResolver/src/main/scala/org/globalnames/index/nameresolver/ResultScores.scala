@@ -4,7 +4,7 @@ package nameresolver
 
 import org.apache.commons.lang3.StringUtils
 import thrift.nameresolver._
-import thrift.nameresolver.MatchKind._
+import thrift.MatchKind._
 import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
 import org.globalnames.matcher.{Author, AuthorsMatcher}
 

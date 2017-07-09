@@ -1,14 +1,16 @@
 #@namespace scala org.globalnames.index.thrift.matcher
 
 include "finatra-thrift/finatra_thrift_exceptions.thrift"
+include "data.thrift"
 
 struct Result {
-    1: string value
+    1: data.Name nameMatched
     2: i32 distance
+    3: data.MatchKind matchKind
 }
 
 struct Response {
-    1: string input
+    1: data.Name input
     2: list<Result> results
 }
 

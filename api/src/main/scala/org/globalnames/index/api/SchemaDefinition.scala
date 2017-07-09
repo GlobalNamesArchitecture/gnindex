@@ -4,6 +4,7 @@ package api
 
 import sangria.schema._
 import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
+import thrift.{Name, MatchType}
 import thrift.nameresolver._
 
 object SchemaDefinition {

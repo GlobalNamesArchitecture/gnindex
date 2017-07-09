@@ -11,11 +11,12 @@ import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.util.{Future => TwitterFuture}
 import thrift.matcher.{Service => MatcherService}
+import thrift.{MatchKind, Name}
 import slick.jdbc.PostgresProfile.api._
 import dao.{Tables => T}
 import MatchTypeScores._
 import thrift.nameresolver._
-import thrift.Uuid
+import thrift.{MatchKind, MatchType, Uuid}
 import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
 
 import scala.collection.immutable.LinearSeq

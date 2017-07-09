@@ -8,18 +8,19 @@ import java.nio.file.{Files, Path}
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
+import thrift.{Name, Uuid}
 import thrift.matcher.{Service => MatcherService, Result, Response }
 
 class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
 
   val tempFilePath: Path = {
-    def namesFileContent: String = s"""
-      |Aaadonta angaurana
-      |Aaadonta constricta
-      |Aaadonta constricta babelthuapi
-      |Abacetus cyclomous
-      |Abacetus cyclomus
-      |""".stripMargin
+    def namesFileContent: String =
+      s"""Aaadonta angaurana
+         |Aaadonta constricta
+         |Aaadonta constricta babelthuapi
+         |Abacetus cyclomous
+         |Abacetus cyclomus
+         |""".stripMargin
     val file = Files.createTempFile("canonical_names", ".txt")
     Files.write(file, namesFileContent.getBytes(StandardCharsets.UTF_8))
   }
@@ -38,12 +39,10 @@ class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
     server.assertHealthy()
   }
 
-  "service#respond to ping" in {
+  "service#findMatches returns results" in {
     val word = "Abacetus cyclomoXX"
-    client.findMatches(Seq(word)).value should contain only
-      Response(input = word, results = Seq(
-        Result("Abacetus cyclomus", 3),
-        Result("Abacetus cyclomous", 2)
-      ))
+    val matches = client.findMatches(Seq(word)).value
+    matches.size shouldBe 1
+    matches.head.results.map { _.nameMatched.value } should contain only "Abacetus cyclomous"
   }
 }

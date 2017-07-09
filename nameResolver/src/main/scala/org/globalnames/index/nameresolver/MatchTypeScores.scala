@@ -2,7 +2,7 @@ package org.globalnames
 package index
 package nameresolver
 
-import thrift.nameresolver.{MatchKind => MK, MatchType}
+import thrift.{MatchKind => MK, MatchType}
 
 object MatchTypeScores {
   private def editDistance(matchKind: MK): Int = matchKind match {
