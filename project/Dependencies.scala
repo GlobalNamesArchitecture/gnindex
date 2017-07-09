@@ -16,7 +16,7 @@ object Dependencies {
     val json4sJackson = "3.5.2"
     val slick = "3.2.0"
     val jodaMapper = "2.3.0"
-    val postgres = "9.4-1206-jdbc42"
+    val postgres = "42.1.1.jre7"
     val gnparser = "0.4.1"
     val gnmatcher = "0.1.2-20170708_1200-SNAPSHOT"
     val twitterBijection = "0.9.5"
