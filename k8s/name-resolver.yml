@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gnnameresolver
+  namespace: gn
+  labels:
+    app: gnnameresolver
+    tier: frontend
+spec:
+  type: NodePort
+  ports:
+    - port: 9999
+      name: thrift-api
+      targetPort: 9999
+    - port: 9990
+      name: http-admin
+      targetPort: 9990
+  selector:
+    app: gnnameresolver
+    tier: frontend
+    type: api
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: gnnameresolver
+  namespace: gn
+spec:
+  replicas: 3
+  template:
+    metadata:
+      name: gnnameresolver
+      labels:
+        app: gnnameresolver
+        tier: frontend
+        type: api
+    spec:
+      containers:
+        - name: gnnameresolver
+          image: gnames/gnnameresolver:0.1.0-20170704_1800-SNAPSHOT
+          ports:
+            - containerPort: 9999
+              name: thrift-api
+            - containerPort: 9990
+              name: http-admin
+          env:
+            - name: MATCHER_ADDRESS
+              value: gnmatcher-api
+            - name: DB_HOST
+              value: gnindex-pgpool
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: gnindex
+                  key: db.port
+            - name: DB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: gnindex
+                  key: db.database
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: gnindex
+                  key: db.user
+            - name: DB_USER_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: gnindex
+                  key: db.user.password
+ 

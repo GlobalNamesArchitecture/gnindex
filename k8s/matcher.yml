@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gnmatcher-api
+  namespace: gn
+  labels:
+    app: gnmatcher
+    tier: frontend
+spec:
+  type: NodePort
+  ports:
+    - port: 9999
+      name: thrift-api
+      targetPort: 9999
+    - port: 9990
+      name: http-admin
+      targetPort: 9990
+  selector:
+    app: gnmatcher
+    tier: frontend
+    type: api
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: gnmatcher-api
+  namespace: gn
+spec:
+  replicas: 3
+  template:
+    metadata:
+      name: gnmatcher-api
+      labels:
+        app: gnmatcher
+        tier: frontend
+        type: api
+    spec:
+      containers:
+        - name: gnmatcher
+          image: gnames/gnmatcher:0.1.0-20170619_2200-SNAPSHOT
+          ports:
+            - containerPort: 9999
+              name: thrift-api
+            - containerPort: 9990
+              name: http-admin
