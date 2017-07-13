@@ -13,7 +13,12 @@ import spray.revolver.RevolverPlugin.autoImport._
 object Settings {
 
   lazy val settings = Seq(
-    version := "0.1.0-SNAPSHOT" + sys.props.get("buildNumber").map { "-" + _ }.getOrElse(""),
+    version := {
+      val version = "0.4.2"
+      val release = sys.props.isDefinedAt("release")
+      if (release) version
+      else version + sys.props.get("buildNumber").map { "-" + _ }.getOrElse("") + "-SNAPSHOT"
+    },
     scalaVersion := "2.11.11",
     homepage := Some(new URL("http://globalnames.org/")),
     organization in ThisBuild := "org.globalnames",
