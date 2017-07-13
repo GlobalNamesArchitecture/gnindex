@@ -24,8 +24,6 @@ import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 
 object NameResolver {
-  private val EmptyUuid = UuidGenerator.generate("")
-
   type NameStringsQuery =
     Query[T.NameStrings, T.NameStringsRow, Seq]
   type NameStringWithDataSourceQuery =
@@ -132,7 +130,7 @@ class NameResolver private[nameresolver](request: Request,
         databaseResults.groupBy { case (ns, _, _) => ns.id }.withDefaultValue(Seq())
       val canonicalUuidMatches =
         databaseResults.groupBy { case (ns, _, _) => ns.canonicalUuid }
-                       .filterKeys { k => k.isDefined && k.get != EmptyUuid }
+                       .filterKeys { key => key.isDefined && key.get != UuidGenerator.EmptyUuid }
                        .withDefaultValue(Seq())
 
       namesParsed.map { nameParsed =>
