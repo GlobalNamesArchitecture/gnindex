@@ -14,7 +14,8 @@ import MatchTypeScores._
 import dao.{Tables => T}
 import thrift.matcher.{Service => MatcherService}
 import thrift.nameresolver._
-import thrift.{MatchKind, MatchType, Name, Uuid}
+import thrift.{MatchKind, MatchType, Name}
+import util.UuidEnhanced._
 import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
 import slick.jdbc.PostgresProfile.api._
 
@@ -43,7 +44,7 @@ object NameResolver {
     val canonicalNameOpt =
       for { canId <- dbResult.nameString.canonicalUuid
             canName <- dbResult.nameString.canonical }
-        yield Name(uuid = Uuid(canId.toString), value = canName)
+        yield Name(uuid = canId, value = canName)
 
     val classification = Classification(
       path = dbResult.nameStringIndex.classificationPath,
@@ -62,8 +63,7 @@ object NameResolver {
     }
 
     val result =
-      Result(name = Name(uuid = Uuid(dbResult.nameString.id.toString),
-                         value = dbResult.nameString.name),
+      Result(name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
              canonicalName = canonicalNameOpt,
              synonym = synonym,
              taxonId = dbResult.nameStringIndex.taxonId,
@@ -167,9 +167,7 @@ class NameResolver private[nameresolver](request: Request,
   def fuzzyMatch(scientificNames: Seq[String]): ScalaFuture[Seq[RequestResponse]] = {
     matcherClient.findMatches(scientificNames)
                          .as[ScalaFuture[Seq[thrift.matcher.Response]]].flatMap { fuzzyMatches =>
-      val uuids = fuzzyMatches.flatMap { fm => fm.results.map { r =>
-        UUID.fromString(r.nameMatched.uuid.uuidString)
-      }}
+      val uuids = fuzzyMatches.flatMap { fm => fm.results.map { r => r.nameMatched.uuid: UUID } }
       val qry = T.NameStrings.filter { ns => ns.canonicalUuid.inSetBind(uuids) }
       database.run(queryWithSurrogates(qry).result).map { nameStringsDB =>
         val nameStringsDBMap = nameStringsDB.map { case (ns, nsi, ds) =>
@@ -177,12 +175,11 @@ class NameResolver private[nameresolver](request: Request,
         }.groupBy { dbr => dbr.nameString.canonicalUuid }.withDefaultValue(Seq())
 
         fuzzyMatches.flatMap { fuzzyMatch =>
-          val uuid = UUID.fromString(fuzzyMatch.input.uuid.uuidString)
-          val nameInputParsed = namesParsedMap(uuid)
+          val nameInputParsed = namesParsedMap(fuzzyMatch.input.uuid)
           val responses = fuzzyMatch.results.map { result =>
             val results = {
-              val canId = UUID.fromString(result.nameMatched.uuid.uuidString).some
-              nameStringsDBMap(canId).map {
+              val canId: UUID = result.nameMatched.uuid
+              nameStringsDBMap(canId.some).map {
                 dbRes => createResult(nameInputParsed, dbRes, createMatchType(result.matchKind))
               }
             }

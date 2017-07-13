@@ -6,6 +6,7 @@ import sangria.schema._
 import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
 import thrift.{Name, MatchType}
 import thrift.nameresolver._
+import util.UuidEnhanced.ThriftUuidEnhanced
 
 object SchemaDefinition {
   implicit val nameInputFromInput = new FromInput[NameInput] {
@@ -30,7 +31,7 @@ object SchemaDefinition {
 
   val NameOT = ObjectType(
     "Name", fields[Unit, Name](
-        Field("id", IDType, resolve = _.value.uuid.uuidString)
+        Field("id", IDType, resolve = _.value.uuid.string)
       , Field("name", StringType, resolve = _.value.value)
     )
   )

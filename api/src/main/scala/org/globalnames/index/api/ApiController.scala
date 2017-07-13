@@ -14,6 +14,7 @@ import sangria.execution.Executor
 import sangria.parser.{QueryParser => QueryParserSangria}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Success, Failure}
 import sangria.marshalling.json4s.jackson._
 
 import org.json4s._
@@ -37,7 +38,7 @@ class ApiController @Inject()(repository: Repository) extends Controller {
 
   post("/api/graphql") { graphqlRequest: GraphqlRequest =>
     QueryParserSangria.parse(graphqlRequest.query) match {
-      case util.Success(queryAst) =>
+      case Success(queryAst) =>
         val graphqlExecution = Executor.execute(
           schema = SchemaDefinition.schema,
           queryAst = queryAst,
@@ -48,7 +49,7 @@ class ApiController @Inject()(repository: Repository) extends Controller {
         graphqlExecution.as[TwitterFuture[JValue]]
                         .map { v => response.ok.json(compact(render(v))) }
 
-      case util.Failure(error) =>
+      case Failure(error) =>
         response.badRequest(error.getMessage)
     }
   }

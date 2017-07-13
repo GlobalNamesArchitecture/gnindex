@@ -4,13 +4,14 @@ package matcher
 
 import org.globalnames.{matcher => matcherlib}
 import thrift.matcher.{Response, Result}
-import thrift.{Name, Uuid}
+import thrift.Name
 import javax.inject.{Inject, Singleton}
 
 import parser.ScientificNameParser.{instance => SNP}
 import akka.http.impl.util._
-import org.globalnames.index.thrift.MatchKind
+import index.thrift.MatchKind
 import org.globalnames.matcher.Candidate
+import util.UuidEnhanced.javaUuid2thriftUuid
 
 import scala.collection.immutable.LinearSeq
 
@@ -27,13 +28,11 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher) {
     }
 
     def nameProvided: Name = {
-      Name(uuid = Uuid(UuidGenerator.generate(name).toString),
-           value = name)
+      Name(uuid = UuidGenerator.generate(name), value = name)
     }
 
     def namePartial: Name = {
-      Name(uuid = Uuid(UuidGenerator.generate(namePartialStr).toString),
-           value = namePartialStr)
+      Name(uuid = UuidGenerator.generate(namePartialStr), value = namePartialStr)
     }
   }
 
@@ -84,7 +83,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher) {
                   else MatchKind.FuzzyPartialMatch
                 }
               Result(
-                nameMatched = Name(uuid = Uuid(UuidGenerator.generate(candidate.term).toString),
+                nameMatched = Name(uuid = UuidGenerator.generate(candidate.term),
                                    value = candidate.term),
                 distance = candidate.distance,
                 matchKind = matchKind
@@ -104,7 +103,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher) {
       np.canonized().isDefined
     }
     val responsesRest = namesParsedRest.map { np =>
-      Response(input = Name(uuid = Uuid(np.preprocessorResult.id.toString),
+      Response(input = Name(uuid = np.preprocessorResult.id,
                value = np.preprocessorResult.verbatim), results = Seq())
     }
     val namesParsedSuccessfullySplits = namesParsedSuccessfully.map { np =>
