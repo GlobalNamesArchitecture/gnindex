@@ -8,23 +8,24 @@ import thrift.Name
 import javax.inject.{Inject, Singleton}
 
 import parser.ScientificNameParser.{instance => SNP}
-import akka.http.impl.util._
 import index.thrift.MatchKind
+import org.apache.commons.lang3.StringUtils
 import org.globalnames.matcher.Candidate
 import util.UuidEnhanced.javaUuid2thriftUuid
-
-import scala.collection.immutable.LinearSeq
 
 @Singleton
 class Matcher @Inject()(matcherLib: matcherlib.Matcher) {
   private val FuzzyMatchLimit = 5
 
-  private case class CanonicalNameSplit(name: String, parts: LinearSeq[String]) {
-    val namePartialStr: String = parts.mkString(" ")
-    val isOriginalCanonical: Boolean = name.length == parts.map(_.length + 1).sum - 1
+  private case class CanonicalNameSplit(name: String, namePartialStr: String) {
 
-    def shortenParts: CanonicalNameSplit = {
-      this.copy(parts = this.parts.dropRight(1))
+    private val size: Int = StringUtils.countMatches(namePartialStr, ' ') + 1
+
+    val isOriginalCanonical: Boolean = name.length == namePartialStr.length
+    val isUninomial: Boolean = size == 1
+
+    def shorten: CanonicalNameSplit = {
+      this.copy(namePartialStr = namePartialStr.substring(0, namePartialStr.lastIndexOf(' ')))
     }
 
     def nameProvided: Name = {
@@ -34,6 +35,10 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher) {
     def namePartial: Name = {
       Name(uuid = UuidGenerator.generate(namePartialStr), value = namePartialStr)
     }
+  }
+
+  private object CanonicalNameSplit {
+    def apply(name: String): CanonicalNameSplit = CanonicalNameSplit(name, name)
   }
 
   private case class FuzzyMatch(canonicalNameSplit: CanonicalNameSplit,
@@ -46,7 +51,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher) {
     } else {
       val (originalOrNonUninomialCanonicals, partialByGenusCanonicals) =
         canonicalNameSplits.partition { canonicalNameSplit =>
-          canonicalNameSplit.isOriginalCanonical || canonicalNameSplit.parts.size > 1
+          canonicalNameSplit.isOriginalCanonical || canonicalNameSplit.isUninomial
         }
 
       val partialByGenusFuzzyResponses =
@@ -66,7 +71,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher) {
         originalOrNonUninomialCanonicalsResponses.partition { _.candidates.nonEmpty }
 
       val responsesEmpty =
-        resolveFromPartials(oonucrEmpty.map { _.canonicalNameSplit.shortenParts })
+        resolveFromPartials(oonucrEmpty.map { _.canonicalNameSplit.shorten })
 
       val responsesNonEmpty =
         for (fuzzyMatch <- oonucrNonEmpty) yield {
@@ -107,8 +112,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher) {
                value = np.preprocessorResult.verbatim), results = Seq())
     }
     val namesParsedSuccessfullySplits = namesParsedSuccessfully.map { np =>
-      CanonicalNameSplit(np.preprocessorResult.verbatim,
-        np.preprocessorResult.verbatim.fastSplit(' '))
+      CanonicalNameSplit(np.preprocessorResult.verbatim)
     }
     resolveFromPartials(namesParsedSuccessfullySplits) ++ responsesRest
   }
