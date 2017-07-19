@@ -1,0 +1,53 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gnindex-graphiql
+  namespace: gn
+  labels:
+    app: gnindex-graphiql
+    tier: frontend
+spec:
+  type: NodePort
+  ports:
+    - port: 3000
+      name: http
+      targetPort: 3000
+  selector:
+    app: gnindex-graphiql
+    tier: frontend
+    type: api
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: gnindex-graphiql
+  namespace: gn
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: gnindex-graphiql
+      labels:
+        app: gnindex-graphiql
+        tier: frontend
+        type: api
+    spec:
+      containers:
+        - name: gnindex-graphiql
+          image: gnames/gnindex-debug:gnindexgraphiql-0.1.0-20170720_1047_CDT-SNAPSHOT
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 300
+            timeoutSeconds: 3
+          ports:
+            - containerPort: 3000
+              name: http

@@ -1,0 +1,14 @@
+{
+  "description": "An example using GraphiQL",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.13.3",
+    "graphiql": "^0.11.2"
+  },
+  "optionalDependencies": {
+    "react": "^15.4.2",
+    "react-dom": "^15.4.2"
+  }
+}

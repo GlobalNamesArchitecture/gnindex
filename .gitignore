@@ -47,3 +47,6 @@ RUNNING_PID
 
 # Ruby
 .byebug_history
+
+# front
+node_modules
