@@ -17,7 +17,7 @@ class MatcherController @Inject()(matcher: Matcher)
   override val findMatches: ThriftMethodService[tmatcher.Service.FindMatches.Args,
                                                 Seq[tmatcher.Response]] =
     handle(tmatcher.Service.FindMatches) { args: tmatcher.Service.FindMatches.Args =>
-      info(s"Responding to findMatches: ${args.words.mkString(" | ")}")
+      info("Responding to findMatches")
       Future.value { matcher.resolve(args.words) }
     }
 }

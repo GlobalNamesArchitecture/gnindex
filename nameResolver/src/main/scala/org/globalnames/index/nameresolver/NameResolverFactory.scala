@@ -8,6 +8,7 @@ import javax.inject.{Inject, Singleton}
 import akka.http.impl.util._
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
+import com.twitter.inject.Logging
 import com.twitter.util.{Future => TwitterFuture}
 import org.apache.commons.lang3.StringUtils
 import MatchTypeScores._
@@ -77,8 +78,14 @@ object NameResolver {
 
 class NameResolver private[nameresolver](request: Request,
                                          database: Database,
-                                         matcherClient: MatcherService.FutureIface) {
+                                         matcherClient: MatcherService.FutureIface)
+  extends Logging {
+
   import NameResolver._
+
+  private def logInfo(message: String): Unit = {
+    logger.info(s"(Request hash code: ${request.hashCode}) $message")
+  }
 
   private val takeCount: Int = request.perPage.min(1000).max(0)
   private val dropCount: Int = (request.page * request.perPage).max(0)
@@ -122,10 +129,12 @@ class NameResolver private[nameresolver](request: Request,
   def queryExactMatchesByUuid(): ScalaFuture[Seq[RequestResponse]] = {
     val canonicalUuids = namesParsed.flatMap { _.parsed.canonizedUuid().map { _.id } }.distinct
     val nameUuids = namesParsed.map { _.parsed.preprocessorResult.id }.distinct
+    logInfo(s"[Exact match] Name UUIDs: ${nameUuids.size}. Canonical UUIDs: ${canonicalUuids.size}")
     val qry = queryWithSurrogates(T.NameStrings.filter { ns =>
       ns.id.inSetBind(nameUuids) || ns.canonicalUuid.inSetBind(canonicalUuids)
     })
     val reqResp = database.run(qry.result).map { databaseResults =>
+      logInfo(s"[Exact match] Database fetched")
       val nameUuidMatches =
         databaseResults.groupBy { case (ns, _, _) => ns.id }.withDefaultValue(Seq())
       val canonicalUuidMatches =
@@ -165,11 +174,15 @@ class NameResolver private[nameresolver](request: Request,
   }
 
   def fuzzyMatch(scientificNames: Seq[String]): ScalaFuture[Seq[RequestResponse]] = {
+    logInfo(s"[Fuzzy match] Names: ${scientificNames.size}")
     matcherClient.findMatches(scientificNames)
                          .as[ScalaFuture[Seq[thrift.matcher.Response]]].flatMap { fuzzyMatches =>
       val uuids = fuzzyMatches.flatMap { fm => fm.results.map { r => r.nameMatched.uuid: UUID } }
+      logInfo("[Fuzzy match] Matcher service response received. " +
+              s"Database request for ${uuids.size} records")
       val qry = T.NameStrings.filter { ns => ns.canonicalUuid.inSetBind(uuids) }
       database.run(queryWithSurrogates(qry).result).map { nameStringsDB =>
+        logInfo(s"[Fuzzy match] Database response: ${nameStringsDB.size} records")
         val nameStringsDBMap = nameStringsDB.map { case (ns, nsi, ds) =>
           DBResult(ns, nsi, ds, Seq())
         }.groupBy { dbr => dbr.nameString.canonicalUuid }.withDefaultValue(Seq())
@@ -198,17 +211,21 @@ class NameResolver private[nameresolver](request: Request,
   }
 
   def resolveExact(): ScalaFuture[Seq[Response]] = {
+    logInfo(s"[Resolution] Resolution started for ${request.names.size} names")
     queryExactMatchesByUuid().flatMap { names =>
       val (exactMatchesByUuid, exactUnmatchesByUuid) =
         names.partition { resp => resp.response.results.nonEmpty }
       val (unmatched, unmatchedNotParsed) = exactUnmatchesByUuid.partition { reqResp =>
         reqResp.request.parsed.canonizedUuid().isDefined
       }
+      logInfo(s"[Resolution] Exact match done. Matches count: ${exactMatchesByUuid.size}. " +
+              s"Unparsed count: ${unmatchedNotParsed.size}")
 
       val namesForFuzzyMatch = unmatched.map { reqResp => reqResp.request.nameInput.value }
       val fuzzyMatchesFut = fuzzyMatch(namesForFuzzyMatch)
 
       fuzzyMatchesFut.map { fuzzyMatches =>
+        logInfo(s"[Resolution] Fuzzy matches count: ${fuzzyMatches.size}")
         val reqResps = exactMatchesByUuid ++ fuzzyMatches ++ unmatchedNotParsed
         reqResps.map { _.response }
       }
