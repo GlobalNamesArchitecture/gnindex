@@ -14,7 +14,7 @@ object Settings {
 
   lazy val settings = Seq(
     version := {
-      val version = "0.4.2"
+      val version = "0.1.0"
       val release = sys.props.isDefinedAt("release")
       if (release) version
       else version + sys.props.get("buildNumber").map { "-" + _ }.getOrElse("") + "-SNAPSHOT"
@@ -51,7 +51,7 @@ object Settings {
     scroogeThriftDependencies in Compile := Seq("finatra-thrift_2.11"),
 
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-    buildInfoPackage := "org.globalnames.matcher",
+    buildInfoPackage := "org.globalnames.index",
 
     test in assembly := {},
     target in assembly := file(baseDirectory.value + "/../bin/"),
@@ -167,7 +167,8 @@ object Settings {
   // Matcher settings //
   //////////////////////
   lazy val matcherSettings = Seq(
-    assemblyJarName in assembly := "gnmatcher-" + version.value + ".jar"
+    assemblyJarName in assembly := "gnmatcher-" + version.value + ".jar",
+    Revolver.enableDebugging(port = 5008, suspend = false)
   )
 
 }

@@ -24,6 +24,7 @@ lazy val nameResolver = (project in file("nameResolver"))
     .settings(libraryDependencies ++= nameResolverDependencies)
 
 lazy val api = (project in file("api"))
+    .enablePlugins(BuildInfoPlugin)
     .dependsOn(common, nameResolver, matcher)
     .settings(publishingSettings: _*)
     .settings(Settings.settings: _*)

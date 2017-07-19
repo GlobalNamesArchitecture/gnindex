@@ -18,7 +18,7 @@ object Dependencies {
     val jodaMapper = "2.3.0"
     val postgres = "42.1.1.jre7"
     val gnparser = "0.4.2-20170715_1200-SNAPSHOT"
-    val gnmatcher = "0.1.2-20170708_1200-SNAPSHOT"
+    val gnmatcher = "0.1.2-20170718_1900-SNAPSHOT"
     val twitterBijection = "0.9.5"
   }
 

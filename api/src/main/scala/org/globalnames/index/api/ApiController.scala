@@ -32,8 +32,8 @@ case class GraphqlRequest(query: String,
 
 @Singleton
 class ApiController @Inject()(repository: Repository) extends Controller {
-  get("/") { _: Request =>
-    response.ok.json("ready")
+  get("/api/version") { _: Request =>
+    response.ok.json(org.globalnames.index.BuildInfo.version)
   }
 
   post("/api/graphql") { graphqlRequest: GraphqlRequest =>
