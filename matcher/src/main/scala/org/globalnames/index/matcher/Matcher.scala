@@ -24,9 +24,10 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
                         canonicalNames: CanonicalNames) extends Logging {
   private val FuzzyMatchLimit = 5
 
-  private case class CanonicalNameSplit(name: String, namePartialStr: String) {
+  private[Matcher] case class CanonicalNameSplit(name: String, namePartialStr: String) {
 
-    private val size: Int = StringUtils.countMatches(namePartialStr, ' ') + 1
+    val size: Int =
+      namePartialStr.isEmpty ? 0 | (StringUtils.countMatches(namePartialStr, ' ') + 1)
 
     val isOriginalCanonical: Boolean = name.length == namePartialStr.length
 
@@ -59,36 +60,42 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
     if (canonicalNameSplits.isEmpty) {
       Seq()
     } else {
-      val (canonicalNameSplitsNonEmpty, canonicalNameSplitsEmpty) =
-        canonicalNameSplits.partition { cnp => cnp.namePartialStr.nonEmpty }
+      val (nonEmptySplits, noFuzzyMatchesSplits) =
+        canonicalNameSplits.partition { cnp => cnp.size > 0 }
 
-      val noFuzzyMatches = canonicalNameSplitsEmpty.map { cns =>
+      val noFuzzyMatches = noFuzzyMatchesSplits.map { cns =>
         Response(input = cns.nameProvided, results = Seq())
       }
 
-      val (originalOrNonUninomialCanonicals, partialByGenusCanonicals) =
-        canonicalNameSplitsNonEmpty.partition { canonicalNameSplit =>
-          canonicalNameSplit.isOriginalCanonical || canonicalNameSplit.isUninomial
-        }
+      val (exactPartialCanonicalMatches, possibleFuzzyCanonicalMatches) =
+        nonEmptySplits
+          .map { cns => (cns, canonicalNames.names(cns.namePartialStr)) }
+          .partition { case (_, dsids) =>
+            dataSourceIds.isEmpty ? dsids.nonEmpty | dataSourceIds.intersect(dsids).nonEmpty
+          }
 
       val partialByGenusFuzzyResponses =
-        for (canonicalNameSplit <- partialByGenusCanonicals) yield {
+        for ((canonicalNameSplit, _) <- exactPartialCanonicalMatches) yield {
+          val matchKind =
+            if (canonicalNameSplit.isOriginalCanonical) MatchKind.ExactCanonicalNameMatchByUUID
+            else MatchKind.FuzzyCanonicalMatch
+
           val result = Result(nameMatched = canonicalNameSplit.namePartial,
                               distance = 0,
-                              matchKind = MatchKind.ExactMatchPartialByGenus)
+                              matchKind = matchKind)
           Response(input = canonicalNameSplit.nameProvided, results = Seq(result))
         }
 
-      logger.info(s"Matcher library call for ${originalOrNonUninomialCanonicals.size} records")
-      val originalOrNonUninomialCanonicalsResponses =
-        for (canNmSplit <- originalOrNonUninomialCanonicals) yield {
+      logger.info(s"Matcher library call for ${possibleFuzzyCanonicalMatches.size} records")
+      val possibleFuzzyCanonicalsResponses =
+        for ((canNmSplit, _) <- possibleFuzzyCanonicalMatches) yield {
           FuzzyMatch(canNmSplit, matcherLib.findMatches(canNmSplit.namePartialStr))
         }
       logger.info(s"matcher library call completed for " +
-                  s"${originalOrNonUninomialCanonicals.size} records")
+                  s"${possibleFuzzyCanonicalMatches.size} records")
 
       val (oonucrNonEmpty, oonucrEmpty) =
-        originalOrNonUninomialCanonicalsResponses.partition { fuzzyMatch =>
+        possibleFuzzyCanonicalsResponses.partition { fuzzyMatch =>
           dataSourceIds.isEmpty ?
             fuzzyMatch.candidates.nonEmpty |
             fuzzyMatch.candidates.exists { candidate =>
