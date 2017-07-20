@@ -175,7 +175,7 @@ class NameResolver private[nameresolver](request: Request,
 
   def fuzzyMatch(scientificNames: Seq[String]): ScalaFuture[Seq[RequestResponse]] = {
     logInfo(s"[Fuzzy match] Names: ${scientificNames.size}")
-    matcherClient.findMatches(scientificNames)
+    matcherClient.findMatches(scientificNames, request.dataSourceIds)
                          .as[ScalaFuture[Seq[thrift.matcher.Response]]].flatMap { fuzzyMatches =>
       val uuids = fuzzyMatches.flatMap { fm => fm.results.map { r => r.nameMatched.uuid: UUID } }
       logInfo("[Fuzzy match] Matcher service response received. " +
@@ -187,24 +187,21 @@ class NameResolver private[nameresolver](request: Request,
           DBResult(ns, nsi, ds, Seq())
         }.groupBy { dbr => dbr.nameString.canonicalUuid }.withDefaultValue(Seq())
 
-        fuzzyMatches.flatMap { fuzzyMatch =>
+        fuzzyMatches.map { fuzzyMatch =>
           val nameInputParsed = namesParsedMap(fuzzyMatch.input.uuid)
-          val responses = fuzzyMatch.results.map { result =>
-            val results = {
-              val canId: UUID = result.nameMatched.uuid
-              nameStringsDBMap(canId.some).map {
-                dbRes => createResult(nameInputParsed, dbRes, createMatchType(result.matchKind))
-              }
+          val results = fuzzyMatch.results.flatMap { result =>
+            val canId: UUID = result.nameMatched.uuid
+            nameStringsDBMap(canId.some).map {
+              dbRes => createResult(nameInputParsed, dbRes, createMatchType(result.matchKind))
             }
-            val response = Response(
-              total = fuzzyMatch.results.size,
-              results = results,
-              suppliedId = nameInputParsed.nameInput.suppliedId,
-              suppliedInput = nameInputParsed.nameInput.value.some
-            )
-            RequestResponse(request = nameInputParsed, response = response)
           }
-          responses
+          val response = Response(
+            total = fuzzyMatch.results.size,
+            results = results,
+            suppliedId = nameInputParsed.nameInput.suppliedId,
+            suppliedInput = nameInputParsed.nameInput.value.some
+          )
+          RequestResponse(request = nameInputParsed, response = response)
         }
       }
     }

@@ -26,9 +26,14 @@ ADD ${ASSEMBLY_PATH} /app/
 ARG CANONICAL_NAMES_FILE_PATH="http://opendata.globalnames.org/staging/canonical_names.txt"
 ADD ${CANONICAL_NAMES_FILE_PATH} /app/
 
+ARG CANONICAL_NAMES_DATASOURCE_FILE_PATH="http://opendata.globalnames.org/staging/canonical_names_with_datasource.txt"
+ADD ${CANONICAL_NAMES_DATASOURCE_FILE_PATH} /app/
+
 CMD bash -c "java -cp '.' -server -Xms16g -Xmx32g -XX:PermSize=512m \
                   -XX:MaxPermSize=512m -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled \
                   -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 \
                   -XX:+ScavengeBeforeFullGC -XX:+CMSScavengeBeforeRemark \
                   -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=dump-$(date +"%Y-%m-%d").hprof \
-                  -jar ${ASSEMBLY_JAR} -names-path=/app/canonical_names.txt"
+                  -jar ${ASSEMBLY_JAR} \
+                      -names-path=/app/canonical_names.txt \
+                      -names-datasources-path=/app/canonical_names_with_datasource.txt"

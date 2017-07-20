@@ -15,7 +15,7 @@ struct Response {
 }
 
 service Service {
-    list<Response> findMatches(1: list<string> words) throws (
+    list<Response> findMatches(1: list<string> names, list<i32> dataSourceIds) throws (
         1: finatra_thrift_exceptions.ClientError clientError,
         2: finatra_thrift_exceptions.ServerError serverError
     )
