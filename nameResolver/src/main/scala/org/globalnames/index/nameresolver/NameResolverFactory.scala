@@ -63,13 +63,17 @@ object NameResolver {
       } else true
     }
 
+    val dataSource = DataSource(id = dbResult.dataSource.id,
+                                title = dbResult.dataSource.title)
+
     val result =
       Result(name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
              canonicalName = canonicalNameOpt,
              synonym = synonym,
              taxonId = dbResult.nameStringIndex.taxonId,
              matchType = matchType,
-             classification = classification
+             classification = classification,
+             dataSource = dataSource
       )
     val score = ResultScores.compute(nameInputParsed.parsed, result)
     ResultScored(result, score)

@@ -62,6 +62,13 @@ object SchemaDefinition {
     )
   )
 
+  val DataSourceOT = ObjectType(
+    "DataSource", fields[Unit, DataSource](
+        Field("id", IntType, resolve = _.value.id)
+      , Field("title", StringType, resolve = _.value.title)
+    )
+  )
+
   val ResultItemOT = ObjectType(
     "ResultItem", fields[Unit, ResultScored](
         Field("name", NameOT, resolve = _.value.result.name)
@@ -71,6 +78,7 @@ object SchemaDefinition {
       , Field("classification", ClassificationOT, resolve = _.value.result.classification)
       , Field("matchType", MatchTypeOT, resolve = _.value.result.matchType)
       , Field("score", ScoreOT, resolve = _.value.score)
+      , Field("dataSource", DataSourceOT, resolve = _.value.result.dataSource)
     )
   )
 

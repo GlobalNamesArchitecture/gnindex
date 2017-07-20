@@ -33,12 +33,15 @@ struct Score {
     5: optional string message
 }
 
-
-
 struct Classification {
     1: optional string path
     2: optional string pathIds
     3: optional string pathRanks
+}
+
+struct DataSource {
+    1: i32 id
+    2: string title
 }
 
 struct Result {
@@ -48,6 +51,7 @@ struct Result {
     4: data.MatchType matchType
     5: string taxonId
     6: Classification classification
+    7: DataSource dataSource
 }
 
 struct ResultScored {
