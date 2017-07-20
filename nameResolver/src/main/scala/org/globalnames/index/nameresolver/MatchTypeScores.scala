@@ -5,10 +5,6 @@ package nameresolver
 import thrift.{MatchKind => MK, MatchType}
 
 object MatchTypeScores {
-  private def editDistance(matchKind: MK): Int = matchKind match {
-    case MK.FuzzyPartialMatch | MK.FuzzyCanonicalMatch => 1
-    case _ => 0
-  }
 
   private def score(matchKind: MK): Int = matchKind match {
     case MK.UUIDLookup => 1
@@ -23,9 +19,9 @@ object MatchTypeScores {
     case MK.Unknown => 10
   }
 
-  def createMatchType(matchKind: MK): MatchType = {
+  def createMatchType(matchKind: MK, editDistance: Int): MatchType = {
     MatchType(kind = matchKind,
               score = score(matchKind),
-              editDistance = editDistance(matchKind))
+              editDistance = editDistance)
   }
 }

@@ -159,7 +159,7 @@ class NameResolver private[nameresolver](request: Request,
               MatchKind.Unknown
             }
           val dbResult = DBResult(ns, nsi, ds, Seq())
-          createResult(nameParsed, dbResult, createMatchType(matchKind))
+          createResult(nameParsed, dbResult, createMatchType(matchKind, editDistance = 0))
         }
 
         val response = Response(
@@ -192,7 +192,8 @@ class NameResolver private[nameresolver](request: Request,
           val results = fuzzyMatch.results.flatMap { result =>
             val canId: UUID = result.nameMatched.uuid
             nameStringsDBMap(canId.some).map {
-              dbRes => createResult(nameInputParsed, dbRes, createMatchType(result.matchKind))
+              dbRes => createResult(nameInputParsed, dbRes,
+                                    createMatchType(result.matchKind, result.distance))
             }
           }
           val response = Response(
