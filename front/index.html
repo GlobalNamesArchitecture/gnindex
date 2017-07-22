@@ -100,6 +100,60 @@
         });
       }
 
+      const defaultQuery = `# Welcome to GraphiQL
+#
+# GraphiQL is an in-browser tool for writing, validating, and
+# testing GraphQL queries.
+#
+# Type queries into this side of the screen, and you will see intelligent
+# typeaheads aware of the current GraphQL type schema and live syntax and
+# validation errors highlighted within the text.
+#
+# GraphQL queries typically start with a "{" character. Lines that starts
+# with a # are ignored.
+#
+# Keyboard shortcuts:
+#
+#       Run Query:  Ctrl-Enter (or press the play button above)
+#
+#   Auto Complete:  Ctrl-Space (or just start typing)
+#
+
+{
+  nameResolver(names: [{value: "Homo sapiens", suppliedId: "foo"}],
+    					 dataSourceIds: [1, 2, 3]) {
+    total
+    suppliedId
+    suppliedInput
+    results {
+      name {
+        id
+        name
+      }
+      canonicalName {
+        id
+        name
+      }
+      dataSource {
+        id
+        title
+      }
+      synonym
+      matchType {
+        kind
+        score
+        editDistance
+      }
+      taxonId
+      score {
+        value
+        parsingQuality
+      }
+    }
+  }
+}
+`;
+
       // Render <GraphiQL /> into the body.
       ReactDOM.render(
         React.createElement(GraphiQL, {
@@ -107,6 +161,7 @@
           query: parameters.query,
           variables: parameters.variables,
           operationName: parameters.operationName,
+          defaultQuery: defaultQuery,
           onEditQuery: onEditQuery,
           onEditVariables: onEditVariables,
           onEditOperationName: onEditOperationName
