@@ -177,28 +177,45 @@ class NameResolver private[nameresolver](request: Request,
     reqResp
   }
 
+  private
   def fuzzyMatch(scientificNames: Seq[String]): ScalaFuture[Seq[RequestResponse]] = {
     logInfo(s"[Fuzzy match] Names: ${scientificNames.size}")
-    matcherClient.findMatches(scientificNames, request.dataSourceIds)
-                         .as[ScalaFuture[Seq[thrift.matcher.Response]]].flatMap { fuzzyMatches =>
-      val uuids = fuzzyMatches.flatMap { fm => fm.results.map { r => r.nameMatched.uuid: UUID } }
-      logInfo("[Fuzzy match] Matcher service response received. " +
-              s"Database request for ${uuids.size} records")
-      val qry = T.NameStrings.filter { ns => ns.canonicalUuid.inSetBind(uuids) }
-      database.run(queryWithSurrogates(qry).result).map { nameStringsDB =>
-        logInfo(s"[Fuzzy match] Database response: ${nameStringsDB.size} records")
-        val nameStringsDBMap = nameStringsDB.map { case (ns, nsi, ds) =>
-          DBResult(ns, nsi, ds, Seq())
-        }.groupBy { dbr => dbr.nameString.canonicalUuid }.withDefaultValue(Seq())
+    if (scientificNames.isEmpty) {
+      ScalaFuture.successful(Seq())
+    } else {
+      matcherClient.findMatches(scientificNames, request.dataSourceIds)
+                           .as[ScalaFuture[Seq[thrift.matcher.Response]]].flatMap { fuzzyMatches =>
+        val uuids = fuzzyMatches.flatMap { fm => fm.results.map { r => r.nameMatched.uuid: UUID } }
+        logInfo("[Fuzzy match] Matcher service response received. " +
+                s"Database request for ${uuids.size} records")
+        val qry = T.NameStrings.filter { ns => ns.canonicalUuid.inSetBind(uuids) }
+        database.run(queryWithSurrogates(qry).result).map { nameStringsDB =>
+          logInfo(s"[Fuzzy match] Database response: ${nameStringsDB.size} records")
+          val nameStringsDBMap = nameStringsDB.map { case (ns, nsi, ds) =>
+            DBResult(ns, nsi, ds, Seq())
+          }.groupBy { dbr => dbr.nameString.canonicalUuid }.withDefaultValue(Seq())
 
-        fuzzyMatches.map { fuzzyMatch =>
-          val nameInputParsed = namesParsedMap(fuzzyMatch.input.uuid)
-          val results = fuzzyMatch.results.flatMap { result =>
-            val canId: UUID = result.nameMatched.uuid
-            nameStringsDBMap(canId.some).map {
-              dbRes => createResult(nameInputParsed, dbRes,
-                                    createMatchType(result.matchKind, result.distance))
+          fuzzyMatches.map { fuzzyMatch =>
+            val nameInputParsed = namesParsedMap(fuzzyMatch.input.uuid)
+            val results = fuzzyMatch.results.flatMap { result =>
+              val canId: UUID = result.nameMatched.uuid
+              nameStringsDBMap(canId.some).map {
+                dbRes => createResult(nameInputParsed, dbRes,
+                                      createMatchType(result.matchKind, result.distance))
+              }
             }
+            val response = Response(
+              total = fuzzyMatch.results.size,
+              results = results,
+              suppliedId = nameInputParsed.nameInput.suppliedId,
+              suppliedInput = nameInputParsed.nameInput.value.some
+            )
+            RequestResponse(request = nameInputParsed, response = response)
+          }
+        }
+      }
+    }
+  }
           }
           val response = Response(
             total = fuzzyMatch.results.size,
