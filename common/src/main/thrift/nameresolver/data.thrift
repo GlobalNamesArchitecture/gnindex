@@ -46,7 +46,7 @@ struct DataSource {
 
 struct Result {
     1: data.Name name
-    2: optional data.Name canonicalName
+    2: optional data.CanonicalName canonicalName
     3: bool synonym
     4: data.MatchType matchType
     5: string taxonId

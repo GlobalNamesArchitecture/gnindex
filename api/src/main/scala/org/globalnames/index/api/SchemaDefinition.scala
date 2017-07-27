@@ -4,7 +4,7 @@ package api
 
 import sangria.schema._
 import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
-import thrift.{Name, MatchType}
+import thrift.{CanonicalName, MatchType, Name}
 import thrift.nameresolver._
 import util.UuidEnhanced.ThriftUuidEnhanced
 
@@ -32,7 +32,15 @@ object SchemaDefinition {
   val NameOT = ObjectType(
     "Name", fields[Unit, Name](
         Field("id", IDType, resolve = _.value.uuid.string)
-      , Field("name", StringType, resolve = _.value.value)
+      , Field("value", StringType, resolve = _.value.value)
+    )
+  )
+
+  val CanonicalNameOT = ObjectType(
+    "Name", fields[Unit, CanonicalName](
+        Field("id", IDType, resolve = _.value.uuid.string)
+      , Field("value", StringType, resolve = _.value.value)
+      , Field("valueRanked", StringType, resolve = _.value.valueRanked)
     )
   )
 
@@ -72,7 +80,7 @@ object SchemaDefinition {
   val ResultItemOT = ObjectType(
     "ResultItem", fields[Unit, ResultScored](
         Field("name", NameOT, resolve = _.value.result.name)
-      , Field("canonicalName", OptionType(NameOT), resolve = _.value.result.canonicalName)
+      , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.result.canonicalName)
       , Field("synonym", BooleanType, resolve = _.value.result.synonym)
       , Field("taxonId", StringType, resolve = _.value.result.taxonId)
       , Field("classification", ClassificationOT, resolve = _.value.result.classification)

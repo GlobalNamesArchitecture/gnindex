@@ -10,6 +10,12 @@ struct Name {
     2: string value
 }
 
+struct CanonicalName {
+    1: Uuid uuid
+    2: string value
+    3: string valueRanked
+}
+
 enum MatchKind {
     UUIDLookup,
     ExactNameMatchByUUID,

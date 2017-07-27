@@ -15,7 +15,7 @@ import MatchTypeScores._
 import dao.{Tables => T}
 import thrift.matcher.{Service => MatcherService}
 import thrift.nameresolver._
-import thrift.{MatchKind, MatchType, Name}
+import thrift.{MatchKind, MatchType, Name, CanonicalName}
 import util.UuidEnhanced._
 import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
 import slick.jdbc.PostgresProfile.api._
@@ -44,8 +44,9 @@ object NameResolver {
                            matchType: MatchType): ResultScored = {
     val canonicalNameOpt =
       for { canId <- dbResult.nameString.canonicalUuid
-            canName <- dbResult.nameString.canonical }
-        yield Name(uuid = canId, value = canName)
+            canNameValue <- dbResult.nameString.canonical
+            canNameValueRanked <- nameInputParsed.parsed.canonized(true) }
+        yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
 
     val classification = Classification(
       path = dbResult.nameStringIndex.classificationPath,
@@ -212,18 +213,6 @@ class NameResolver private[nameresolver](request: Request,
             )
             RequestResponse(request = nameInputParsed, response = response)
           }
-        }
-      }
-    }
-  }
-          }
-          val response = Response(
-            total = fuzzyMatch.results.size,
-            results = results,
-            suppliedId = nameInputParsed.nameInput.suppliedId,
-            suppliedInput = nameInputParsed.nameInput.value.some
-          )
-          RequestResponse(request = nameInputParsed, response = response)
         }
       }
     }
