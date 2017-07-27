@@ -148,9 +148,11 @@ class NameResolver private[nameresolver](request: Request,
                        .withDefaultValue(Seq())
 
       namesParsed.map { nameParsed =>
-        val databaseMatches =
-          nameUuidMatches(nameParsed.parsed.preprocessorResult.id) ++
-            canonicalUuidMatches(nameParsed.parsed.canonizedUuid().map { _.id })
+        val databaseMatches = {
+          val nums = nameUuidMatches(nameParsed.parsed.preprocessorResult.id)
+          val cums = canonicalUuidMatches(nameParsed.parsed.canonizedUuid().map { _.id })
+          (nums ++ cums).distinct
+        }
 
         val responseResults = databaseMatches.map { case (ns, nsi, ds) =>
           val matchKind =
