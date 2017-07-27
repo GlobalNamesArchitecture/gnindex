@@ -13,10 +13,11 @@ struct NameInput {
 struct Request {
     1: list<NameInput> names
     2: list<i32> dataSourceIds = []
-    3: i32 page = 0
-    4: i32 perPage = nameStringsMaxCount
-    5: bool withSurrogates = false
-    6: bool withVernaculars = false
+    3: list<i32> preferredDataSourceIds = []
+    4: i32 page = 0
+    5: i32 perPage = nameStringsMaxCount
+    6: bool withSurrogates = false
+    7: bool withVernaculars = false
 }
 
 struct AuthorScore {
@@ -64,4 +65,5 @@ struct Response {
     2: optional string suppliedInput
     3: optional string suppliedId
     4: list<ResultScored> results
+    5: list<ResultScored> preferredResults
 }

@@ -96,10 +96,13 @@ object SchemaDefinition {
       , Field("suppliedInput", OptionType(StringType), None, resolve = _.value.suppliedInput)
       , Field("suppliedId", OptionType(StringType), None, resolve = _.value.suppliedId)
       , Field("results", ListType(ResultItemOT), None, resolve = _.value.results)
+      , Field("preferredResults", ListType(ResultItemOT), resolve = _.value.preferredResults)
     )
   )
 
   val DataSourceIdsArg = Argument("dataSourceIds", OptionInputType(ListInputType(IntType)))
+  val PreferredDataSourceIdsArg =
+    Argument("preferredDataSourceIds", OptionInputType(ListInputType(IntType)))
   val NameRequestIOT = InputObjectType[NameInput]("name", List(
       InputField("value", StringType)
     , InputField("suppliedId", OptionInputType(StringType))
@@ -109,8 +112,10 @@ object SchemaDefinition {
   val QueryTypeOT = ObjectType(
     "Query", fields[Repository, Unit](
       Field("nameResolver", ListType(ResponseOT),
-        arguments = List(NamesRequestArg, DataSourceIdsArg),
-        resolve = ctx => ctx.withArgs(NamesRequestArg, DataSourceIdsArg)(ctx.ctx.nameResolver)
+        arguments = List(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg),
+        resolve = ctx =>
+          ctx.withArgs(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg)
+                      (ctx.ctx.nameResolver)
       )
     )
   )

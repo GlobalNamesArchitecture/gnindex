@@ -12,9 +12,11 @@ import com.twitter.bijection.twitter_util.UtilBijections._
 
 class Repository @Inject() (nameResolverClient: NameResolverService.FutureIface) {
   def nameResolver(namesInput: Seq[NameInput],
-                   dataSourceIds: Option[Seq[Int]]): ScalaFuture[Seq[Response]] = {
+                   dataSourceIds: Option[Seq[Int]],
+                   preferredDataSourceIds: Option[Seq[Int]]): ScalaFuture[Seq[Response]] = {
     val req = Request(names = namesInput,
-                      dataSourceIds = dataSourceIds.getOrElse(Seq())
+                      dataSourceIds = dataSourceIds.getOrElse(Seq()),
+                      preferredDataSourceIds = preferredDataSourceIds.getOrElse(Seq())
               )
     nameResolverClient.nameResolve(req).as[ScalaFuture[Seq[Response]]]
   }

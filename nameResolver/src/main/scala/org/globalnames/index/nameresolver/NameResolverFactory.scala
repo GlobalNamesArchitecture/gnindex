@@ -92,6 +92,8 @@ class NameResolver private[nameresolver](request: Request,
     logger.info(s"(Request hash code: ${request.hashCode}) $message")
   }
 
+  private val dataSourceIds: Seq[Int] =
+    (request.preferredDataSourceIds ++ request.dataSourceIds).distinct
   private val takeCount: Int = request.perPage.min(1000).max(0)
   private val dropCount: Int = (request.page * request.perPage).max(0)
   private val namesParsed: Vector[NameInputParsed] =
@@ -123,8 +125,7 @@ class NameResolver private[nameresolver](request: Request,
       nsi <- T.NameStringIndices.filter { nsi => nsi.nameStringId === ns.id }
       ds <- {
         val ds = T.DataSources.filter { ds => ds.id === nsi.dataSourceId }
-        request.dataSourceIds.isEmpty ?
-          ds | ds.filter { ds => ds.id.inSetBind(request.dataSourceIds) }
+        dataSourceIds.isEmpty ? ds | ds.filter { ds => ds.id.inSetBind(dataSourceIds) }
       }
     } yield (ns, nsi, ds)
 
@@ -154,13 +155,15 @@ class NameResolver private[nameresolver](request: Request,
           (nums ++ cums).distinct
         }
 
-        val responseResults = databaseMatches.map { case (ns, nsi, ds) =>
+        def composeResult(ns: T.NameStringsRow,
+                          nsi: T.NameStringIndicesRow,
+                          ds: T.DataSourcesRow) = {
           val matchKind =
             if (ns.id == nameParsed.parsed.preprocessorResult.id) {
               MatchKind.ExactNameMatchByUUID
             } else if (ns.canonicalUuid.isDefined &&
-                       nameParsed.parsed.canonizedUuid().isDefined &&
-                       ns.canonicalUuid.get == nameParsed.parsed.canonizedUuid().get.id) {
+              nameParsed.parsed.canonizedUuid().isDefined &&
+              ns.canonicalUuid.get == nameParsed.parsed.canonizedUuid().get.id) {
               MatchKind.ExactCanonicalNameMatchByUUID
             } else {
               MatchKind.Unknown
@@ -169,8 +172,17 @@ class NameResolver private[nameresolver](request: Request,
           createResult(nameParsed, dbResult, createMatchType(matchKind, editDistance = 0))
         }
 
+        val responseResults = databaseMatches
+          .map { case (ns, nsi, ds) => composeResult(ns, nsi, ds) }
+
+        val preferredResponseResults = databaseMatches
+          .filter { case (_, _, ds) => request.preferredDataSourceIds.contains(ds.id) }
+          .map { case (ns, nsi, ds) => composeResult(ns, nsi, ds) }
+
         val response = Response(
-          total = responseResults.size, results = responseResults,
+          total = responseResults.size,
+          results = responseResults,
+          preferredResults = preferredResponseResults,
           suppliedId = nameParsed.nameInput.suppliedId,
           suppliedInput = nameParsed.nameInput.value.some
         )
@@ -186,7 +198,7 @@ class NameResolver private[nameresolver](request: Request,
     if (scientificNames.isEmpty) {
       ScalaFuture.successful(Seq())
     } else {
-      matcherClient.findMatches(scientificNames, request.dataSourceIds)
+      matcherClient.findMatches(scientificNames, dataSourceIds)
                            .as[ScalaFuture[Seq[thrift.matcher.Response]]].flatMap { fuzzyMatches =>
         val uuids = fuzzyMatches.flatMap { fm => fm.results.map { r => r.nameMatched.uuid: UUID } }
         logInfo("[Fuzzy match] Matcher service response received. " +
@@ -207,9 +219,19 @@ class NameResolver private[nameresolver](request: Request,
                                       createMatchType(result.matchKind, result.distance))
               }
             }
+            val preferredResults = fuzzyMatch.results.flatMap { result =>
+              val canId: UUID = result.nameMatched.uuid
+              nameStringsDBMap(canId.some)
+                .filter { resp => request.preferredDataSourceIds.contains(resp.dataSource.id) }
+                .map { dbRes =>
+                  createResult(nameInputParsed, dbRes,
+                               createMatchType(result.matchKind, result.distance))
+                }
+              }
             val response = Response(
               total = fuzzyMatch.results.size,
               results = results,
+              preferredResults = preferredResults,
               suppliedId = nameInputParsed.nameInput.suppliedId,
               suppliedInput = nameInputParsed.nameInput.value.some
             )
