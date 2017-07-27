@@ -197,7 +197,7 @@ class NameResolver private[nameresolver](request: Request,
           }.groupBy { dbr => dbr.nameString.canonicalUuid }.withDefaultValue(Seq())
 
           fuzzyMatches.map { fuzzyMatch =>
-            val nameInputParsed = namesParsedMap(fuzzyMatch.input.uuid)
+            val nameInputParsed = namesParsedMap(fuzzyMatch.inputUuid)
             val results = fuzzyMatch.results.flatMap { result =>
               val canId: UUID = result.nameMatched.uuid
               nameStringsDBMap(canId.some).map {

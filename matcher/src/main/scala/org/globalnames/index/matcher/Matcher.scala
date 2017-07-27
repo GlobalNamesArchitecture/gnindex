@@ -10,7 +10,7 @@ import thrift.Name
 import javax.inject.{Inject, Singleton}
 
 import parser.ScientificNameParser.{instance => SNP}
-import index.thrift.MatchKind
+import index.thrift.{MatchKind, Uuid}
 import org.apache.commons.lang3.StringUtils
 import util.UuidEnhanced.javaUuid2thriftUuid
 
@@ -40,7 +40,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
         this.copy(namePartialStr = "")
       }
 
-    def nameProvided: Name = Name(uuid = UuidGenerator.generate(name), value = name)
+    def nameProvidedUuid: Uuid = UuidGenerator.generate(name)
 
     def namePartial: Name =
       Name(uuid = UuidGenerator.generate(namePartialStr), value = namePartialStr)
@@ -64,7 +64,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
         canonicalNameSplits.partition { cnp => cnp.size > 0 }
 
       val noFuzzyMatches = noFuzzyMatchesSplits.map { cns =>
-        Response(input = cns.nameProvided, results = Seq())
+        Response(inputUuid = cns.nameProvidedUuid, results = Seq())
       }
 
       val (exactPartialCanonicalMatches, possibleFuzzyCanonicalMatches) =
@@ -83,7 +83,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
           val result = Result(nameMatched = canonicalNameSplit.namePartial,
                               distance = 0,
                               matchKind = matchKind)
-          Response(input = canonicalNameSplit.nameProvided, results = Seq(result))
+          Response(inputUuid = canonicalNameSplit.nameProvidedUuid, results = Seq(result))
         }
 
       logger.info(s"Matcher library call for ${possibleFuzzyCanonicalMatches.size} records")
@@ -109,11 +109,12 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
       val responsesNonEmpty =
         for (fuzzyMatch <- oonucrNonEmpty) yield {
           if (fuzzyMatch.candidates.size > FuzzyMatchLimit) {
-            Response(input = fuzzyMatch.canonicalNameSplit.nameProvided, results = Seq())
+            Response(inputUuid = fuzzyMatch.canonicalNameSplit.nameProvidedUuid, results = Seq())
           } else {
             val results = fuzzyMatch.candidates
               .filter { candidate =>
-                canonicalNames.names(candidate.term).intersect(dataSourceIds).nonEmpty
+                dataSourceIds.isEmpty ||
+                  canonicalNames.names(candidate.term).intersect(dataSourceIds).nonEmpty
               }
               .map { candidate =>
                 val matchKind =
@@ -131,7 +132,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
                   matchKind = matchKind
                 )
               }
-            Response(input = fuzzyMatch.canonicalNameSplit.nameProvided, results = results)
+            Response(inputUuid = fuzzyMatch.canonicalNameSplit.nameProvidedUuid, results = results)
           }
         }
 
@@ -147,8 +148,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
       np.canonized().isDefined
     }
     val responsesRest = namesParsedRest.map { np =>
-      Response(input = Name(uuid = np.preprocessorResult.id,
-               value = np.preprocessorResult.verbatim), results = Seq())
+      Response(inputUuid = np.preprocessorResult.id, results = Seq())
     }
     val namesParsedSuccessfullySplits = namesParsedSuccessfully.map { np =>
       CanonicalNameSplit(np.preprocessorResult.verbatim)

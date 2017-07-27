@@ -10,12 +10,12 @@ struct Result {
 }
 
 struct Response {
-    1: data.Name input
+    1: data.Uuid inputUuid
     2: list<Result> results
 }
 
 service Service {
-    list<Response> findMatches(1: list<string> names, list<i32> dataSourceIds) throws (
+    list<Response> findMatches(1: list<string> canonicalNames, list<i32> dataSourceIds) throws (
         1: finatra_thrift_exceptions.ClientError clientError,
         2: finatra_thrift_exceptions.ServerError serverError
     )
