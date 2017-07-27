@@ -242,6 +242,14 @@ class NameResolver private[nameresolver](request: Request,
     }
   }
 
+  private
+  def rearrangeResults(responses: Seq[Response]): Seq[Response] = {
+    responses.map { response =>
+      val results = response.results.sortBy { _.score.value.getOrElse(0.0) }
+      response.copy(results = results)
+    }
+  }
+
   def resolveExact(): ScalaFuture[Seq[Response]] = {
     logInfo(s"[Resolution] Resolution started for ${request.names.size} names")
     queryExactMatchesByUuid().flatMap { names =>
@@ -259,7 +267,8 @@ class NameResolver private[nameresolver](request: Request,
       fuzzyMatchesFut.map { fuzzyMatches =>
         logInfo(s"[Resolution] Fuzzy matches count: ${fuzzyMatches.size}")
         val reqResps = exactMatchesByUuid ++ fuzzyMatches ++ unmatchedNotParsed
-        reqResps.map { _.response }
+        val responses = reqResps.map { _.response }
+        rearrangeResults(responses)
       }
     }
   }
