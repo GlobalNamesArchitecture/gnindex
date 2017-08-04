@@ -45,6 +45,13 @@ struct DataSource {
     2: string title
 }
 
+struct AcceptedName {
+    1: data.Name name
+    2: optional data.CanonicalName canonicalName
+    3: string taxonId
+    4: i32 dataSourceId
+}
+
 struct Result {
     1: data.Name name
     2: optional data.CanonicalName canonicalName
@@ -53,6 +60,8 @@ struct Result {
     5: string taxonId
     6: Classification classification
     7: DataSource dataSource
+    8: optional string acceptedTaxonId
+    9: optional AcceptedName acceptedName
 }
 
 struct ResultScored {

@@ -77,6 +77,15 @@ object SchemaDefinition {
     )
   )
 
+  val AcceptedNameOT = ObjectType(
+    "AcceptedName", fields[Unit, AcceptedName](
+        Field("name", NameOT, resolve = _.value.name)
+      , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
+      , Field("taxonId", StringType, resolve = _.value.taxonId)
+      , Field("dataSourceId", IntType, resolve = _.value.dataSourceId)
+    )
+  )
+
   val ResultItemOT = ObjectType(
     "ResultItem", fields[Unit, ResultScored](
         Field("name", NameOT, resolve = _.value.result.name)
@@ -87,6 +96,7 @@ object SchemaDefinition {
       , Field("matchType", MatchTypeOT, resolve = _.value.result.matchType)
       , Field("score", ScoreOT, resolve = _.value.score)
       , Field("dataSource", DataSourceOT, resolve = _.value.result.dataSource)
+      , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.result.acceptedName)
     )
   )
 
