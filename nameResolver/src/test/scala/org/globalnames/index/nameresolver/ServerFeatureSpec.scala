@@ -12,7 +12,7 @@ import com.twitter.util.Future
 import thrift.nameresolver.{NameInput, Service => NameResolverService, Request}
 import matcher.{MatcherModule, Server => MatcherServer}
 
-class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
+class ServerFeatureSpec extends SpecConfig with FeatureTestMixin {
 
   val canonicalNamesFilePath: Path = {
     val namesFileContent: String = s"""
