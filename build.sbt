@@ -1,6 +1,7 @@
 import Dependencies._
 import Settings._
 import com.github.tototoshi.sbt.slick.CodegenPlugin
+import scoverage.ScoverageKeys._
 
 lazy val common = (project in file("common"))
     .settings(noPublishingSettings: _*)
@@ -34,4 +35,7 @@ lazy val api = (project in file("api"))
 lazy val `gnindex-root` = project.in(file("."))
     .aggregate(common, nameResolver, matcher, api)
     .settings(noPublishingSettings: _*)
-    .settings(crossScalaVersions := Seq("2.11.8"))
+    .settings(
+      crossScalaVersions := Seq("2.11.8"),
+      coverageEnabled := true
+    )
