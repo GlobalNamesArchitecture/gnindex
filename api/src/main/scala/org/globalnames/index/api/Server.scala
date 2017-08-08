@@ -11,7 +11,7 @@ class Server extends HttpServer {
   override val modules = Seq(ApiModule)
 
   override def configureHttp(router: HttpRouter): Unit = {
-    router
+    val _ = router
       .filter[LoggingMDCFilter[Request, Response]]
       .filter[TraceIdMDCFilter[Request, Response]]
       .filter[CommonFilters]

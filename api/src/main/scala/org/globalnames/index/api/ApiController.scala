@@ -20,9 +20,9 @@ import sangria.validation.QueryValidator
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
-case class GraphqlRequest(query: String,
-                          variables: Option[JsonNode],
-                          operation: Option[JsonNode]) {
+final case class GraphqlRequest(query: String,
+                                variables: Option[JsonNode],
+                                operation: Option[JsonNode]) {
   val variablesJson: JValue =
     variables.map { fromJsonNode }.getOrElse(JObject())
 
@@ -32,11 +32,14 @@ case class GraphqlRequest(query: String,
 
 @Singleton
 class ApiController @Inject()(repository: Repository) extends Controller {
-  private def errorsResponse(errorMessages: Vector[String]): JValue =
+  private def errorsResponse(errorMessages: Vector[String]): JValue = {
+    val resultsFieldName = SchemaDefinition.ResponseOT.fieldsByName("results")
+                                           .headOption.map { _.name }.getOrElse("results")
     JObject(
-      SchemaDefinition.ResponseOT.fieldsByName("results").head.name -> JArray(List()),
+      resultsFieldName -> JArray(List()),
       "meta" -> JObject("errors" -> JArray(errorMessages.map { JString(_) }.toList))
     )
+  }
 
   get("/api/version") { _: Request =>
     response.ok.json(org.globalnames.index.BuildInfo.version)

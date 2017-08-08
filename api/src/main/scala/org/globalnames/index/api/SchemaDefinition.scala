@@ -9,15 +9,20 @@ import thrift.nameresolver._
 import util.UuidEnhanced.ThriftUuidEnhanced
 
 object SchemaDefinition {
-  implicit val nameInputFromInput = new FromInput[NameInput] {
+
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf", "" +
+                          "org.wartremover.warts.Throw"))
+  private implicit val nameInputFromInput: FromInput[NameInput] = new FromInput[NameInput] {
     val marshaller: CoercedScalaResultMarshaller = CoercedScalaResultMarshaller.default
 
-    def fromResult(node: marshaller.Node): NameInput = {
-      val nodeMap = node.asInstanceOf[Map[String, Any]]
-      NameInput(
-        value = nodeMap("value").asInstanceOf[String],
-        suppliedId = nodeMap.get("suppliedId").flatMap { _.asInstanceOf[Option[String]] }
-      )
+    def fromResult(node: marshaller.Node): NameInput = node match {
+      case nodeMap: Map[String, Any] @unchecked =>
+        NameInput(
+          value = nodeMap("value").asInstanceOf[String],
+          suppliedId = nodeMap.get("suppliedId").flatMap { _.asInstanceOf[Option[String]] }
+        )
+      case _ =>
+        throw sangria.schema.SchemaMaterializationException(s"$node has inappropriate type")
     }
   }
 
