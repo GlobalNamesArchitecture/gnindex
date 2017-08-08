@@ -9,6 +9,7 @@ import slick.codegen.SourceCodeGenerator
 import slick.{ model => m }
 import com.github.tototoshi.sbt.slick.CodegenPlugin.autoImport._
 import spray.revolver.RevolverPlugin.autoImport._
+import wartremover.WartRemover.autoImport._
 
 object Settings {
 
@@ -65,6 +66,35 @@ object Settings {
     javaOptions ++= Seq(
       "-Dlog.service.output=/dev/stderr",
       "-Dlog.access.output=/dev/stderr")
+  )
+
+  val wartremoverSettings = Seq(
+    wartremoverWarnings in (Compile, compile) := Seq(
+      Wart.AsInstanceOf,
+      Wart.EitherProjectionPartial,
+      Wart.IsInstanceOf,
+      Wart.TraversableOps,
+      Wart.NonUnitStatements,
+      Wart.Null,
+      Wart.OptionPartial,
+      Wart.Return,
+      Wart.StringPlusAny,
+      Wart.Throw,
+      Wart.TryPartial,
+      Wart.Var,
+      Wart.FinalCaseClass,
+      Wart.ExplicitImplicitTypes
+    ),
+
+    wartremoverWarnings in (Test, compile) := Seq(
+      Wart.EitherProjectionPartial,
+      Wart.TraversableOps,
+      Wart.Return,
+      Wart.StringPlusAny,
+      Wart.TryPartial,
+      Wart.FinalCaseClass,
+      Wart.ExplicitImplicitTypes
+    )
   )
 
   val publishingSettings = Seq(

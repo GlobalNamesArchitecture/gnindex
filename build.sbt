@@ -13,6 +13,7 @@ lazy val matcher = (project in file("matcher"))
     .dependsOn(common)
     .settings(publishingSettings: _*)
     .settings(Settings.settings: _*)
+    .settings(Settings.wartremoverSettings: _*)
     .settings(Settings.matcherSettings: _*)
     .settings(libraryDependencies ++= matcherDependencies)
 
@@ -21,14 +22,19 @@ lazy val nameResolver = (project in file("nameResolver"))
     .dependsOn(common, matcher)
     .settings(publishingSettings: _*)
     .settings(Settings.settings: _*)
+    .settings(Settings.wartremoverSettings: _*)
     .settings(Settings.nameResolverSettings: _*)
-    .settings(libraryDependencies ++= nameResolverDependencies)
+    .settings(
+      libraryDependencies ++= nameResolverDependencies,
+      wartremoverExcluded += (scalaSource in Compile).value / "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala"
+    )
 
 lazy val api = (project in file("api"))
     .enablePlugins(BuildInfoPlugin)
     .dependsOn(common, nameResolver, matcher)
     .settings(publishingSettings: _*)
     .settings(Settings.settings: _*)
+    .settings(Settings.wartremoverSettings: _*)
     .settings(Settings.apiSettings: _*)
     .settings(libraryDependencies ++= apiDependencies)
 
