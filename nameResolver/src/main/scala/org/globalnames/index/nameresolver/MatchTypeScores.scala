@@ -17,6 +17,7 @@ object MatchTypeScores {
     case MK.FuzzyPartialMatch => 8
     case MK.ExactMatchPartialByGenus => 9
     case MK.Unknown => 10
+    case _: MK.EnumUnknownMatchKind => 10
   }
 
   def createMatchType(matchKind: MK, editDistance: Int): MatchType = {

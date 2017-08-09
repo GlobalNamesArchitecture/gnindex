@@ -1,6 +1,6 @@
 // Slick code generation
 // https://github.com/tototoshi/sbt-slick-codegen
-lazy val pluginCrossBuild = uri("https://github.com/tototoshi/sbt-slick-codegen.git#c30c3dea84399402dfeef44d8cff1d33bbcc0984")
+lazy val pluginCrossBuild = uri("https://github.com/tototoshi/sbt-slick-codegen.git#16813c65f59b2b2ce317eebbecc833d344937130")
 
 lazy val root = (project in file(".")).dependsOn(pluginCrossBuild)
 
