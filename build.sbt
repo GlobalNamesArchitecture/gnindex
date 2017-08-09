@@ -26,7 +26,10 @@ lazy val nameResolver = (project in file("nameResolver"))
     .settings(Settings.nameResolverSettings: _*)
     .settings(
       libraryDependencies ++= nameResolverDependencies,
-      wartremoverExcluded += (scalaSource in Compile).value / "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala"
+      wartremoverExcluded ++= Seq(
+        (scalaSource in Compile).value / "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala",
+        (sourceManaged in Compile).value / "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala"
+      )
     )
 
 lazy val api = (project in file("api"))

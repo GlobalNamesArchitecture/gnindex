@@ -17,7 +17,7 @@ import util.UuidEnhanced.javaUuid2thriftUuid
 import scalaz.syntax.std.boolean._
 
 @Singleton
-case class CanonicalNames(names: Map[String, Set[Int]])
+final case class CanonicalNames(names: Map[String, Set[Int]])
 
 @Singleton
 class Matcher @Inject()(matcherLib: matcherlib.Matcher,

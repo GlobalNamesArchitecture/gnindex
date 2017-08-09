@@ -32,13 +32,14 @@ object NameResolver {
     Query[(T.NameStrings, T.NameStringIndices, T.DataSources),
           (T.NameStringsRow, T.NameStringIndicesRow, T.DataSourcesRow), Seq]
 
-  case class NameInputParsed(nameInput: NameInput, parsed: SNResult)
-  case class RequestResponse(request: NameInputParsed, response: Response)
-  case class DBResult(nameString: T.NameStringsRow,
-                      nameStringIndex: T.NameStringIndicesRow,
-                      dataSource: T.DataSourcesRow,
-                      acceptedNameOpt: Option[(T.NameStringsRow, T.NameStringIndicesRow)],
-                      vernaculars: Seq[(T.VernacularStringIndicesRow, T.VernacularStringsRow)])
+  final case class NameInputParsed(nameInput: NameInput, parsed: SNResult)
+  final case class RequestResponse(request: NameInputParsed, response: Response)
+  final case class DBResult(
+    nameString: T.NameStringsRow,
+    nameStringIndex: T.NameStringIndicesRow,
+    dataSource: T.DataSourcesRow,
+    acceptedNameOpt: Option[(T.NameStringsRow, T.NameStringIndicesRow)],
+    vernaculars: Seq[(T.VernacularStringIndicesRow, T.VernacularStringsRow)])
 
   private def createResult(nameInputParsed: NameInputParsed,
                            dbResult: DBResult,
@@ -59,9 +60,9 @@ object NameResolver {
       val classificationPathIdsSeq =
         dbResult.nameStringIndex.classificationPathIds.map { _.fastSplit('|') }.getOrElse(List())
       if (classificationPathIdsSeq.nonEmpty) {
-        dbResult.nameStringIndex.taxonId != classificationPathIdsSeq.last
+        dbResult.nameStringIndex.taxonId.some != classificationPathIdsSeq.lastOption
       } else if (dbResult.nameStringIndex.acceptedTaxonId.isDefined) {
-        dbResult.nameStringIndex.taxonId != dbResult.nameStringIndex.acceptedTaxonId.get
+        dbResult.nameStringIndex.taxonId.some != dbResult.nameStringIndex.acceptedTaxonId
       } else true
     }
 
@@ -170,7 +171,7 @@ class NameResolver private[nameresolver](request: Request,
         databaseResults.groupBy { case (ns, _, _, _, _) => ns.id }.withDefaultValue(Seq())
       val canonicalUuidMatches =
         databaseResults.groupBy { case (ns, _, _, _, _) => ns.canonicalUuid }
-                       .filterKeys { key => key.isDefined && key.get != UuidGenerator.EmptyUuid }
+                       .filterKeys { key => key.isDefined && key != UuidGenerator.EmptyUuid.some }
                        .withDefaultValue(Seq())
 
       namesParsed.map { nameParsed =>
@@ -188,9 +189,9 @@ class NameResolver private[nameresolver](request: Request,
           val matchKind =
             if (ns.id == nameParsed.parsed.preprocessorResult.id) {
               MatchKind.ExactNameMatchByUUID
-            } else if (ns.canonicalUuid.isDefined &&
-              nameParsed.parsed.canonizedUuid().isDefined &&
-              ns.canonicalUuid.get == nameParsed.parsed.canonizedUuid().get.id) {
+            } else if (
+              (for (nsCan <- ns.canonicalUuid; npCan <- nameParsed.parsed.canonizedUuid())
+                yield nsCan == npCan.id).getOrElse(false)) {
               MatchKind.ExactCanonicalNameMatchByUUID
             } else {
               MatchKind.Unknown
