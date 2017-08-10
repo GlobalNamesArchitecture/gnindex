@@ -10,7 +10,7 @@ import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
 import thrift.matcher.{Service => MatcherService}
 
-class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
+class ServerFeatureSpec extends SpecConfig with FeatureTestMixin {
 
   val canonicalNamesFilePath: Path = {
     def namesFileContent: String =
@@ -58,7 +58,7 @@ class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
   )
 
   val client: MatcherService[Future] =
-    server.thriftClient[MatcherService[Future]](clientId = "client123")
+    server.thriftClient[MatcherService[Future]](clientId = "matcherClient")
 
   "server#startup" in {
     server.assertHealthy()
@@ -68,6 +68,7 @@ class ServerFeatureTest extends SpecConfig with FeatureTestMixin {
     val word = "Abacetus cyclomuX"
     val matches = client.findMatches(Seq(word)).value
     matches.size shouldBe 1
-    matches.head.results.map { _.nameMatched.value } should contain only "Abacetus cyclomus"
+    matches.headOption.value.results.map { _.nameMatched.value } should
+      contain only "Abacetus cyclomus"
   }
 }

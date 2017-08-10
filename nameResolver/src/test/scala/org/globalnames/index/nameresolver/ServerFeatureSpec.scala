@@ -69,7 +69,7 @@ class ServerFeatureSpec extends SpecConfig with FeatureTestMixin {
   )
 
   val client: NameResolverService[Future] =
-    server.thriftClient[NameResolverService[Future]](clientId = "client123")
+    server.thriftClient[NameResolverService[Future]](clientId = "nameResolverClient")
 
   "server#startup" in {
     server.assertHealthy()
