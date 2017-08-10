@@ -1,0 +1,32 @@
+require 'active_record'
+require 'yaml'
+require 'rake'
+require 'sinatra/activerecord'
+require 'sinatra/activerecord/rake'
+
+include ActiveRecord::Tasks
+
+namespace :db do
+  desc 'create all the databases'
+  namespace :create do
+    task(:all) do
+      DatabaseTasks.create_all
+    end
+  end
+
+  desc 'Make migration with output'
+  task(:migrate_with_sql => :environment) do
+    ActiveRecord::Base.logger = Logger.new(STDOUT)
+    Rake::Task['db:migrate'].invoke
+  end
+
+  desc 'drop all the databases'
+  namespace :drop do
+    task(:all) do
+      DatabaseTasks.drop_all
+    end
+  end
+
+  desc 'redo last migration'
+  task redo: %w(db:rollback db:migrate)
+end
