@@ -12,7 +12,7 @@ class Server extends ThriftServer {
   override val modules = Seq(MatcherModule)
 
   override def configureThrift(router: ThriftRouter): Unit = {
-    router
+    val _ = router
       .filter[LoggingMDCFilter]
       .filter[TraceIdMDCFilter]
       .filter[ThriftMDCFilter]
