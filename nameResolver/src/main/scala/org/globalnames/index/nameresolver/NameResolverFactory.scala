@@ -84,17 +84,18 @@ object NameResolver {
       )
     }
 
-    val result =
-      Result(name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
-             canonicalName = canonicalNameOpt,
-             synonym = synonym,
-             taxonId = dbResult.nameStringIndex.taxonId,
-             matchType = matchType,
-             classification = classification,
-             dataSource = dataSource,
-             acceptedTaxonId = dbResult.nameStringIndex.acceptedTaxonId,
-             acceptedName = acceptedNameResult
-      )
+    val result = Result(
+      name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
+      canonicalName = canonicalNameOpt,
+      synonym = synonym,
+      taxonId = dbResult.nameStringIndex.taxonId,
+      matchType = matchType,
+      classification = classification,
+      dataSource = dataSource,
+      acceptedTaxonId = dbResult.nameStringIndex.acceptedTaxonId,
+      acceptedName = acceptedNameResult,
+      updatedAt = dbResult.dataSource.updatedAt.map { _.toString }
+    )
     val score = ResultScores.compute(nameInputParsed.parsed, result)
     ResultScored(result, score)
   }

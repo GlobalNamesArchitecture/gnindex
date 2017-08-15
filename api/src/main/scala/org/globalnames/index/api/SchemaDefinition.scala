@@ -109,6 +109,7 @@ object SchemaDefinition {
       , Field("score", ScoreOT, resolve = _.value.score)
       , Field("dataSource", DataSourceOT, resolve = _.value.result.dataSource)
       , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.result.acceptedName)
+      , Field("updatedAt", OptionType(StringType), resolve = _.value.result.updatedAt)
     )
   )
 

@@ -5,6 +5,8 @@ struct Uuid {
   2: i64 mostSignificantBits
 }
 
+typedef string Timestamp
+
 struct Name {
     1: Uuid uuid
     2: string value
@@ -82,6 +84,7 @@ struct Result {
     7: DataSource dataSource
     8: optional string acceptedTaxonId
     9: optional AcceptedName acceptedName
+    10: optional Timestamp updatedAt
 }
 
 struct ResultScored {
