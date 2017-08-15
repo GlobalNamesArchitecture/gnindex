@@ -121,33 +121,54 @@
 
 {
   nameResolver(names: [{value: "Homo sapiens", suppliedId: "foo"}],
-    					 dataSourceIds: [1, 2, 3]) {
-    total
-    suppliedId
-    suppliedInput
-    results {
-      name {
-        id
-        name
+    					 dataSourceIds: [1, 2, 3],
+    					 preferredDataSourceIds: [3, 4]) {
+    responses {
+      total
+      suppliedId
+      suppliedInput
+      results {
+        name {
+          id
+          value
+        }
+        canonicalName {
+          id
+          value
+          valueRanked
+        }
+        dataSource {
+          id
+          title
+        }
+        acceptedName {
+          name {
+            value
+          }
+          canonicalName {
+            value
+          }
+          taxonId
+          dataSourceId
+        }
+        synonym
+        matchType {
+          kind
+          score
+          editDistance
+        }
+        taxonId
+        score {
+          value
+          parsingQuality
+        }
       }
-      canonicalName {
-        id
-        name
-      }
+    }
+    context {
+      clade
       dataSource {
         id
         title
-      }
-      synonym
-      matchType {
-        kind
-        score
-        editDistance
-      }
-      taxonId
-      score {
-        value
-        parsingQuality
       }
     }
   }
