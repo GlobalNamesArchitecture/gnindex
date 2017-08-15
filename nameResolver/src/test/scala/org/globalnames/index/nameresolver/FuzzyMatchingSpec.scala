@@ -31,7 +31,7 @@ class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
 
   private def nameTest(request: String, expectedResults: ExpectedResult*): Unit = {
     val req = Request(names = Seq(NameInput(request)), dataSourceIds = Seq(1))
-    val responses = client.nameResolve(req).value
+    val responses = client.nameResolve(req).value.items
 
     responses.length shouldBe 1
     val response = responses.headOption.value

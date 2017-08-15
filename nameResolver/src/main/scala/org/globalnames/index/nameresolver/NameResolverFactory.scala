@@ -277,6 +277,18 @@ class NameResolver private[nameresolver](request: Request,
   }
 
   private
+  def computeContext(responses: Seq[Response]): Responses = {
+    val context =
+      responses.flatMap { response => response.results }
+               .groupBy { _.result.dataSource }
+               .mapValues { results =>
+                 ContextFinder.find(results.flatMap { _.result.classification.path })
+               }
+               .toSeq.map { case (ds, path) => Context(ds, path) }
+    Responses(items = responses, context = context)
+  }
+
+  private
   def rearrangeResults(responses: Seq[Response]): Seq[Response] = {
     responses.map { response =>
       val results = response.results.sortBy { _.score.value.getOrElse(0.0) }
@@ -284,7 +296,7 @@ class NameResolver private[nameresolver](request: Request,
     }
   }
 
-  def resolveExact(): ScalaFuture[Seq[Response]] = {
+  def resolveExact(): ScalaFuture[Responses] = {
     logInfo(s"[Resolution] Resolution started for ${request.names.size} names")
     queryExactMatchesByUuid().flatMap { names =>
       val (exactMatchesByUuid, exactUnmatchesByUuid) =
@@ -302,7 +314,7 @@ class NameResolver private[nameresolver](request: Request,
         logInfo(s"[Resolution] Fuzzy matches count: ${fuzzyMatches.size}")
         val reqResps = exactMatchesByUuid ++ fuzzyMatches ++ unmatchedNotParsed
         val responses = reqResps.map { _.response }
-        rearrangeResults(responses)
+        (rearrangeResults _ andThen computeContext)(responses)
       }
     }
   }
@@ -312,9 +324,9 @@ class NameResolver private[nameresolver](request: Request,
 class NameResolverFactory @Inject()(database: Database,
                                     matcherClient: MatcherService.FutureIface) {
 
-  def resolveExact(request: Request): TwitterFuture[Seq[Response]] = {
+  def resolveExact(request: Request): TwitterFuture[Responses] = {
     val nameRequest = new NameResolver(request, database, matcherClient)
-    nameRequest.resolveExact().as[TwitterFuture[Seq[Response]]]
+    nameRequest.resolveExact().as[TwitterFuture[Responses]]
   }
 
 }

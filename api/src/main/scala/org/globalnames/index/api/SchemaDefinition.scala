@@ -5,12 +5,12 @@ package api
 import sangria.schema._
 import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
 import thrift.{CanonicalName, MatchType, Name}
-import thrift.nameresolver._
+import thrift.nameresolver.{Context => ResponsesContext, _}
 import util.UuidEnhanced.ThriftUuidEnhanced
 
 object SchemaDefinition {
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf", "" +
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf",
                           "org.wartremover.warts.Throw"))
   private implicit val nameInputFromInput: FromInput[NameInput] = new FromInput[NameInput] {
     val marshaller: CoercedScalaResultMarshaller = CoercedScalaResultMarshaller.default
@@ -91,6 +91,13 @@ object SchemaDefinition {
     )
   )
 
+  val ContextOT = ObjectType(
+    "Context", fields[Unit, ResponsesContext](
+        Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
+      , Field("clade", StringType, resolve = _.value.clade)
+    )
+  )
+
   val ResultItemOT = ObjectType(
     "ResultItem", fields[Unit, ResultScored](
         Field("name", NameOT, resolve = _.value.result.name)
@@ -115,6 +122,13 @@ object SchemaDefinition {
     )
   )
 
+  val ResponsesOT = ObjectType(
+    "Responses", fields[Unit, Responses](
+        Field("responses", ListType(ResponseOT), resolve = _.value.items)
+      , Field("context", ListType(ContextOT), resolve = _.value.context)
+    )
+  )
+
   val DataSourceIdsArg = Argument("dataSourceIds", OptionInputType(ListInputType(IntType)))
   val PreferredDataSourceIdsArg =
     Argument("preferredDataSourceIds", OptionInputType(ListInputType(IntType)))
@@ -126,7 +140,7 @@ object SchemaDefinition {
 
   val QueryTypeOT = ObjectType(
     "Query", fields[Repository, Unit](
-      Field("nameResolver", ListType(ResponseOT),
+      Field("nameResolver", ResponsesOT,
         arguments = List(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg),
         resolve = ctx =>
           ctx.withArgs(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg)

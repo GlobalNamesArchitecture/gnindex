@@ -30,7 +30,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
     "match 'Homo sapiens Linnaeus, 1758' exactly by name UUID" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId))).value
+        dataSourceIds = Seq(dataSourceId))).value.items
       response should have size 1
       val results = response.headOption.value.results
       results should have size 1
@@ -44,7 +44,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
     "match 'Homo sapiens XXX, 1999' exactly by canonical UUID" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens XXX, 1999")),
-        dataSourceIds = Seq(dataSourceId))).value
+        dataSourceIds = Seq(dataSourceId))).value.items
       response should have size 1
       val results = response.headOption.value.results
       results should have size 1
@@ -58,14 +58,14 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
     "preserve suppliedInput" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId))).value
+        dataSourceIds = Seq(dataSourceId))).value.items
       response.headOption.value.suppliedInput.value shouldBe "Homo sapiens Linnaeus, 1758"
     }
 
     "not have suppliedId if not given" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId))).value
+        dataSourceIds = Seq(dataSourceId))).value.items
       response.headOption.value.suppliedId shouldBe None
     }
 
@@ -73,7 +73,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
       val suppliedId = "abc"
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758", suppliedId = suppliedId.some)),
-        dataSourceIds = Seq(dataSourceId))).value
+        dataSourceIds = Seq(dataSourceId))).value.items
       response.headOption.value.suppliedId.value shouldBe suppliedId
     }
 
@@ -85,7 +85,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
         NameInput("Homo sapiens"),
         NameInput("Bryum capillare")
       ), dataSourceIds = inputDataSourceIds)
-      val response = client.nameResolve(request).value
+      val response = client.nameResolve(request).value.items
       val dataSourceIdsResponse =
         response.flatMap { resp => resp.results.map { res => res.result.dataSource.id }}
       dataSourceIdsResponse should contain only (1, 3)
@@ -99,7 +99,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
           names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
           dataSourceIds = inputDataSourceIds,
           preferredDataSourceIds = preferredDataSourceIds)
-        val response = client.nameResolve(request).value.headOption.value
+        val response = client.nameResolve(request).value.items.headOption.value
 
         val dataSourceIdsResponse = response.results.map { _.result.dataSource.id }
         val preferredDataSourceIdsResponse = response.preferredResults.map { _.result.dataSource.id}
@@ -115,7 +115,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
         val request = Request(
           names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
           preferredDataSourceIds = preferredDataSourceIds)
-        val response = client.nameResolve(request).value.headOption.value
+        val response = client.nameResolve(request).value.items.headOption.value
 
         val dataSourceIdsResponse = response.results.map { _.result.dataSource.id }
         val preferredDataSourceIdsResponse = response.preferredResults.map { _.result.dataSource.id}

@@ -52,6 +52,11 @@ struct AcceptedName {
     4: i32 dataSourceId
 }
 
+struct Context {
+    1: DataSource dataSource
+    2: string clade
+}
+
 struct Result {
     1: data.Name name
     2: optional data.CanonicalName canonicalName
@@ -75,4 +80,9 @@ struct Response {
     3: optional string suppliedId
     4: list<ResultScored> results
     5: list<ResultScored> preferredResults
+}
+
+struct Responses {
+    1: list<Response> items
+    2: list<Context> context
 }
