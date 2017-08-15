@@ -24,13 +24,16 @@ lazy val nameResolver = (project in file("nameResolver"))
     .settings(Settings.settings: _*)
     .settings(Settings.wartremoverSettings: _*)
     .settings(Settings.nameResolverSettings: _*)
-    .settings(
-      libraryDependencies ++= nameResolverDependencies,
-      wartremoverExcluded ++= Seq(
-        (scalaSource in Compile).value / "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala",
-        (sourceManaged in Compile).value / "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala"
-      )
-    )
+    .settings(libraryDependencies ++= nameResolverDependencies)
+
+lazy val nameFilter = (project in file("nameFilter"))
+    .enablePlugins(CodegenPlugin)
+    .dependsOn(common, matcher)
+    .settings(publishingSettings: _*)
+    .settings(Settings.settings: _*)
+    .settings(Settings.wartremoverSettings: _*)
+    .settings(Settings.nameFilterSettings: _*)
+    .settings(libraryDependencies ++= nameResolverDependencies)
 
 lazy val api = (project in file("api"))
     .enablePlugins(BuildInfoPlugin)

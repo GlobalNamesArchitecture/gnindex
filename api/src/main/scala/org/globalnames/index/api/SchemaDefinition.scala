@@ -4,8 +4,8 @@ package api
 
 import sangria.schema._
 import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
-import thrift.{CanonicalName, MatchType, Name}
-import thrift.nameresolver.{Context => ResponsesContext, _}
+import thrift.{Context => ResponsesContext, _}
+import thrift.nameresolver._
 import util.UuidEnhanced.ThriftUuidEnhanced
 
 object SchemaDefinition {
@@ -137,6 +137,7 @@ object SchemaDefinition {
     , InputField("suppliedId", OptionInputType(StringType))
   ))
   val NamesRequestArg = Argument("names", ListInputType(NameRequestIOT))
+  val SearchTermArg = Argument("searchTerm", StringType)
 
   val QueryTypeOT = ObjectType(
     "Query", fields[Repository, Unit](
@@ -145,6 +146,10 @@ object SchemaDefinition {
         resolve = ctx =>
           ctx.withArgs(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg)
                       (ctx.ctx.nameResolver)
+      ),
+      Field("nameStrings", ListType(ResultItemOT),
+        arguments = List(SearchTermArg),
+        resolve = ctx => ctx.withArgs(SearchTermArg)(ctx.ctx.nameStrings)
       )
     )
   )

@@ -1,6 +1,6 @@
 package org.globalnames
 package index
-package nameresolver
+package namefilter
 
 import org.apache.commons.lang3.StringUtils
 import thrift._
@@ -64,7 +64,7 @@ object ResultScores {
 
   def compute(scientificName: SNResult, result: Result): Score = {
     val authorshipInput = scientificName.authorshipNames
-                                        .map { asn => Author(asn.mkString(" ")) }
+      .map { asn => Author(asn.mkString(" ")) }
     val yearInput = for (yr <- scientificName.yearDelimited; y <- Try(yr.toInt).toOption) yield y
 
     val resultParsedString = SNP.fromString(result.name.value)
@@ -81,10 +81,10 @@ object ResultScores {
     val nameType = result.canonicalName.map { can => StringUtils.countMatches(can.value, " ") + 1 }
     val score =
       Score(nameType = nameType,
-            authorScore = authorScore,
-            parsingQuality = resultParsedString.scientificName.quality,
-            value = scoreMsg.rightMap { x => sigmoid(x) }.toOption,
-            message = scoreMsg.swap.toOption)
+        authorScore = authorScore,
+        parsingQuality = resultParsedString.scientificName.quality,
+        value = scoreMsg.rightMap { x => sigmoid(x) }.toOption,
+        message = scoreMsg.swap.toOption)
     score
   }
 }

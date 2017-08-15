@@ -6,7 +6,8 @@ import com.google.inject.Stage
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import thrift.nameresolver.{Context, DataSource, NameInput, Request, Service => NameResolverService}
+import thrift.{Context, DataSource}
+import thrift.nameresolver.{NameInput, Request, Service => NameResolverService}
 
 import scala.util.Properties
 

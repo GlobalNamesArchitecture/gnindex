@@ -190,7 +190,51 @@ object Settings {
     },
     sourceGenerators in Compile += slickCodegen.taskValue,
 
-    Revolver.enableDebugging(port = 5006, suspend = false)
+    Revolver.enableDebugging(port = 5006, suspend = false),
+
+    wartremoverExcluded ++= Seq(
+      (scalaSource in Compile).value / "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala",
+      (sourceManaged in Compile).value / "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala"
+    )
+  )
+
+  /////////////////////////
+  // NameFilter settings //
+  /////////////////////////
+  lazy val nameFilterSettings = Seq(
+    assemblyJarName in assembly := "gnnamefilter-" + version.value + ".jar",
+
+    slickCodegenDatabaseUrl := databaseUrl,
+    slickCodegenDatabaseUser := databaseUser,
+    slickCodegenDatabasePassword := databasePassword,
+    slickCodegenDriver := slick.driver.PostgresDriver,
+    slickCodegenJdbcDriver := "org.postgresql.Driver",
+    slickCodegenOutputPackage := "org.globalnames.index.namefilter.dao",
+    slickCodegenExcludedTables := Seq("schema_version"),
+    slickCodegenCodeGenerator := { (model:  m.Model) =>
+      new SourceCodeGenerator(model) {
+        override def code =
+          s"""import com.github.tototoshi.slick.PostgresJodaSupport._
+             |import org.joda.time.DateTime
+             |${super.code}""".stripMargin
+        override def Table = new Table(_) {
+          override def Column = new Column(_) {
+            override def rawType = model.tpe match {
+              case "java.sql.Timestamp" => "DateTime" // kill j.s.Timestamp
+              case _ => super.rawType
+            }
+          }
+        }
+      }
+    },
+    sourceGenerators in Compile += slickCodegen.taskValue,
+
+    Revolver.enableDebugging(port = 5009, suspend = false),
+
+    wartremoverExcluded ++= Seq(
+      (scalaSource in Compile).value / "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala",
+      (sourceManaged in Compile).value / "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala"
+    )
   )
 
   //////////////////////
@@ -198,7 +242,8 @@ object Settings {
   //////////////////////
   lazy val matcherSettings = Seq(
     assemblyJarName in assembly := "gnmatcher-" + version.value + ".jar",
-    Revolver.enableDebugging(port = 5008, suspend = false)
+    Revolver.enableDebugging(port = 5008, suspend = false),
+    javaOptions in reStart ++= Seq("-Xms4G", "-Xmx20G", "-Xss1M", "-XX:+CMSClassUnloadingEnabled")
   )
 
 }

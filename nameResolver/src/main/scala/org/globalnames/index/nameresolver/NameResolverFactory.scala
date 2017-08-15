@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils
 import MatchTypeScores._
 import dao.{Tables => T}
 import thrift.matcher.{Service => MatcherService}
+import thrift._
 import thrift.nameresolver._
 import thrift.{MatchKind, MatchType, Name, CanonicalName}
 import util.UuidEnhanced._

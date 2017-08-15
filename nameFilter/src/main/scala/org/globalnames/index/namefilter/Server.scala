@@ -1,15 +1,15 @@
 package org.globalnames
 package index
-package nameresolver
+package namefilter
 
 import com.twitter.finatra.thrift.ThriftServer
 import com.twitter.finatra.thrift.filters._
 import com.twitter.finatra.thrift.routing.ThriftRouter
 
 class Server extends ThriftServer {
-  override val name = "nameresolver-server"
+  override val name = "namefilter-server"
 
-  override val modules = Seq(NameResolverModule)
+  override val modules = Seq(NameFilterModule)
 
   override def configureThrift(router: ThriftRouter): Unit = {
     val _ = router
@@ -19,7 +19,7 @@ class Server extends ThriftServer {
       .filter[AccessLoggingFilter]
       .filter[StatsFilter]
       .filter[ExceptionTranslationFilter]
-      .add[NameResolverController]
+      .add[NameFilterController]
   }
 }
 
