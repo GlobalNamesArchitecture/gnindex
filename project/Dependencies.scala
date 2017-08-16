@@ -9,7 +9,7 @@ object Dependencies {
     val guice = "4.1.0"
     val junit = "4.12"
     val pegdown = "1.6.0"
-    val niceUuid = "1.4"
+    val niceUuid = "1.3"
     val logback = "1.2.3"
     val mockito = "1.10.19"
     val scalatest = "3.0.3"
