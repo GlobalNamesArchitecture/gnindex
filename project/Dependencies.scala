@@ -8,6 +8,8 @@ object Dependencies {
     val finatra = "2.11.0"
     val guice = "4.1.0"
     val junit = "4.12"
+    val pegdown = "1.6.0"
+    val niceUuid = "1.4"
     val logback = "1.2.3"
     val mockito = "1.10.19"
     val scalatest = "3.0.3"
@@ -48,6 +50,8 @@ object Dependencies {
     val twitterInjSer        = "com.twitter"                       %% "inject-server"                % version.finatra        % Test
     val mockito              = "org.mockito"                       %  "mockito-core"                 % version.mockito        % Test
     val junit                = "junit"                             %  "junit"                        % version.junit          % Test
+    val pegdown              = "org.pegdown"                       %  "pegdown"                      % version.pegdown        % Test
+    val niceUuid             = "biz.neumann"                       %% "nice-uuid"                    % version.niceUuid       % Test
   }
 
   val finatraDeps = Seq(library.finatraThrift, library.logback)
@@ -58,7 +62,7 @@ object Dependencies {
     library.twitterInjApp classifier "tests", library.twitterInjCor classifier "tests",
     library.twitterInjMod classifier "tests", library.twitterInjSer classifier "tests"
   )
-  val testDeps = Seq(library.scalatest)
+  val testDeps = Seq(library.scalatest, library.pegdown, library.niceUuid)
 
   val commonDependencies: Seq[ModuleID] = Seq(library.finatraThrift)
 

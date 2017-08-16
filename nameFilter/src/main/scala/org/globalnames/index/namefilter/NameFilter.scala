@@ -49,7 +49,7 @@ class NameFilter @Inject()(database: Database) {
       for { canId <- dbResult.nameString.canonicalUuid
             canNameValue <- dbResult.nameString.canonical
             canNameValueRanked <- nameInputParsed.canonized(true)}
-        yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = "")
+        yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
 
     val classification = Classification(
       path = dbResult.nameStringIndex.classificationPath,
@@ -84,17 +84,18 @@ class NameFilter @Inject()(database: Database) {
       )
     }
 
-    val result =
-      Result(name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
-             canonicalName = canonicalNameOpt,
-             synonym = synonym,
-             taxonId = dbResult.nameStringIndex.taxonId,
-             matchType = matchType,
-             classification = classification,
-             dataSource = dataSource,
-             acceptedTaxonId = dbResult.nameStringIndex.acceptedTaxonId,
-             acceptedName = acceptedNameResult
-      )
+    val result = Result(
+      name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
+      canonicalName = canonicalNameOpt,
+      synonym = synonym,
+      taxonId = dbResult.nameStringIndex.taxonId,
+      matchType = matchType,
+      classification = classification,
+      dataSource = dataSource,
+      acceptedTaxonId = dbResult.nameStringIndex.acceptedTaxonId,
+      acceptedName = acceptedNameResult,
+      updatedAt = dbResult.dataSource.updatedAt.map { _.toString }
+    )
     val score = ResultScores.compute(nameInputParsed, result)
     ResultScored(result, score)
   }
@@ -136,7 +137,7 @@ class NameFilter @Inject()(database: Database) {
 
   private[namefilter] def resolveYear(year: String) = {
     Try(year.toInt) match {
-      case Success(yr) if yr < 1758 =>
+      case Success(yr) if yr < 1750 =>
         T.NameStrings.take(0)
       case _ =>
         val query = T.NameStrings_Year.filter { x => x.year === year }.map { _.nameUuid }
@@ -278,7 +279,7 @@ class NameFilter @Inject()(database: Database) {
   }
 
   private
-  def queryWithSurrogates(nameStringsQuery: NameStringsQuery) = {
+  def queryComplete(nameStringsQuery: NameStringsQuery) = {
     val query = for {
       ns <- nameStringsQuery
       nsi <- T.NameStringIndices.filter { nsi => nsi.nameStringId === ns.id }
@@ -293,57 +294,54 @@ class NameFilter @Inject()(database: Database) {
       .map { case (((ns, nsi, ds), nsiAccepted), nsAccepted) =>
         (ns, nsi, ds, nsiAccepted, nsAccepted)
       }
+      .take(1000)
   }
 
   def resolveString(request: Request): TwitterFuture[Seq[ResultScored]] = {
     val search = QueryParser.result(request.searchTerm)
-    val wildcard = search.wildcard
-    val modifier = search.modifier
-    val nameFilter = this
-
     val resolverFunction: (String) => Query[T.NameStrings, T.NameStringsRow, Seq] =
-      modifier match {
+      search.modifier match {
         case NoModifier =>
-          if (wildcard) nameFilter.resolveWildcard
-          else nameFilter.resolve
+          if (search.wildcard) resolveWildcard
+          else resolve
         case ExactModifier =>
 //          paramsRes = paramsRes.copy(matchType = MatchKind.ExactNameMatchByUUID)
-          nameFilter.resolveExact
+          resolveExact
         case NameStringModifier =>
-          if (wildcard) nameFilter.resolveNameStringsLike
+          if (search.wildcard) resolveNameStringsLike
           else {
 //            paramsRes = paramsRes.copy(matchType = MatchKind.ExactNameMatchByString)
-            nameFilter.resolveNameStrings
+            resolveNameStrings
           }
         case CanonicalModifier =>
-          if (wildcard) {
+          if (search.wildcard) {
 //            paramsRes = paramsRes.copy(matchType = MatchKind.ExactCanonicalNameMatchByUUID)
-            nameFilter.resolveCanonicalLike
+            resolveCanonicalLike
           } else {
 //            paramsRes = paramsRes.copy(matchType = MatchKind.ExactCanonicalNameMatchByString)
-            nameFilter.resolveCanonical
+            resolveCanonical
           }
         case UninomialModifier =>
-          if (wildcard) nameFilter.resolveUninomialWildcard
-          else nameFilter.resolveUninomial
+          if (search.wildcard) resolveUninomialWildcard
+          else resolveUninomial
         case GenusModifier =>
-          if (wildcard) nameFilter.resolveGenusWildcard
-          else nameFilter.resolveGenus
+          if (search.wildcard) resolveGenusWildcard
+          else resolveGenus
         case SpeciesModifier =>
-          if (wildcard) nameFilter.resolveSpeciesWildcard
-          else nameFilter.resolveSpecies
+          if (search.wildcard) resolveSpeciesWildcard
+          else resolveSpecies
         case SubspeciesModifier =>
-          if (wildcard) nameFilter.resolveSubspeciesWildcard
-          else nameFilter.resolveSubspecies
+          if (search.wildcard) resolveSubspeciesWildcard
+          else resolveSubspecies
         case AuthorModifier =>
-          if (wildcard) nameFilter.resolveAuthorWildcard
-          else nameFilter.resolveAuthor
+          if (search.wildcard) resolveAuthorWildcard
+          else resolveAuthor
         case YearModifier =>
-          if (wildcard) nameFilter.resolveYearWildcard
-          else nameFilter.resolveYear
+          if (search.wildcard) resolveYearWildcard
+          else resolveYear
       }
-    val nameStrings = resolverFunction(valueCleaned(request.searchTerm, modifier))
-    val resultFuture = database.run(queryWithSurrogates(nameStrings).result).map { dbResults =>
+    val nameStrings = resolverFunction(valueCleaned(search.contents, search.modifier))
+    val resultFuture = database.run(queryComplete(nameStrings).result).map { dbResults =>
       val results = dbResults.map { case (ns, nsi, ds, nsiAcptOpt, nsAcptOpt) =>
         val acceptedName = for (ns <- nsAcptOpt; nsi <- nsiAcptOpt) yield (ns, nsi)
         val dbResult = DBResult(ns, nsi, ds, acceptedName, Seq())
