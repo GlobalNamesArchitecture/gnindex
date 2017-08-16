@@ -234,6 +234,15 @@ object Settings {
     wartremoverExcluded ++= Seq(
       (scalaSource in Compile).value / "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala",
       (sourceManaged in Compile).value / "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala"
+    ),
+
+    testOptions := Seq(
+      Tests.Argument("-h", "target/test-html"),
+      Tests.Argument("-u", "target/test-xml"),
+      Tests.Argument("-C", "org.globalnames.TestReporter"),
+      Tests.Argument("-oD"), // Configuring summaries has no effect when running with SBT
+      Tests.Argument("-eTNCXEHLOPQRM"), // T = full backtraces, NCXEHLOPQRM = Ignore all events that are already sent to out (SBT)
+      Tests.Filter { testName => !testName.contains("Integration") }
     )
   )
 
