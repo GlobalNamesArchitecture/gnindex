@@ -8,15 +8,25 @@ import NameFilter._
 object QueryParser extends RegexParsers {
   case class SearchPart(modifier: Modifier, contents: String, wildcard: Boolean)
 
-  private val exactModifier = "exact" ^^ { _ => ExactModifier }
-  private val nameStringModifier = "ns" ^^ { _ => NameStringModifier }
-  private val canonicalModifier = "can" ^^ { _ => CanonicalModifier }
-  private val uninomialModifier = "uni" ^^ { _ => UninomialModifier }
-  private val genusModifier = "gen" ^^ { _ => GenusModifier }
-  private val speciesModifier = "sp" ^^ { _ => SpeciesModifier }
-  private val subspeciesModifier = "ssp" ^^ { _ => SubspeciesModifier }
-  private val authorModifier = "au" ^^ { _ => AuthorModifier }
-  private val yearModifier = "yr" ^^ { _ => YearModifier }
+  private[namefilter] val canonicalModifierStr = "can"
+  private[namefilter] val authorModifierStr = "au"
+  private[namefilter] val yearModifierStr = "yr"
+  private[namefilter] val uninomialModifierStr = "uni"
+  private[namefilter] val genusModifierStr = "gen"
+  private[namefilter] val speciesModifierStr = "sp"
+  private[namefilter] val subSpeciesModifierStr = "ssp"
+  private[namefilter] val nameStringModifierStr = "ns"
+  private[namefilter] val exactStringModifierStr = "exact"
+
+  private val exactModifier = exactStringModifierStr ^^ { _ => ExactModifier }
+  private val nameStringModifier = nameStringModifierStr ^^ { _ => NameStringModifier }
+  private val canonicalModifier = canonicalModifierStr ^^ { _ => CanonicalModifier }
+  private val uninomialModifier = uninomialModifierStr ^^ { _ => UninomialModifier }
+  private val genusModifier = genusModifierStr ^^ { _ => GenusModifier }
+  private val speciesModifier = speciesModifierStr ^^ { _ => SpeciesModifier }
+  private val subspeciesModifier = subSpeciesModifierStr ^^ { _ => SubspeciesModifier }
+  private val authorModifier = authorModifierStr ^^ { _ => AuthorModifier }
+  private val yearModifier = yearModifierStr ^^ { _ => YearModifier }
 
   private def word = s"""[^$wildcard]*""".r
 

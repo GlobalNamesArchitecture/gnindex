@@ -21,6 +21,8 @@ import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 
 class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with FeatureTestMixin {
+  import QueryParser._
+
   override val server = new EmbeddedThriftServer(
     twitterServer = new Server,
     stage = Stage.PRODUCTION,
@@ -29,24 +31,14 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
     )
   )
 
-  val searcher: NameFilterService[Future] =
+  val nameFilterClient: NameFilterService[Future] =
     server.thriftClient[NameFilterService[Future]](clientId = "nameFilterClient")
-
-  val canonicalModifier = "can"
-  val authorModifier = "au"
-  val yearModifier = "yr"
-  val uninomialModifier = "uni"
-  val genusModifier = "gen"
-  val speciesModifier = "sp"
-  val subSpeciesModifier = "ssp"
-  val nameStringModifier = "ns"
-  val exactStringModifier = "exact"
 
   describe("NameFilter") {
     describe(".resolveCanonical") {
       it("resolves exact") {
-        val request = Request(searchTerm = s"$canonicalModifier:Aaadonta constricta")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$canonicalModifierStr:Aaadonta constricta")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 6
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "b2cf575f-ec53-50ec-96b4-da94de2d926f",
@@ -55,8 +47,8 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("resolves exact with multiple spaces input") {
-        val request = Request(searchTerm = s"$canonicalModifier:  \t  Aaadonta   constricta    ")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$canonicalModifierStr:  \t  Aaadonta   constricta    ")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 6
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "b2cf575f-ec53-50ec-96b4-da94de2d926f",
@@ -65,20 +57,20 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("resolves exact with wildcard inside input") {
-        val request = Request(searchTerm = s"$canonicalModifier:Aaadonta %constricta")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$canonicalModifierStr:Aaadonta %constricta")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("resolves exact with wildcard as input") {
-        val request = Request(searchTerm = s"$canonicalModifier:%")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$canonicalModifierStr:%")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("resolves wildcard") {
-        val request = Request(searchTerm = s"$canonicalModifier:Aaadonta constricta ba*")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$canonicalModifierStr:Aaadonta constricta ba*")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 2
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "5a68f4ec-6121-553e-8843-3d602089ec88",
@@ -87,22 +79,22 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("resolves no mathches when string request of length less than 4 is provided") {
-        val request = Request(searchTerm = s"$canonicalModifier:Aaa")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$canonicalModifierStr:Aaa")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("returns no wildcarded matches when empty string is provided") {
-        val request = Request(searchTerm = s"$canonicalModifier:")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$canonicalModifierStr:")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
     }
 
     describe(".resolveAuthor") {
       it("resolves") {
-        val request = Request(searchTerm = s"$authorModifier:Abakar-Ousman")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$authorModifierStr:Abakar-Ousman")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 15
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "f36a6f4d-ddfc-509c-a652-5b50e8372006",
@@ -115,16 +107,16 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("returns no matches when empty string is provided") {
-        val request = Request(searchTerm = s"$authorModifier:")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$authorModifierStr:")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
     }
 
     describe(".resolveYear") {
       it("resolves") {
-        val request = Request(searchTerm = s"$yearModifier:1752")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$yearModifierStr:1752")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 16
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "64d3585d-714c-5fcf-b3b9-b1790af61baa",
@@ -141,22 +133,22 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("returns no matches on non-existing year") {
-        val request = Request(searchTerm = s"$yearModifier:3000")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$yearModifierStr:3000")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("returns no matches when empty string is provided") {
-        val request = Request(searchTerm = s"$yearModifier:")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$yearModifierStr:")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
     }
 
     describe(".resolveUninomial") {
       it("resolves") {
-        val request = Request(searchTerm = s"$uninomialModifier:Aalenirhynchia")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$uninomialModifierStr:Aalenirhynchia")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 6
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "05375e93-f74c-5bf4-8815-1cc363c1b98c",
@@ -168,16 +160,16 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("returns no matches when empty string is provided") {
-        val request = Request(searchTerm = s"$uninomialModifier:")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$uninomialModifierStr:")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
     }
 
     describe(".resolveGenus") {
       it("resolves") {
-        val request = Request(searchTerm = s"$genusModifier:Buxela")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$genusModifierStr:Buxela")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 5
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "94fc8bf8-098c-5d49-a766-b7a71296024a",
@@ -187,8 +179,8 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("resolves lowercase") {
-        val request = Request(searchTerm = s"$uninomialModifier:buxela")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$uninomialModifierStr:buxela")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 11
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "2fb5da60-3b02-5605-9411-a6634c4d535a",
@@ -199,28 +191,28 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("resolves binomial") {
-        val request = Request(searchTerm = s"$uninomialModifier:Aalenirhynchia ab")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$uninomialModifierStr:Aalenirhynchia ab")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("returns no matches on non-existing input") {
-        val request = Request(searchTerm = s"$genusModifier:Aalenirhynchia1")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$genusModifierStr:Aalenirhynchia1")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("returns no matches when empty string is provided") {
-        val request = Request(searchTerm = s"$genusModifier:")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$genusModifierStr:")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
     }
 
     describe(".resolveSpecies") {
       it("resolves") {
-        val request = Request(searchTerm = s"$speciesModifier:cynoscion")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$speciesModifierStr:cynoscion")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 8
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "173848c3-baa3-5662-ba1c-40b1a363e182",
@@ -230,18 +222,16 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("returns no matches when empty string is provided") {
-        val request = Request(searchTerm = s"$speciesModifier:")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$speciesModifierStr:")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
     }
-    */
 
-    /*
     describe(".resolveSubspecies") {
       it("resolves") {
-        val request = Request(searchTerm = s"$subSpeciesModifier:Abacantha")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$subSpeciesModifierStr:Abacantha")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 4
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "03e71643-d238-5859-af6f-b98a129ebe12",
@@ -252,42 +242,43 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("returns no matches when empty string is provided") {
-        val request = Request(searchTerm = s"$subSpeciesModifier:")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$subSpeciesModifierStr:")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
     }
 
     describe(".resolveNameStrings") {
       it("resolves exact") {
-        val request = Request(searchTerm = s"$nameStringModifier:Aaadonta constricta babelthuapi")
-        val result = searcher.nameString(request = request).value
+        val request =
+          Request(searchTerm = s"$nameStringModifierStr:Aaadonta constricta babelthuapi")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 1
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only
           "5a68f4ec-6121-553e-8843-3d602089ec88"
       }
 
       it("returns no matches when empty string is provided") {
-        val request = Request(searchTerm = s"$nameStringModifier:")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$nameStringModifierStr:")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("resolves exact with non-existing input") {
-        val request = Request(searchTerm = s"$nameStringModifier:Pararara")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$nameStringModifierStr:Pararara")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("resolves no matches when empty string is provided") {
-        val request = Request(searchTerm = s"$nameStringModifier:")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$nameStringModifierStr:")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("resolves wildcard") {
-        val request = Request(searchTerm = s"$nameStringModifier:Aaadonta constricta komak*")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$nameStringModifierStr:Aaadonta constricta komak*")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 2
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "51b7b1b2-07ba-5a0e-a65d-c5ca402b58de",
@@ -296,20 +287,20 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("returns no wildcarded matches when empty string is provided") {
-        val request = Request(searchTerm = s"$nameStringModifier:")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$nameStringModifierStr:")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("resolves nothing wildcard with non-existing stirng") {
-        val request = Request(searchTerm = s"$nameStringModifier:Pararara*")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$nameStringModifierStr:Pararara*")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
 
       it("resolves wildcard with wildcard in begin of input") {
-        val request = Request(searchTerm = s"$nameStringModifier:%Aaadonta constricta ba*")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$nameStringModifierStr:%Aaadonta constricta ba*")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 2
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "073bab60-1816-5b5c-b018-87b4193db6f7",
@@ -318,8 +309,8 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("resolves wildcard with wildcard in middle of input") {
-        val request = Request(searchTerm = s"$nameStringModifier:Aaadonta constricta * ba*")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$nameStringModifierStr:Aaadonta constricta * ba*")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 10
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only(
           "073bab60-1816-5b5c-b018-87b4193db6f7",
@@ -332,16 +323,16 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("resolves no matches when string request of length less than 4 is provided") {
-        val request = Request(searchTerm = s"$nameStringModifier:Aaa*")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$nameStringModifierStr:Aaa*")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 0
       }
     }
 
     describe(".resolveExact") {
       it("resolves") {
-        val request = Request(searchTerm = s"$exactStringModifier:Aalenirhynchia")
-        val result = searcher.nameString(request = request).value
+        val request = Request(searchTerm = s"$exactStringModifierStr:Aalenirhynchia")
+        val result = nameFilterClient.nameString(request = request).value
         result.size shouldBe 1
         result.map { rs => (rs.result.name.uuid: UUID).toString } should contain only
           "c96fd1c5-c5cb-50ed-afd1-63bd1368896b"
