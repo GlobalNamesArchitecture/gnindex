@@ -67,6 +67,11 @@ object Dependencies {
     library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
   )
 
+  val nameFilterDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
+    library.twitterBijectionCore, library.twitterBijectionUtil,
+    library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
+  )
+
   val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
     library.gnparser, library.gnmatcher, library.scalaz
   )

@@ -33,7 +33,7 @@ lazy val nameFilter = (project in file("nameFilter"))
     .settings(Settings.settings: _*)
     .settings(Settings.wartremoverSettings: _*)
     .settings(Settings.nameFilterSettings: _*)
-    .settings(libraryDependencies ++= nameResolverDependencies)
+    .settings(libraryDependencies ++= nameFilterDependencies)
 
 lazy val api = (project in file("api"))
     .enablePlugins(BuildInfoPlugin)
@@ -45,7 +45,7 @@ lazy val api = (project in file("api"))
     .settings(libraryDependencies ++= apiDependencies)
 
 lazy val `gnindex-root` = project.in(file("."))
-    .aggregate(common, nameResolver, matcher, api)
+    .aggregate(common, nameResolver, nameFilter, matcher, api)
     .settings(noPublishingSettings: _*)
     .settings(
       crossScalaVersions := Seq("2.11.8"),
