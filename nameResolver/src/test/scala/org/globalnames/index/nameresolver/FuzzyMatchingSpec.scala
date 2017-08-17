@@ -61,7 +61,9 @@ class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
     "match 'Andreaea heinemanii'" in nameTest(
       request = "Andreaea heinemanii",
       ExpectedResult(
+        // scalastyle:off non.ascii.character.disallowed
         name = "Andreaea heinemannii Hampe & C. Müller, 1846",
+        // scalastyle:on
         kind = MatchKind.FuzzyCanonicalMatch,
         editDistance = 1,
         scoreLowerBound = GoodMatchScore
