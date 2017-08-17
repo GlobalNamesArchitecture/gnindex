@@ -1,0 +1,28 @@
+version: '2'
+services:
+  app:
+    build: .
+    environment:
+      RUN_MODE: tests
+      RACK_ENV: development
+      DB_HOST: pg
+      DB_DATABASE: development
+      DB_USER: postgres
+      DB_USER_PASS: ""
+    depends_on:
+      - pg
+  front:
+    build: ./front
+  proxy:
+    image: nginx:1.13
+    ports:
+      - "0.0.0.0:8080:8080"
+    volumes:
+       - ./config/nginx.conf:/etc/nginx/conf.d/nginx.conf
+    command: /bin/bash -c "nginx -g 'daemon off;'"
+    depends_on:
+      - app
+      - front
+  pg:
+    image: postgres:9.6
+

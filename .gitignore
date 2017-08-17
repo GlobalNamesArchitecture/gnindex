@@ -36,7 +36,6 @@ output.json
 logs/
 *.log
 tmp/
-bin/
 VARS_PROD*.env
 pgpass*
 .ensime*
