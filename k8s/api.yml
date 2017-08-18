@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: gnindex
-          image: gnames/gnindex-debug:gnindexapi-0.1.0-20170827_0751_CDT-SNAPSHOT
+          image: gnames/gnindex-debug:gnindexapi-0.1.0-20170828_0818_CDT-SNAPSHOT
           readinessProbe:
             httpGet:
               path: /admin/ping
@@ -54,6 +54,8 @@ spec:
           env:
             - name: NAMERESOLVER_ADDRESS
               value: gnnameresolver:9999
+            - name: NAMEFILTER_ADDRESS
+              value: gnnamefilter:9999
           ports:
             - containerPort: 8888
               name: thrift-api
