@@ -1,6 +1,34 @@
 gnindex
 =======
 
+Brief Info
+----------
+
+``gnindex`` is a search engine over collection of strings (combinations of
+characters) that have been used as names for organisms. ``gnindex`` contains
+many examples of names spelled in slightly different ways. It indexes
+occurances of biological scientific names in the world, normalizes and
+reconsiles lexical and taxonomic variants of the name strings.
+
+``gnindex`` handles two type of queries over indexed name strings: resolution
+and faceted search.
+
+Faceted search accepts part of name string (canonical part, author word(s),
+genus word(s), species word(s), year) possibly wildcarded or their logically
+combined composition. In response it returns all results that satisfy given
+request.
+
+Resolution accepts a set of whole name strings with resolution parameters. Parameters
+includes:
+
+- raw string supplied to name input ("a label")
+- data source IDs where ``gnindex`` should perform resolution
+- should names be resolved in respect to context
+- should ``gnindex`` resolve a name with vernacular
+
+Project Structure
+-----------------
+
 The projects consists of 6 subprojects:
 - ``common``
 - ``matcher``
@@ -9,14 +37,13 @@ The projects consists of 6 subprojects:
 - ``api``
 - ``front``
 
-
 common
-------
+~~~~~~
 
 Contains Thrift data structures that are shared between microservices.
 
 matcher
--------
+~~~~~~~
 
 The Thrift microservice expects canonical names of type ``Seq[String]`` and data sources IDs of
 type ``Seq[Int]``. It tries to fuzzy match through all known canonical names and those stems 
@@ -26,7 +53,7 @@ It returns list of lists of found fuzzy matches UUIDs: one list per provided can
 that it returns UUIDs only as it has no connection to database.
 
 nameResolver
-------------
+~~~~~~~~~~~~
 
 The Thrift microservice expects complex requests of type ``thrift.nameresolver.Request``. It passes
 through stages for every provided name request:
@@ -38,12 +65,12 @@ through stages for every provided name request:
    Final results are formed based on database results matched by those UUIDs.
 
 facetedSearcher
----------------
+~~~~~~~~~~~~~~~
 
 Performs faceted search.
 
 api
----
+~~~~
 
 The ``api`` microservice is connected with ``nameresolver`` and ``facetedSearcher`` microservices.
 It provides ``GraphQL`` interface to the user. ``GraphQL`` requests are then translated to
