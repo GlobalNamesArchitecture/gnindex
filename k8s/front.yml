@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: gnindex-graphiql
-          image: gnames/gnindex-debug:gnindexgraphiql-0.1.0-20170727_0840_CDT-SNAPSHOT
+          image: gnames/gnindex-debug:gnindexgraphiql-0.1.0-20170828_0818_CDT-SNAPSHOT
           readinessProbe:
             httpGet:
               path: /

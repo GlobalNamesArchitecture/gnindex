@@ -25,4 +25,3 @@ services:
       - front
   pg:
     image: postgres:9.6
-
