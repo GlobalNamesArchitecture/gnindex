@@ -51,7 +51,7 @@ Using API
 GraphQL requests at ``/api/graphql`` URL. It's simply a POST request with JSON
 body of predefined format:
 
-.. code: json
+.. code:: json
 
   {
     "query": "BODY OF QUERY",
@@ -69,7 +69,7 @@ documentation fetched from API and rendered by GraphiQL at ``/api``.
 
 A simple GraphQL request might be:
 
-.. code: graphql
+.. code:: graphql
 
   query {
     nameResolver(names: [{value: "Homo sapiens"}], dataSourceIds: [1]) {
@@ -84,7 +84,7 @@ A simple GraphQL request might be:
 
 That returns result:
 
-.. code: graphql
+.. code:: graphql
 
   {
     "data": {
@@ -103,9 +103,9 @@ That returns result:
     }
   }
 
-The request could be composed with `cURL`:
+The request could be composed with ``cURL``:
 
-.. code: bash
+.. code:: bash
 
   curl 'http://index.globalnames.org/api/graphql' \
     -H 'Content-Type: application/json' \
@@ -151,6 +151,7 @@ Project Structure
 -----------------
 
 The projects consists of 6 subprojects:
+
 - ``common``
 - ``matcher``
 - ``nameResolver``
