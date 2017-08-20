@@ -118,6 +118,7 @@ to parent JSON. Some languages provide `GraphQL clients
 Consider simple Ruby client to request ``gnindex`` API:
 
 .. code: ruby
+
   def variables(names)
     { dataSourceIds: [1],
       names: names.map { |name| { value: name[:name], suppliedId: name[:id] } } }
@@ -196,4 +197,12 @@ The ``api`` microservice is connected with ``nameresolver`` and ``facetedSearche
 It provides ``GraphQL`` interface to the user. ``GraphQL`` requests are then translated to
 microservices requests.
 
+Development
+-----------
 
+TODO
+
+Testing
+-------
+
+TODO
