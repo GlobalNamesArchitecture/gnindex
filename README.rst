@@ -35,13 +35,116 @@ Installation
 
     docker-compose up
 
-``docker-compose`` pulls all necessary Docker containers (Postgres database engine,
-``gnindex`` matcher, nameResolver, facetedSearcher, api and front services), initializes
-them, and listens for HTTP connections over 80 port with paths as follows:
+``docker-compose`` pulls all necessary Docker containers (Postgres database
+engine, ``gnindex`` matcher, nameResolver, facetedSearcher, api and front
+services), initializes them, and listens for HTTP connections over 80 port with
+paths as follows:
 
 - ``/`` path returns user-friendly HTML interface
-- ``/api`` returns `GraphiQL <https://github.com/graphql/graphiql>`_ interactive
-  in-browser environment to interact with ``gnindex`` API.
+- ``/api`` returns `GraphiQL <https://github.com/graphql/graphiql>`_
+  interactive in-browser environment to interact with ``gnindex`` API.
+
+Using API
+---------
+
+``gnindex`` uses GraphQL interface to make requests to API. ``gnindex`` accepts
+GraphQL requests at ``/api/graphql`` URL. It's simply a POST request with JSON
+body of predefined format:
+
+.. code: json
+
+  {
+    "query": "BODY OF QUERY",
+    "variables": "SUPPLIED VARIABLES",
+    "operation": "SELECTED OPERATION"
+  }
+
+``gnindex`` API exposes GraphQL methods as follows:
+
+- ``nameResolver`` for name resolution
+- ``nameStrings`` for faceted search
+
+Detailed documentation on input parameters and output could also be found in
+documentation fetched from API and rendered by GraphiQL at ``/api``.
+
+A simple GraphQL request might be:
+
+.. code: graphql
+
+  query {
+    nameResolver(names: [{value: "Homo sapiens"}], dataSourceIds: [1]) {
+      results {
+        name {
+          id
+          value
+        }
+      }
+    }
+  }
+
+That returns result:
+
+.. code: graphql
+
+  {
+    "data": {
+      "nameResolver": [
+        {
+          "results": [
+            {
+              "name": {
+                "id": "7db4f8a2-aafe-56b6-8838-89522c67d9f0",
+                "value": "Homo sapiens Linnaeus, 1758"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+
+The request could be composed with `cURL`:
+
+.. code: bash
+
+  curl 'http://index.globalnames.org/api/graphql' \
+    -H 'Content-Type: application/json' \
+    -H 'Accept: application/json' \
+    --data-binary '{"query":"query {\n  nameResolver(names: [{value: \"Homo sapiens\"}], dataSourceIds: [1]) {\n    results {\n      name {\n        id\n        value\n      }\n    }\n  }\n}\n","variables":null}'
+
+Forturately, it isn't necessary to encode GraphQL query string and to nest it
+to parent JSON. Some languages provide `GraphQL clients
+<http://graphql.org/code/#graphql-clients>`_ that do all dirty work.
+Consider simple Ruby client to request ``gnindex`` API:
+
+.. code: ruby
+  def variables(names)
+    { dataSourceIds: [1],
+      names: names.map { |name| { value: name[:name], suppliedId: name[:id] } } }
+  end
+
+  RESOLVER_URL = "http://index-api.globalnames.org/api/graphql"
+  http = GraphQL::Client::HTTP.new(RESOLVER_URL)
+  schema = GraphQL::Client.load_schema(http)
+  @client = GraphQL::Client.new(schema: schema, execute: http)
+  @query = <<~GRAPHQL_QUERY
+    query($names: [name!]!, $dataSourceIds: [Int!]) {
+      nameResolver(names: $names, dataSourceIds: $dataSourceIds) {
+        total suppliedId suppliedInput
+        results {
+          name { value }
+          canonicalName { value }
+          synonym
+          matchType { kind score editDistance }
+          taxonId classification { pathRanks }
+          score { value parsingQuality }
+        }
+      }
+    }
+  GRAPHQL_QUERY
+  names = ["Homo sapiens", "Phallomedusa solida"]
+  res = GRAPHQL.client.query(QUERY, variables: variables(names))
+  puts res
 
 Project Structure
 -----------------
