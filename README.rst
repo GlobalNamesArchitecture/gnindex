@@ -26,6 +26,23 @@ includes:
 - should names be resolved in respect to context
 - should ``gnindex`` resolve a name with vernacular
 
+Installation
+------------
+
+``gnindex`` is dockerized:
+
+.. code:: bash
+
+    docker-compose up
+
+``docker-compose`` pulls all necessary Docker containers (Postgres database engine,
+``gnindex`` matcher, nameResolver, facetedSearcher, api and front services), initializes
+them, and listens for HTTP connections over 80 port with paths as follows:
+
+- ``/`` path returns user-friendly HTML interface
+- ``/api`` returns `GraphiQL <https://github.com/graphql/graphiql>`_ interactive
+  in-browser environment to interact with ``gnindex`` API.
+
 Project Structure
 -----------------
 
