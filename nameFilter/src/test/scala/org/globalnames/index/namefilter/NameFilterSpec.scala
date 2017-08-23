@@ -305,6 +305,17 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
         )
       }
 
+      it("resolves with wildcard") {
+        val request = Request(searchTerm = s"$genusModifierStr:Buxe*")
+        val result = nameFilterClient.nameString(request = request).value
+        result.size shouldBe 5
+        result.map { project } should contain only(
+          names(u"94fc8bf8-098c-5d49-a766-b7a71296024a"),
+          names(u"c91b7662-42ea-59ae-8b08-91832939f5e1"),
+          names(u"d710a5b8-ecd8-5222-a57f-21c1e8aa9166")
+        )
+      }
+
       it("resolves lowercase") {
         val request = Request(searchTerm = s"$uninomialModifierStr:buxela")
         val result = nameFilterClient.nameString(request = request).value
