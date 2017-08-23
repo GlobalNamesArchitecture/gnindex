@@ -125,5 +125,44 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
         preferredDataSourceIds should contain allElementsOf preferredDataSourceIdsResponse
       }
     }
+
+    "return correct value for synonym field" when {
+      "name is a synonym" in {
+        val synonymNames = Seq(
+          "Neoperla schmidti Enderlein, 1909",
+          "Cynorkis pauciflora Rolfe",
+          "Vincetoxicum petiolare (A. Gray) Standl.",
+          "Herniaria incana subsp. permixta (Guss.) Maire"
+        )
+
+        val request = Request(names = synonymNames.map { n => NameInput(value = n) })
+        val response = client.nameResolve(request).value
+
+        response.items.count { _.results.nonEmpty } shouldBe synonymNames.size
+        val synonymStatuses = response.items.flatMap { _.results.map { _.result.synonym } }
+        synonymStatuses should contain only true
+      }
+
+      "name is not a synonym" in {
+        val nonSynonymNames = Seq(
+          "Macrobiotus harmsworthi subsp. obscurus Dastych, 1985",
+          "Macrobiotus islandicus subsp. islandicus Richters, 1904",
+          "Macrobiotus hufelandi subsp. hufelandi C.A.S. Schultze, 1834",
+          "Macrobiotus harmsworthi subsp. harmsworthi Murray, 1907",
+          "Macrobiotus harmsworthi subsp. obscurus Dastych, 1985",
+          "Hypechiniscus gladiator subsp. gladiator (Murray, 1905)"
+        )
+
+        val request = Request(
+          names = nonSynonymNames.map { n => NameInput(value = n) },
+          dataSourceIds = Seq(1)
+        )
+        val response = client.nameResolve(request).value
+
+        response.items.count { _.results.nonEmpty } shouldBe nonSynonymNames.size
+        val synonymStatuses = response.items.flatMap { _.results.map { _.result.synonym } }
+        synonymStatuses should contain only false
+      }
+    }
   }
 }

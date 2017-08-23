@@ -60,7 +60,7 @@ object NameResolver {
     val synonym = {
       val classificationPathIdsSeq =
         dbResult.nameStringIndex.classificationPathIds.map { _.fastSplit('|') }.getOrElse(List())
-      if (classificationPathIdsSeq.nonEmpty) {
+      if (classificationPathIdsSeq.nonEmpty && classificationPathIdsSeq != Seq("")) {
         dbResult.nameStringIndex.taxonId.some != classificationPathIdsSeq.lastOption
       } else if (dbResult.nameStringIndex.acceptedTaxonId.isDefined) {
         dbResult.nameStringIndex.taxonId.some != dbResult.nameStringIndex.acceptedTaxonId
