@@ -12,18 +12,28 @@ import com.twitter.util.Future
 import thrift.ResultScored
 import thrift.namefilter.{Request, Service => NameFilterService}
 import util.UuidEnhanced._
-
-import scala.util.Properties
+import matcher.{MatcherModule, Server => MatcherServer}
 
 class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with FeatureTestMixin {
 
   import QueryParser._
 
+  val matcherServer = new EmbeddedThriftServer(
+    twitterServer = new MatcherServer,
+    stage = Stage.PRODUCTION,
+    flags = Map(
+      MatcherModule.namesFileKey.name ->
+        "db-migration/matcher-data/canonical-names.csv",
+      MatcherModule.namesWithDatasourcesFileKey.name ->
+        "db-migration/matcher-data/canonical-names-with-data-sources.csv"
+    )
+  )
+
   override val server = new EmbeddedThriftServer(
     twitterServer = new Server,
     stage = Stage.PRODUCTION,
     flags = Map(
-      NameFilterModule.matcherServiceAddress.name -> Properties.envOrElse("MATCHER_ADDRESS", "")
+      NameFilterModule.matcherServiceAddress.name -> matcherServer.thriftHostAndPort
     )
   )
 
@@ -158,7 +168,28 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       ExpectedValue(u"edd01cc8-0e7a-5370-8d90-173d24c9341c".uuid.get),
 
     u"f36a6f4d-ddfc-509c-a652-5b50e8372006" ->
-      ExpectedValue(u"f36a6f4d-ddfc-509c-a652-5b50e8372006".uuid.get)
+      ExpectedValue(u"f36a6f4d-ddfc-509c-a652-5b50e8372006".uuid.get),
+
+    u"231467e3-5822-5ce6-8a93-8bf539957900" ->
+      ExpectedValue(u"231467e3-5822-5ce6-8a93-8bf539957900".uuid.get),
+
+    u"4323d4d8-1e8d-5e4a-966a-e3f831d2c3eb" ->
+      ExpectedValue(u"4323d4d8-1e8d-5e4a-966a-e3f831d2c3eb".uuid.get),
+
+    u"5a041add-35ee-5380-ae65-980bc834de70" ->
+      ExpectedValue(u"5a041add-35ee-5380-ae65-980bc834de70".uuid.get),
+
+    u"7a74b27e-51f5-5b09-b2d6-43264cc812ca" ->
+      ExpectedValue(u"7a74b27e-51f5-5b09-b2d6-43264cc812ca".uuid.get),
+
+    u"9df9e622-26ff-51d6-a007-a41279d09cf6" ->
+      ExpectedValue(u"9df9e622-26ff-51d6-a007-a41279d09cf6".uuid.get),
+
+    u"b48f2da8-82d8-5cdf-b4be-c83f7438715b" ->
+      ExpectedValue(u"b48f2da8-82d8-5cdf-b4be-c83f7438715b".uuid.get),
+
+    u"d31f59fb-a5bb-53aa-bacc-08294378ba27" ->
+      ExpectedValue(u"d31f59fb-a5bb-53aa-bacc-08294378ba27".uuid.get)
   )
 
   describe("NameFilter") {
@@ -306,13 +337,17 @@ class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with Fe
       }
 
       it("resolves with wildcard") {
-        val request = Request(searchTerm = s"$genusModifierStr:Buxe*")
+        val request = Request(searchTerm = s"$genusModifierStr:Buxet*")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 5
+        result.size shouldBe 19
         result.map { project } should contain only(
-          names(u"94fc8bf8-098c-5d49-a766-b7a71296024a"),
-          names(u"c91b7662-42ea-59ae-8b08-91832939f5e1"),
-          names(u"d710a5b8-ecd8-5222-a57f-21c1e8aa9166")
+          names(u"231467e3-5822-5ce6-8a93-8bf539957900"),
+          names(u"7a74b27e-51f5-5b09-b2d6-43264cc812ca"),
+          names(u"4323d4d8-1e8d-5e4a-966a-e3f831d2c3eb"),
+          names(u"5a041add-35ee-5380-ae65-980bc834de70"),
+          names(u"9df9e622-26ff-51d6-a007-a41279d09cf6"),
+          names(u"b48f2da8-82d8-5cdf-b4be-c83f7438715b"),
+          names(u"d31f59fb-a5bb-53aa-bacc-08294378ba27")
         )
       }
 
