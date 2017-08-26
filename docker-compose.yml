@@ -11,6 +11,8 @@ services:
       DB_USER_PASS: ""
     depends_on:
       - pg
+    volumes:
+      - .:/app
   front:
     build: ./front
   proxy:

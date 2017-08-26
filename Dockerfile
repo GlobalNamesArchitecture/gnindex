@@ -29,14 +29,6 @@ RUN gem install bundle
 RUN mkdir /app
 WORKDIR /app
 
-COPY ./project/*.sbt ./project/*.scala ./project/build.properties /app/project/
-COPY build.sbt /app/
 RUN sbt test:compile
-
-COPY ./db-migration/Gemfile /app/db-migration/
-WORKDIR /app/db-migration
-RUN bundle
-COPY . /app
-WORKDIR /app
 
 CMD ["/app/bin/docker-startup.sh"]
