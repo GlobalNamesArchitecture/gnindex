@@ -36,5 +36,4 @@ object NameResolverModule extends TwitterModule {
   @Provides
   def provideMatcherClient: MatcherService.FutureIface =
     ThriftMux.client.newIface[MatcherService.FutureIface](matcherServiceAddress())
-
 }

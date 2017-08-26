@@ -67,7 +67,9 @@ class ContextSpec extends SpecConfig with FeatureTestMixin {
     "return Context in response" in {
       val request = Request(names = Seq(
         NameInput("Achillea dobrogensis Prod."),
+        NameInput("Achillea dobrogensis Prod."),
         NameInput("Achnatherum coreanum (Honda) Ohwi"),
+        NameInput("Achnatherum coronatum"),
         NameInput("Achnatherum coronatum"),
         NameInput("Achnatherum coronatum (Thurb.) Barkworth"),
         NameInput("Homo sapiens")
