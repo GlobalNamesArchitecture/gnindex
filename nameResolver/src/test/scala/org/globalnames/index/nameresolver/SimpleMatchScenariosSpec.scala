@@ -8,16 +8,27 @@ import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
 import thrift.MatchKind
 import thrift.nameresolver.{NameInput, Request, Service => NameResolverService}
+import matcher.{MatcherModule, Server => MatcherServer}
 
-import scala.util.Properties
 import scalaz.syntax.std.option._
 
 class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
+  val matcherServer = new EmbeddedThriftServer(
+    twitterServer = new MatcherServer,
+    stage = Stage.PRODUCTION,
+    flags = Map(
+      MatcherModule.namesFileKey.name ->
+        "db-migration/matcher-data/canonical-names.csv",
+      MatcherModule.namesWithDatasourcesFileKey.name ->
+        "db-migration/matcher-data/canonical-names-with-data-sources.csv"
+    )
+  )
+
   override val server = new EmbeddedThriftServer(
     twitterServer = new Server,
     stage = Stage.PRODUCTION,
     flags = Map(
-      NameResolverModule.matcherServiceAddress.name -> Properties.envOrElse("MATCHER_ADDRESS", "")
+      NameResolverModule.matcherServiceAddress.name -> matcherServer.thriftHostAndPort
     )
   )
 
