@@ -10,6 +10,7 @@ import slick.{ model => m }
 import com.github.tototoshi.sbt.slick.CodegenPlugin.autoImport._
 import spray.revolver.RevolverPlugin.autoImport._
 import wartremover.WartRemover.autoImport._
+import io.gatling.sbt.GatlingKeys.Gatling
 
 object Settings {
 
@@ -253,6 +254,14 @@ object Settings {
     assemblyJarName in assembly := "gnmatcher-" + version.value + ".jar",
     Revolver.enableDebugging(port = 5008, suspend = false),
     javaOptions in reStart ++= Seq("-Xms4G", "-Xmx20G", "-Xss1M", "-XX:+CMSClassUnloadingEnabled")
+  )
+
+  ////////////////////////
+  // Benchmark settings //
+  ////////////////////////
+  lazy val benchmarkSettings = Seq(
+    assemblyJarName in assembly := "gnbenchmark-" + version.value + ".jar",
+    javaOptions in Gatling := Seq("-Xms1024m", "-Xmx2048m")
   )
 
 }

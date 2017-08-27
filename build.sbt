@@ -2,6 +2,7 @@ import Dependencies._
 import Settings._
 import com.github.tototoshi.sbt.slick.CodegenPlugin
 import scoverage.ScoverageKeys._
+import io.gatling.sbt.GatlingPlugin
 
 lazy val common = (project in file("common"))
     .settings(noPublishingSettings: _*)
@@ -44,8 +45,16 @@ lazy val api = (project in file("api"))
     .settings(Settings.apiSettings: _*)
     .settings(libraryDependencies ++= apiDependencies)
 
+lazy val benchmark = (project in file("benchmark"))
+    .enablePlugins(GatlingPlugin)
+    .settings(publishingSettings: _*)
+    .settings(Settings.settings: _*)
+    .settings(Settings.wartremoverSettings: _*)
+    .settings(Settings.benchmarkSettings: _*)
+    .settings(libraryDependencies ++= benchmarkDependencies)
+
 lazy val `gnindex-root` = project.in(file("."))
-    .aggregate(common, nameResolver, nameFilter, matcher, api)
+    .aggregate(benchmark, common, nameResolver, nameFilter, matcher, api)
     .settings(noPublishingSettings: _*)
     .settings(
       crossScalaVersions := Seq("2.11.8"),
