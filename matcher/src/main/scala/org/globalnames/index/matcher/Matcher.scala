@@ -60,18 +60,28 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
     if (canonicalNameSplits.isEmpty) {
       Seq()
     } else {
-      val (nonEmptySplits, noFuzzyMatchesSplits) =
-        canonicalNameSplits.partition { cnp => cnp.size > 0 }
+      val (nonGenusSplits, genusOnlyMatchesSplits) =
+        canonicalNameSplits.partition { cnp => cnp.size > 1 }
 
-      val noFuzzyMatches = noFuzzyMatchesSplits.map { cns =>
-        Response(inputUuid = cns.nameProvidedUuid, results = Seq())
-      }
+      val noFuzzyMatches =
+        for (goms <- genusOnlyMatchesSplits) yield {
+          val matchKind =
+            if (goms.isOriginalCanonical) MatchKind.ExactCanonicalNameMatchByUUID
+            else MatchKind.FuzzyCanonicalMatch
+
+          val dsIds = canonicalNames.names(goms.namePartialStr)
+          val results =
+            (dataSourceIds.isEmpty ? dsIds | dataSourceIds.intersect(dsIds)).nonEmpty.option {
+              Result(nameMatched = goms.namePartial, distance = 0, matchKind = matchKind)
+            }.toSeq
+          Response(inputUuid = goms.nameProvidedUuid, results = results)
+        }
 
       val (exactPartialCanonicalMatches, possibleFuzzyCanonicalMatches) =
-        nonEmptySplits
+        nonGenusSplits
           .map { cns => (cns, canonicalNames.names(cns.namePartialStr)) }
           .partition { case (_, dsids) =>
-            dataSourceIds.isEmpty ? dsids.nonEmpty | dataSourceIds.intersect(dsids).nonEmpty
+            (dataSourceIds.isEmpty ? dsids | dataSourceIds.intersect(dsids)).nonEmpty
           }
 
       val partialByGenusFuzzyResponses =

@@ -234,7 +234,8 @@ class NameResolver private[nameresolver](request: Request,
     } else {
       matcherClient.findMatches(scientificNames, dataSourceIds)
                            .as[ScalaFuture[Seq[thrift.matcher.Response]]].flatMap { fuzzyMatches =>
-        val uuids = fuzzyMatches.flatMap { fm => fm.results.map { r => r.nameMatched.uuid: UUID } }
+        val uuids =
+          fuzzyMatches.flatMap { fm => fm.results.map { r => r.nameMatched.uuid: UUID } }.distinct
         logInfo("[Fuzzy match] Matcher service response received. " +
                 s"Database request for ${uuids.size} records")
         val qry = T.NameStrings.filter { ns => ns.canonicalUuid.inSetBind(uuids) }
