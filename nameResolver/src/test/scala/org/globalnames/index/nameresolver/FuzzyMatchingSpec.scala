@@ -26,8 +26,7 @@ class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
     twitterServer = new Server,
     stage = Stage.PRODUCTION,
     flags = Map(
-      NameResolverModule.matcherServiceAddress.name ->
-        scala.util.Properties.envOrElse("MATCHER_ADDRESS", "")
+      NameResolverModule.matcherServiceAddress.name -> matcherServer.thriftHostAndPort
     )
   )
 
