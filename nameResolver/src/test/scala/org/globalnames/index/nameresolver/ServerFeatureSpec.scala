@@ -76,7 +76,7 @@ class ServerFeatureSpec extends SpecConfig with FeatureTestMixin {
   }
 
   "server#nameResolve" in {
-    val request = Request(names = Seq(NameInput("Homo sapiens")))
+    val request = Request(names = Seq(NameInput("Homo sapiens")), advancedResolution = true)
     val responses = client.nameResolve(request).value.items
     responses.headOption.value.total should be > 0
   }

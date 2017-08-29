@@ -73,7 +73,7 @@ class ContextSpec extends SpecConfig with FeatureTestMixin {
         NameInput("Achnatherum coronatum"),
         NameInput("Achnatherum coronatum (Thurb.) Barkworth"),
         NameInput("Homo sapiens")
-      ), dataSourceIds = Seq(1))
+      ), advancedResolution = true, dataSourceIds = Seq(1))
 
       val response = client.nameResolve(request).value
       response.context should contain only

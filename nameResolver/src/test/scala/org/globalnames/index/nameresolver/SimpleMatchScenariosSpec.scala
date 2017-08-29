@@ -41,7 +41,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
     "match 'Homo sapiens Linnaeus, 1758' exactly by name UUID" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId))).value.items
+        advancedResolution = true, dataSourceIds = Seq(dataSourceId))).value.items
       response should have size 1
       val results = response.headOption.value.results
       results should have size 1
@@ -55,7 +55,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
     "match 'Homo sapiens XXX, 1999' exactly by canonical UUID" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens XXX, 1999")),
-        dataSourceIds = Seq(dataSourceId))).value.items
+        dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
       response should have size 1
       val results = response.headOption.value.results
       results should have size 1
@@ -69,14 +69,14 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
     "preserve suppliedInput" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId))).value.items
+        dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
       response.headOption.value.suppliedInput.value shouldBe "Homo sapiens Linnaeus, 1758"
     }
 
     "not have suppliedId if not given" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId))).value.items
+        dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
       response.headOption.value.suppliedId shouldBe None
     }
 
@@ -84,7 +84,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
       val suppliedId = "abc"
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758", suppliedId = suppliedId.some)),
-        dataSourceIds = Seq(dataSourceId))).value.items
+        dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
       response.headOption.value.suppliedId.value shouldBe suppliedId
     }
 
@@ -95,7 +95,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
         NameInput("Andreaea heinemanii"),
         NameInput("Homo sapiens"),
         NameInput("Bryum capillare")
-      ), dataSourceIds = inputDataSourceIds)
+      ), dataSourceIds = inputDataSourceIds, advancedResolution = true)
       val response = client.nameResolve(request).value.items
       val dataSourceIdsResponse =
         response.flatMap { resp => resp.results.map { res => res.result.dataSource.id }}
@@ -109,7 +109,8 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
         val request = Request(
           names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
           dataSourceIds = inputDataSourceIds,
-          preferredDataSourceIds = preferredDataSourceIds)
+          preferredDataSourceIds = preferredDataSourceIds,
+          advancedResolution = true)
         val response = client.nameResolve(request).value.items.headOption.value
 
         val dataSourceIdsResponse = response.results.map { _.result.dataSource.id }
@@ -125,7 +126,8 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
         val preferredDataSourceIds = Seq(3, 4)
         val request = Request(
           names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-          preferredDataSourceIds = preferredDataSourceIds)
+          preferredDataSourceIds = preferredDataSourceIds,
+          advancedResolution = true)
         val response = client.nameResolve(request).value.items.headOption.value
 
         val dataSourceIdsResponse = response.results.map { _.result.dataSource.id }
@@ -146,7 +148,8 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
           "Herniaria incana subsp. permixta (Guss.) Maire"
         )
 
-        val request = Request(names = synonymNames.map { n => NameInput(value = n) })
+        val request = Request(names = synonymNames.map { n => NameInput(value = n) },
+                              advancedResolution = true)
         val response = client.nameResolve(request).value
 
         response.items.count { _.results.nonEmpty } shouldBe synonymNames.size
@@ -166,7 +169,7 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
 
         val request = Request(
           names = nonSynonymNames.map { n => NameInput(value = n) },
-          dataSourceIds = Seq(1)
+          dataSourceIds = Seq(1), advancedResolution = true
         )
         val response = client.nameResolve(request).value
 

@@ -18,6 +18,8 @@ class MatcherController @Inject()(matcher: Matcher)
                                                 Seq[tmatcher.Response]] =
     handle(tmatcher.Service.FindMatches) { args: tmatcher.Service.FindMatches.Args =>
       info("Responding to findMatches")
-      Future.value { matcher.resolve(args.canonicalNames, args.dataSourceIds) }
+      Future.value {
+        matcher.resolve(args.canonicalNames, args.dataSourceIds, args.advancedResolution)
+      }
     }
 }

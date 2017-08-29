@@ -41,8 +41,11 @@ class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
 
   private def nameTest(request: String,
                        expectedResults: Seq[ExpectedResult],
-                       dataSourceIds: Seq[Int] = Seq(1)): Unit = {
-    val req = Request(names = Seq(NameInput(request)), dataSourceIds = dataSourceIds)
+                       dataSourceIds: Seq[Int] = Seq(1),
+                       advancedResolution: Boolean = true): Unit = {
+    val req = Request(names = Seq(NameInput(request)),
+                      dataSourceIds = dataSourceIds,
+                      advancedResolution = advancedResolution)
     val responses = client.nameResolve(req).value.items
 
     responses.length shouldBe 1
@@ -116,7 +119,7 @@ class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
       request = "Bryum marattii",
       Seq(ExpectedResult(
         name = "Bryum",
-        kind = MatchKind.FuzzyCanonicalMatch,
+        kind = MatchKind.ExactMatchPartialByGenus,
         editDistance = 0,
         scoreLowerBound = FairMatchScore
       ))
@@ -305,6 +308,25 @@ class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
           editDistance = 1
         )),
         dataSourceIds = Seq(168)
+      )
+    }
+
+    "support `advancedResolution`" when {
+      "flag is false" in nameTest(
+        request = "Abarys rabastulus",
+        Seq(),
+        dataSourceIds = Seq(),
+        advancedResolution = false
+      )
+
+      "flag is true" in nameTest(
+        request = "Abarys rabastulus",
+        Seq(ExpectedResult(
+          name = "Abarys",
+          kind = MatchKind.ExactMatchPartialByGenus,
+          editDistance = 0
+        )),
+        dataSourceIds = Seq(7)
       )
     }
   }

@@ -133,6 +133,7 @@ object SchemaDefinition {
   val DataSourceIdsArg = Argument("dataSourceIds", OptionInputType(ListInputType(IntType)))
   val PreferredDataSourceIdsArg =
     Argument("preferredDataSourceIds", OptionInputType(ListInputType(IntType)))
+  val AdvancedResolutionArg = Argument("advancedResolution", OptionInputType(BooleanType), false)
   val NameRequestIOT = InputObjectType[NameInput]("name", List(
       InputField("value", StringType)
     , InputField("suppliedId", OptionInputType(StringType))
@@ -143,9 +144,11 @@ object SchemaDefinition {
   val QueryTypeOT = ObjectType(
     "Query", fields[Repository, Unit](
       Field("nameResolver", ResponsesOT,
-        arguments = List(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg),
+        arguments = List(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg,
+                         AdvancedResolutionArg),
         resolve = ctx =>
-          ctx.withArgs(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg)
+          ctx.withArgs(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg,
+                       AdvancedResolutionArg)
                       (ctx.ctx.nameResolver)
       ),
       Field("nameStrings", ListType(ResultItemOT),

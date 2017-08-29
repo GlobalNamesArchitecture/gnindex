@@ -15,7 +15,9 @@ struct Response {
 }
 
 service Service {
-    list<Response> findMatches(1: list<string> canonicalNames, list<i32> dataSourceIds) throws (
+    list<Response> findMatches(1: list<string> canonicalNames,
+                               2: list<i32> dataSourceIds,
+                               3: bool advancedResolution) throws (
         1: finatra_thrift_exceptions.ClientError clientError,
         2: finatra_thrift_exceptions.ServerError serverError
     )

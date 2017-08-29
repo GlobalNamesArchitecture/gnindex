@@ -227,12 +227,13 @@ class NameResolver private[nameresolver](request: Request,
   }
 
   private
-  def fuzzyMatch(scientificNames: Seq[String]): ScalaFuture[Seq[RequestResponse]] = {
+  def fuzzyMatch(scientificNames: Seq[String],
+                 advancedResolution: Boolean): ScalaFuture[Seq[RequestResponse]] = {
     logInfo(s"[Fuzzy match] Names: ${scientificNames.size}")
     if (scientificNames.isEmpty) {
       ScalaFuture.successful(Seq())
     } else {
-      matcherClient.findMatches(scientificNames, dataSourceIds)
+      matcherClient.findMatches(scientificNames, dataSourceIds, advancedResolution)
                            .as[ScalaFuture[Seq[thrift.matcher.Response]]].flatMap { fuzzyMatches =>
         val uuids =
           fuzzyMatches.flatMap { fm => fm.results.map { r => r.nameMatched.uuid: UUID } }.distinct
@@ -311,7 +312,7 @@ class NameResolver private[nameresolver](request: Request,
               s"Unparsed count: ${unmatchedNotParsed.size}")
 
       val namesForFuzzyMatch = unmatched.map { reqResp => reqResp.request.nameInput.value }
-      val fuzzyMatchesFut = fuzzyMatch(namesForFuzzyMatch)
+      val fuzzyMatchesFut = fuzzyMatch(namesForFuzzyMatch, request.advancedResolution)
 
       fuzzyMatchesFut.map { fuzzyMatches =>
         logInfo(s"[Resolution] Fuzzy matches count: ${fuzzyMatches.size}")

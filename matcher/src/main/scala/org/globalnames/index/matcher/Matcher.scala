@@ -55,7 +55,8 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
 
   private
   def resolveFromPartials(canonicalNameSplits: Seq[CanonicalNameSplit],
-                          dataSourceIds: Set[Int]): Seq[Response] = {
+                          dataSourceIds: Set[Int],
+                          advancedResolution: Boolean): Seq[Response] = {
     logger.info(s"Matcher service start for ${canonicalNameSplits.size} records")
     if (canonicalNameSplits.isEmpty) {
       Seq()
@@ -67,7 +68,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
         for (goms <- genusOnlyMatchesSplits) yield {
           val matchKind =
             if (goms.isOriginalCanonical) MatchKind.ExactCanonicalNameMatchByUUID
-            else MatchKind.FuzzyCanonicalMatch
+            else MatchKind.ExactMatchPartialByGenus
 
           val dsIds = canonicalNames.names(goms.namePartialStr)
           val results =
@@ -114,7 +115,15 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
         }
 
       val responsesYetEmpty =
-        resolveFromPartials(oonucrEmpty.map { _.canonicalNameSplit.shorten }, dataSourceIds)
+        if (advancedResolution) {
+          resolveFromPartials(oonucrEmpty.map { _.canonicalNameSplit.shorten },
+                              dataSourceIds,
+                              advancedResolution)
+        } else {
+          for { fm <- oonucrEmpty } yield {
+            Response(inputUuid = fm.canonicalNameSplit.nameProvidedUuid, results = Seq())
+          }
+        }
 
       val responsesNonEmpty =
         for (fuzzyMatch <- oonucrNonEmpty) yield {
@@ -147,11 +156,16 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
         }
 
       logger.info(s"Matcher service completed for ${canonicalNameSplits.size} records")
-      partialByGenusFuzzyResponses ++ responsesNonEmpty ++ responsesYetEmpty ++ noFuzzyMatches
+      val responses =
+        partialByGenusFuzzyResponses ++ responsesNonEmpty ++ responsesYetEmpty ++ noFuzzyMatches
+      assert(responses.size == canonicalNameSplits.size)
+      responses
     }
   }
 
-  def resolve(names: Seq[String], dataSourceIds: Seq[Int]): Seq[Response] = {
+  def resolve(names: Seq[String],
+              dataSourceIds: Seq[Int],
+              advancedResolution: Boolean): Seq[Response] = {
     logger.info("Started. Splitting names")
     val namesParsed = names.map { name => SNP.fromString(name) }
     val (namesParsedSuccessfully, namesParsedRest) = namesParsed.partition { np =>
@@ -164,6 +178,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
       CanonicalNameSplit(np.preprocessorResult.verbatim)
     }
     logger.info("Recursive fuzzy match started")
-    resolveFromPartials(namesParsedSuccessfullySplits, dataSourceIds.toSet) ++ responsesRest
+    resolveFromPartials(
+      namesParsedSuccessfullySplits, dataSourceIds.toSet, advancedResolution) ++ responsesRest
   }
 }
