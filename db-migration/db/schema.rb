@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170815111416) do
+ActiveRecord::Schema.define(version: 20170829181214) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -79,6 +79,7 @@ ActiveRecord::Schema.define(version: 20170815111416) do
   end
 
   add_index "name_strings__author_words", ["author_word"], name: "index_name_strings__author_words_on_author_word", using: :btree
+  add_index "name_strings__author_words", ["name_uuid"], name: "index_name_strings__author_words_on_name_uuid", using: :btree
 
   create_table "name_strings__genus", id: false, force: :cascade do |t|
     t.string "genus",     limit: 50, null: false
@@ -86,12 +87,14 @@ ActiveRecord::Schema.define(version: 20170815111416) do
   end
 
   add_index "name_strings__genus", ["genus"], name: "index_name_strings__genus_on_genus", using: :btree
+  add_index "name_strings__genus", ["name_uuid"], name: "index_name_strings__genus_on_name_uuid", using: :btree
 
   create_table "name_strings__species", id: false, force: :cascade do |t|
     t.string "species",   limit: 50, null: false
     t.uuid   "name_uuid",            null: false
   end
 
+  add_index "name_strings__species", ["name_uuid"], name: "index_name_strings__species_on_name_uuid", using: :btree
   add_index "name_strings__species", ["species"], name: "index_name_strings__species_on_species", using: :btree
 
   create_table "name_strings__subspecies", id: false, force: :cascade do |t|
@@ -99,6 +102,7 @@ ActiveRecord::Schema.define(version: 20170815111416) do
     t.uuid   "name_uuid",             null: false
   end
 
+  add_index "name_strings__subspecies", ["name_uuid"], name: "index_name_strings__subspecies_on_name_uuid", using: :btree
   add_index "name_strings__subspecies", ["subspecies"], name: "index_name_strings__subspecies_on_subspecies", using: :btree
 
   create_table "name_strings__uninomial", id: false, force: :cascade do |t|
@@ -106,6 +110,7 @@ ActiveRecord::Schema.define(version: 20170815111416) do
     t.uuid   "name_uuid",            null: false
   end
 
+  add_index "name_strings__uninomial", ["name_uuid"], name: "index_name_strings__uninomial_on_name_uuid", using: :btree
   add_index "name_strings__uninomial", ["uninomial"], name: "index_name_strings__uninomial_on_uninomial", using: :btree
 
   create_table "name_strings__year", id: false, force: :cascade do |t|
@@ -113,6 +118,7 @@ ActiveRecord::Schema.define(version: 20170815111416) do
     t.uuid   "name_uuid",           null: false
   end
 
+  add_index "name_strings__year", ["name_uuid"], name: "index_name_strings__year_on_name_uuid", using: :btree
   add_index "name_strings__year", ["year"], name: "index_name_strings__year_on_year", using: :btree
 
   create_table "vernacular_string_indices", id: false, force: :cascade do |t|
