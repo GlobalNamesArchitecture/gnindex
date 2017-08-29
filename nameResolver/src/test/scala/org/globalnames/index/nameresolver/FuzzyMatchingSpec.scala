@@ -309,6 +309,28 @@ class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
         )),
         dataSourceIds = Seq(168)
       )
+
+      "non empty match for 'Abarys rabasulus'" in nameTest(
+        request = "Abarys rabasulus",
+        Seq(
+          ExpectedResult(
+            name = "Abarys Turner, 1947",
+            kind = MatchKind.ExactMatchPartialByGenus,
+            editDistance = 0
+          ),
+          ExpectedResult(
+            name = "Abarys Agassiz, 1846",
+            kind = MatchKind.ExactMatchPartialByGenus,
+            editDistance = 0
+          ),
+          ExpectedResult(
+            name = "Abarys",
+            kind = MatchKind.ExactMatchPartialByGenus,
+            editDistance = 0
+          )
+        ),
+        dataSourceIds = Seq(7, 8)
+      )
     }
 
     "support `advancedResolution`" when {
