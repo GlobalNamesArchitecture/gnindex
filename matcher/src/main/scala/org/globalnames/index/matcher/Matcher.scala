@@ -10,7 +10,7 @@ import thrift.Name
 import javax.inject.{Inject, Singleton}
 
 import parser.ScientificNameParser.{instance => SNP}
-import index.thrift.{MatchKind, Uuid}
+import index.thrift.{MatchKind => MK, Uuid}
 import org.apache.commons.lang3.StringUtils
 import util.UuidEnhanced.javaUuid2thriftUuid
 
@@ -67,8 +67,8 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
       val noFuzzyMatches =
         for (goms <- genusOnlyMatchesSplits) yield {
           val matchKind =
-            if (goms.isOriginalCanonical) MatchKind.ExactCanonicalNameMatchByUUID
-            else MatchKind.ExactMatchPartialByGenus
+            if (goms.isOriginalCanonical) MK.ExactCanonicalNameMatchByUUID
+            else MK.ExactMatchPartialByGenus
 
           val dsIds = canonicalNames.names(goms.namePartialStr)
           val results =
@@ -88,8 +88,8 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
       val partialByGenusFuzzyResponses =
         for ((canonicalNameSplit, _) <- exactPartialCanonicalMatches) yield {
           val matchKind =
-            if (canonicalNameSplit.isOriginalCanonical) MatchKind.ExactCanonicalNameMatchByUUID
-            else MatchKind.FuzzyCanonicalMatch
+            if (canonicalNameSplit.isOriginalCanonical) MK.ExactCanonicalNameMatchByUUID
+            else MK.FuzzyCanonicalMatch
 
           val result = Result(nameMatched = canonicalNameSplit.namePartial,
                               distance = 0,
@@ -138,11 +138,11 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
               .map { candidate =>
                 val matchKind =
                   if (fuzzyMatch.canonicalNameSplit.isOriginalCanonical) {
-                    if (candidate.distance == 0) MatchKind.ExactCanonicalNameMatchByUUID
-                    else MatchKind.FuzzyCanonicalMatch
+                    if (candidate.distance == 0) MK.ExactCanonicalNameMatchByUUID
+                    else MK.FuzzyCanonicalMatch
                   } else {
-                    if (candidate.distance == 0) MatchKind.ExactPartialMatch
-                    else MatchKind.FuzzyPartialMatch
+                    if (candidate.distance == 0) MK.ExactPartialMatch
+                    else MK.FuzzyPartialMatch
                   }
                 Result(
                   nameMatched = Name(uuid = UuidGenerator.generate(candidate.term),
@@ -178,7 +178,21 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
       CanonicalNameSplit(np.preprocessorResult.verbatim)
     }
     logger.info("Recursive fuzzy match started")
-    resolveFromPartials(
-      namesParsedSuccessfullySplits, dataSourceIds.toSet, advancedResolution) ++ responsesRest
+    val matches =
+      resolveFromPartials(
+        namesParsedSuccessfullySplits, dataSourceIds.toSet, advancedResolution) ++ responsesRest
+
+    if (advancedResolution) {
+      matches
+    } else {
+      for (mtch <- matches) yield {
+        mtch.copy(results = mtch.results.filter { r =>
+          r.matchKind match {
+            case MK.FuzzyPartialMatch | MK.ExactMatchPartialByGenus | MK.ExactPartialMatch => false
+            case _ => true
+          }
+        })
+      }
+    }
   }
 }

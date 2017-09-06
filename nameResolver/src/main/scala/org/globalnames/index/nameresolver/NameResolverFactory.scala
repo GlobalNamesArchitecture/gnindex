@@ -57,31 +57,33 @@ object NameResolver {
       pathRanks = dbResult.nameStringIndex.classificationPathRanks
     )
 
-    val synonym = {
-      val classificationPathIdsSeq =
-        dbResult.nameStringIndex.classificationPathIds.map { _.fastSplit('|') }.getOrElse(List())
-      if (classificationPathIdsSeq.nonEmpty && classificationPathIdsSeq != Seq("")) {
-        dbResult.nameStringIndex.taxonId.some != classificationPathIdsSeq.lastOption
-      } else if (dbResult.nameStringIndex.acceptedTaxonId.isDefined) {
-        dbResult.nameStringIndex.taxonId.some != dbResult.nameStringIndex.acceptedTaxonId
-      } else true
-    }
-
+    val synonym = dbResult.acceptedNameOpt.isDefined
     val dataSource = DataSource(id = dbResult.dataSource.id,
                                 title = dbResult.dataSource.title)
 
-    val acceptedNameResult = dbResult.acceptedNameOpt.map { case (ns, nsi) =>
-      val canonicalNameOpt =
-        for { canId <- ns.canonicalUuid
-              canNameValue <- ns.canonical
-              canNameValueRanked <- SNP.fromString(ns.name).canonized(true) }
-          yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
-      AcceptedName(
-        name = Name(uuid = ns.id, value = ns.name),
-        canonicalName = canonicalNameOpt,
-        taxonId = nsi.taxonId,
-        dataSourceId = nsi.dataSourceId
-      )
+    val acceptedNameResult = {
+      val anOpt = for ((ns, nsi) <- dbResult.acceptedNameOpt) yield {
+        val canonicalNameOpt =
+          for { canId <- ns.canonicalUuid
+                canNameValue <- ns.canonical
+                canNameValueRanked <- SNP.fromString(ns.name).canonized(true) } yield {
+            CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
+          }
+        AcceptedName(
+          name = Name(uuid = ns.id, value = ns.name),
+          canonicalName = canonicalNameOpt,
+          taxonId = nsi.taxonId,
+          dataSourceId = nsi.dataSourceId
+        )
+      }
+      anOpt.getOrElse {
+        AcceptedName(
+          name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
+          canonicalName = canonicalNameOpt,
+          taxonId = dbResult.nameStringIndex.taxonId,
+          dataSourceId = dbResult.dataSource.id
+        )
+      }
     }
 
     val result = Result(
@@ -151,7 +153,8 @@ class NameResolver private[nameresolver](request: Request,
 
     query
       .joinLeft(T.NameStringIndices).on { case ((_, nsi_l, _), nsi_r) =>
-        nsi_l.dataSourceId === nsi_r.dataSourceId && nsi_l.acceptedTaxonId === nsi_r.taxonId
+        nsi_l.acceptedTaxonId =!= "" &&
+          nsi_l.dataSourceId === nsi_r.dataSourceId && nsi_l.acceptedTaxonId === nsi_r.taxonId
       }
       .joinLeft(T.NameStrings).on { case ((_, nsi), ns) => ns.id === nsi.map { _.nameStringId } }
       .map { case (((ns, nsi, ds), nsiAccepted), nsAccepted) =>

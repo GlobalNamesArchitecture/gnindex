@@ -83,7 +83,7 @@ struct Result {
     6: Classification classification
     7: DataSource dataSource
     8: optional string acceptedTaxonId
-    9: optional AcceptedName acceptedName
+    9: AcceptedName acceptedName
     10: optional Timestamp updatedAt
 }
 
