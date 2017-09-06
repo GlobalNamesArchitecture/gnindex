@@ -63,7 +63,7 @@ object NameResolver {
       if (classificationPathIdsSeq.nonEmpty && classificationPathIdsSeq != Seq("")) {
         dbResult.nameStringIndex.taxonId.some != classificationPathIdsSeq.lastOption
       } else if (dbResult.nameStringIndex.acceptedTaxonId.isDefined) {
-        dbResult.nameStringIndex.taxonId.some != dbResult.nameStringIndex.acceptedTaxonId
+        dbResult.nameStringIndex.taxonId.some != dbResult.nameStringIndex.acceptedTaxonId.some
       } else true
     }
 

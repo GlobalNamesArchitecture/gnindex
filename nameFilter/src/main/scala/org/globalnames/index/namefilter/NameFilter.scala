@@ -63,7 +63,7 @@ class NameFilter @Inject()(database: Database) {
       if (classificationPathIdsSeq.nonEmpty) {
         dbResult.nameStringIndex.taxonId.some != classificationPathIdsSeq.lastOption
       } else if (dbResult.nameStringIndex.acceptedTaxonId.isDefined) {
-        dbResult.nameStringIndex.taxonId.some != dbResult.nameStringIndex.acceptedTaxonId
+        dbResult.nameStringIndex.taxonId.some != dbResult.nameStringIndex.acceptedTaxonId.some
       } else true
     }
 
