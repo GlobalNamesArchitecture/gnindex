@@ -142,14 +142,17 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
     "return correct value for synonym field" when {
       "name is a synonym" in {
         val synonymNames = Seq(
-          "Neoperla schmidti Enderlein, 1909",
-          "Cynorkis pauciflora Rolfe",
-          "Vincetoxicum petiolare (A. Gray) Standl.",
-          "Herniaria incana subsp. permixta (Guss.) Maire"
+          // scalastyle:off non.ascii.character.disallowed
+          "Macrosporium septosporum (Preuss) Rabenh., 1851",
+          "Gloeosporium hawaiense Thüm.",
+          "Creonectria Seaver, 1909",
+          "Argomyces Arthur, 1912"
+          // scalastyle:on non.ascii.character.disallowed
         )
 
         val request = Request(names = synonymNames.map { n => NameInput(value = n) },
-                              advancedResolution = true)
+                              advancedResolution = true,
+                              dataSourceIds = Seq(8))
         val response = client.nameResolve(request).value
 
         response.items.count { _.results.nonEmpty } shouldBe synonymNames.size
@@ -176,6 +179,14 @@ class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
         response.items.count { _.results.nonEmpty } shouldBe nonSynonymNames.size
         val synonymStatuses = response.items.flatMap { _.results.map { _.result.synonym } }
         synonymStatuses should contain only false
+
+        for { item <- response.items
+              result <- item.results } {
+          result.result.acceptedName.name shouldBe result.result.name
+          result.result.acceptedName.canonicalName shouldBe result.result.canonicalName
+          result.result.acceptedName.taxonId shouldBe result.result.taxonId
+          result.result.acceptedName.dataSourceId shouldBe result.result.dataSource.id
+        }
       }
     }
   }
