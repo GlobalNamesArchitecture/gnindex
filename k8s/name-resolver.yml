@@ -60,7 +60,10 @@ spec:
             - name: MATCHER_ADDRESS
               value: gnmatcher-api:9999
             - name: DB_HOST
-              value: gnindex-pgpool
+              valueFrom:
+                configMapKeyRef:
+                  name: gnindex
+                  key: db.host
             - name: DB_PORT
               valueFrom:
                 configMapKeyRef:
