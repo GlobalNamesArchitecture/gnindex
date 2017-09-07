@@ -139,7 +139,7 @@ class NameFilter @Inject()(database: Database) {
 
   private[namefilter] def resolveYear(year: String) = {
     Try(year.toInt) match {
-      case Success(yr) if yr < 1750 =>
+      case Success(yr) if yr < 1753 =>
         T.NameStrings.take(0)
       case _ =>
         val query = T.NameStrings_Year.filter { x => x.year === year }.map { _.nameUuid }
