@@ -36,7 +36,7 @@ fi
 echo "Starting GNIndex API server"
 
 if [[ ${RUN_MODE} = "tests" ]]; then
-  sbt "~;test:compile;test:scalastyle;test;
+  sbt "~;test:compile;scalastyle;test:scalastyle;test;
         ;matcher/reStart -admin.port=$MATCHER_ADMIN_PORT -thrift.port=$MATCHER_THRIFT_PORT -names-path=./db-migration/matcher-data/canonical-names.csv -names-datasources-path=./db-migration/matcher-data/canonical-names-with-data-sources.csv \
         ;nameResolver/reStart -thrift.port=$NAMERESOLVER_THRIFT_PORT -admin.port=$NAMERESOLVER_ADMIN_PORT -matcherServiceAddress=$MATCHER_THRIFT_PORT \
         ;nameFilter/reStart -thrift.port=$NAMEFILTER_THRIFT_PORT -admin.port=$NAMEFILTER_ADMIN_PORT -matcherServiceAddress=$MATCHER_THRIFT_PORT \

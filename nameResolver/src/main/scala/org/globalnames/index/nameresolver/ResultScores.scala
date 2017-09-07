@@ -69,7 +69,10 @@ object ResultScores {
 
     val resultParsedString = SNP.fromString(result.name.value)
     val authorshipMatch = resultParsedString.authorshipNames.map { as => Author(as.mkString(" ")) }
-    val yearMatch = for (yr <- resultParsedString.yearDelimited; y <- Try(yr.toInt).toOption) yield y
+    val yearMatch = for {
+      yr <- resultParsedString.yearDelimited
+      y <- Try(yr.toInt).toOption
+    } yield y
     val authorScore =
       AuthorScore(
         authorshipInput = s"${authorshipInput.map { _.name }.mkString(" | ")} || year: $yearInput",
