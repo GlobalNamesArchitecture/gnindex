@@ -54,7 +54,8 @@ class NameResolverSimulation extends Simulation {
           |  ],
           |  "dataSourceIds": [1]
           |}""".stripMargin.replace("\n", "")
-      val qry = s"""{"query":"${formatGraphQL(graphql)}","variables":${variables}, "operationName":null}"""
+      val qry =
+        s"""{"query":"${formatGraphQL(graphql)}","variables":${variables}, "operationName":null}"""
 
       Map(
         "graphql-query" -> qry
@@ -95,7 +96,8 @@ class NameResolverSimulation extends Simulation {
     scenario("nameResolver: exact name by UUID")
       .exec(http("nameResolver: exact name by UUID")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
@@ -127,7 +129,8 @@ class NameResolverSimulation extends Simulation {
     scenario("nameResolver: exact canonical name by UUID")
       .exec(http("nameResolver: exact canonical name by UUID")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
@@ -147,7 +150,7 @@ class NameResolverSimulation extends Simulation {
         .asJSON
         .check(
           status.is(200),
-          jsonPath("$..name.id").ofType[String]
+          jsonPath("$..results").exists
         )
       )
   }

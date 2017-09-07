@@ -29,7 +29,8 @@ class NameFilterSimulation extends Simulation {
     scenario("nameFilter: canonical modifier")
       .exec(http("nameFilter: canonical modifier")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
@@ -53,7 +54,8 @@ class NameFilterSimulation extends Simulation {
     scenario("nameFilter: author modifier")
       .exec(http("nameFilter: author modifier")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
@@ -67,7 +69,7 @@ class NameFilterSimulation extends Simulation {
     val graphql =
       """
         |{
-        |  nameStrings(searchTerm: "yr:1752") {
+        |  nameStrings(searchTerm: "yr:1753") {
         |    name {
         |      id
         |      value
@@ -77,7 +79,8 @@ class NameFilterSimulation extends Simulation {
     scenario("nameFilter: year modifier")
       .exec(http("nameFilter: year modifier")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
@@ -101,7 +104,8 @@ class NameFilterSimulation extends Simulation {
     scenario("nameFilter: uninomial modifier")
       .exec(http("nameFilter: uninomial modifier")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
@@ -125,7 +129,8 @@ class NameFilterSimulation extends Simulation {
     scenario("nameFilter: genus modifier")
       .exec(http("nameFilter: genus modifier")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
@@ -149,7 +154,8 @@ class NameFilterSimulation extends Simulation {
     scenario("nameFilter: species modifier")
       .exec(http("nameFilter: species modifier")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
@@ -173,7 +179,8 @@ class NameFilterSimulation extends Simulation {
     scenario("nameFilter: subspecies modifier")
       .exec(http("nameFilter: subspecies modifier")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
@@ -197,7 +204,8 @@ class NameFilterSimulation extends Simulation {
     scenario("nameFilter: name_strings modifier")
       .exec(http("nameFilter: name_strings modifier")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
@@ -221,7 +229,8 @@ class NameFilterSimulation extends Simulation {
     scenario("nameFilter: exact modifier")
       .exec(http("nameFilter: exact modifier")
         .post("/api/graphql")
-        .body(StringBody(s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
+        .body(StringBody(
+          s"""{"query":"${formatGraphQL(graphql)}","variables":null,"operationName":null}"""))
         .asJSON
         .header("Content-Type", "application/json")
         .check(
