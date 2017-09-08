@@ -5,6 +5,7 @@ import scoverage.ScoverageKeys._
 import io.gatling.sbt.GatlingPlugin
 
 lazy val common = (project in file("common"))
+    .enablePlugins(CodegenPlugin)
     .settings(noPublishingSettings: _*)
     .settings(Settings.settings: _*)
     .settings(Settings.commonSettings: _*)
@@ -19,7 +20,6 @@ lazy val matcher = (project in file("matcher"))
     .settings(libraryDependencies ++= matcherDependencies)
 
 lazy val nameResolver = (project in file("nameResolver"))
-    .enablePlugins(CodegenPlugin)
     .dependsOn(common, matcher)
     .settings(publishingSettings: _*)
     .settings(Settings.settings: _*)
@@ -28,7 +28,6 @@ lazy val nameResolver = (project in file("nameResolver"))
     .settings(libraryDependencies ++= nameResolverDependencies)
 
 lazy val nameFilter = (project in file("nameFilter"))
-    .enablePlugins(CodegenPlugin)
     .dependsOn(common, matcher)
     .settings(publishingSettings: _*)
     .settings(Settings.settings: _*)

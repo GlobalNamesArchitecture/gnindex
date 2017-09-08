@@ -144,8 +144,44 @@ object Settings {
     fork in IntegrationTest := true
   )
 
+  /////////////////////
+  // Common settings //
+  /////////////////////
+  lazy val databaseUrl = {
+    val host = sys.env.getOrElse("DB_HOST", "localhost")
+    val port = sys.env.getOrElse("DB_PORT", "5432")
+    val database = sys.env.getOrElse("DB_DATABASE", "development")
+    s"jdbc:postgresql://$host:$port/$database"
+  }
+  lazy val databaseUser = sys.env.getOrElse("DB_USER", "postgres")
+  lazy val databasePassword = sys.env.getOrElse("DB_USER_PASS", "")
   lazy val commonSettings = Seq(
-    scroogeThriftDependencies in Compile := Seq("finatra-thrift_2.11")
+    scroogeThriftDependencies in Compile := Seq("finatra-thrift_2.11"),
+
+    slickCodegenDatabaseUrl := databaseUrl,
+    slickCodegenDatabaseUser := databaseUser,
+    slickCodegenDatabasePassword := databasePassword,
+    slickCodegenDriver := slick.driver.PostgresDriver,
+    slickCodegenJdbcDriver := "org.postgresql.Driver",
+    slickCodegenOutputPackage := "org.globalnames.index.dao",
+    slickCodegenExcludedTables := Seq("schema_version"),
+    slickCodegenCodeGenerator := { (model: m.Model) =>
+      new SourceCodeGenerator(model) {
+        override def code =
+          s"""import com.github.tototoshi.slick.PostgresJodaSupport._
+             |import org.joda.time.DateTime
+             |${super.code}""".stripMargin
+        override def Table = new Table(_) {
+          override def Column = new Column(_) {
+            override def rawType = model.tpe match {
+              case "java.sql.Timestamp" => "DateTime" // kill j.s.Timestamp
+              case _ => super.rawType
+            }
+          }
+        }
+      }
+    },
+    sourceGenerators in Compile += slickCodegen.taskValue
   )
 
   //////////////////
@@ -159,44 +195,9 @@ object Settings {
   ///////////////////////////
   // NameResolver settings //
   ///////////////////////////
-  lazy val databaseUrl = {
-    val host = sys.env.getOrElse("DB_HOST", "localhost")
-    val port = sys.env.getOrElse("DB_PORT", "5432")
-    val database = sys.env.getOrElse("DB_DATABASE", "development")
-    s"jdbc:postgresql://$host:$port/$database"
-  }
-  lazy val databaseUser = sys.env.getOrElse("DB_USER", "postgres")
-  lazy val databasePassword = sys.env.getOrElse("DB_USER_PASS", "")
   lazy val nameResolverSettings = Seq(
     assemblyJarName in assembly := "gnnameresolver-" + version.value + ".jar",
-
-    slickCodegenDatabaseUrl := databaseUrl,
-    slickCodegenDatabaseUser := databaseUser,
-    slickCodegenDatabasePassword := databasePassword,
-    slickCodegenDriver := slick.driver.PostgresDriver,
-    slickCodegenJdbcDriver := "org.postgresql.Driver",
-    slickCodegenOutputPackage := "org.globalnames.index.nameresolver.dao",
-    slickCodegenExcludedTables := Seq("schema_version"),
-    slickCodegenCodeGenerator := { (model: m.Model) =>
-      new SourceCodeGenerator(model) {
-        override def code =
-          s"""import com.github.tototoshi.slick.PostgresJodaSupport._
-             |import org.joda.time.DateTime
-             |${super.code}""".stripMargin
-        override def Table = new Table(_) {
-          override def Column = new Column(_) {
-            override def rawType = model.tpe match {
-              case "java.sql.Timestamp" => "DateTime" // kill j.s.Timestamp
-              case _ => super.rawType
-            }
-          }
-        }
-      }
-    },
-    sourceGenerators in Compile += slickCodegen.taskValue,
-
     Revolver.enableDebugging(port = 5006, suspend = false),
-
     wartremoverExcluded ++= Seq(
       (scalaSource in Compile).value /
         "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala",
@@ -210,41 +211,13 @@ object Settings {
   /////////////////////////
   lazy val nameFilterSettings = Seq(
     assemblyJarName in assembly := "gnnamefilter-" + version.value + ".jar",
-
-    slickCodegenDatabaseUrl := databaseUrl,
-    slickCodegenDatabaseUser := databaseUser,
-    slickCodegenDatabasePassword := databasePassword,
-    slickCodegenDriver := slick.driver.PostgresDriver,
-    slickCodegenJdbcDriver := "org.postgresql.Driver",
-    slickCodegenOutputPackage := "org.globalnames.index.namefilter.dao",
-    slickCodegenExcludedTables := Seq("schema_version"),
-    slickCodegenCodeGenerator := { (model: m.Model) =>
-      new SourceCodeGenerator(model) {
-        override def code =
-          s"""import com.github.tototoshi.slick.PostgresJodaSupport._
-             |import org.joda.time.DateTime
-             |${super.code}""".stripMargin
-        override def Table = new Table(_) {
-          override def Column = new Column(_) {
-            override def rawType = model.tpe match {
-              case "java.sql.Timestamp" => "DateTime" // kill j.s.Timestamp
-              case _ => super.rawType
-            }
-          }
-        }
-      }
-    },
-    sourceGenerators in Compile += slickCodegen.taskValue,
-
     Revolver.enableDebugging(port = 5009, suspend = false),
-
     wartremoverExcluded ++= Seq(
       (scalaSource in Compile).value /
         "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala",
       (sourceManaged in Compile).value /
         "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala"
     ),
-
     testOptions := Seq(
       Tests.Argument("-h", "target/test-html"),
       Tests.Argument("-u", "target/test-xml"),

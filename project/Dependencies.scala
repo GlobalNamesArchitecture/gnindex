@@ -67,7 +67,10 @@ object Dependencies {
   )
   val testDeps = Seq(library.scalatest, library.pegdown, library.niceUuid)
 
-  val commonDependencies: Seq[ModuleID] = Seq(library.finatraThrift)
+  val commonDependencies: Seq[ModuleID] = Seq(
+    library.finatraThrift,
+    library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
+  )
 
   val nameResolverDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
     library.twitterBijectionCore, library.twitterBijectionUtil,
