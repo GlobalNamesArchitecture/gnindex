@@ -26,7 +26,8 @@ object Settings {
     organization in ThisBuild := "org.globalnames",
     description := "Family of Global Names microservices",
     startYear := Some(2015),
-    licenses := Seq("MIT" -> new URL("https://github.com/GlobalNamesArchitecture/gnmicroservices/blob/master/LICENSE")),
+    licenses := Seq("MIT" ->
+      new URL("https://github.com/GlobalNamesArchitecture/gnmicroservices/blob/master/LICENSE")),
     resolvers ++= Seq(
       "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
       Resolver.sonatypeRepo("snapshots")
@@ -103,8 +104,11 @@ object Settings {
     useGpg := true,
     publishTo := {
       val nexus = "https://oss.sonatype.org/"
-      if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
-      else                  Some("releases" at nexus + "service/local/staging/deploy/maven2")
+      if (isSnapshot.value) {
+        Some("snapshots" at nexus + "content/repositories/snapshots")
+      } else {
+        Some("releases" at nexus + "service/local/staging/deploy/maven2")
+      }
     },
     pomIncludeRepository := { _ => false },
     pomExtra :=
@@ -173,7 +177,7 @@ object Settings {
     slickCodegenJdbcDriver := "org.postgresql.Driver",
     slickCodegenOutputPackage := "org.globalnames.index.nameresolver.dao",
     slickCodegenExcludedTables := Seq("schema_version"),
-    slickCodegenCodeGenerator := { (model:  m.Model) =>
+    slickCodegenCodeGenerator := { (model: m.Model) =>
       new SourceCodeGenerator(model) {
         override def code =
           s"""import com.github.tototoshi.slick.PostgresJodaSupport._
@@ -194,8 +198,10 @@ object Settings {
     Revolver.enableDebugging(port = 5006, suspend = false),
 
     wartremoverExcluded ++= Seq(
-      (scalaSource in Compile).value / "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala",
-      (sourceManaged in Compile).value / "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala"
+      (scalaSource in Compile).value /
+        "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala",
+      (sourceManaged in Compile).value /
+        "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala"
     )
   )
 
@@ -212,7 +218,7 @@ object Settings {
     slickCodegenJdbcDriver := "org.postgresql.Driver",
     slickCodegenOutputPackage := "org.globalnames.index.namefilter.dao",
     slickCodegenExcludedTables := Seq("schema_version"),
-    slickCodegenCodeGenerator := { (model:  m.Model) =>
+    slickCodegenCodeGenerator := { (model: m.Model) =>
       new SourceCodeGenerator(model) {
         override def code =
           s"""import com.github.tototoshi.slick.PostgresJodaSupport._
@@ -233,16 +239,20 @@ object Settings {
     Revolver.enableDebugging(port = 5009, suspend = false),
 
     wartremoverExcluded ++= Seq(
-      (scalaSource in Compile).value / "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala",
-      (sourceManaged in Compile).value / "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala"
+      (scalaSource in Compile).value /
+        "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala",
+      (sourceManaged in Compile).value /
+        "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala"
     ),
 
     testOptions := Seq(
       Tests.Argument("-h", "target/test-html"),
       Tests.Argument("-u", "target/test-xml"),
       Tests.Argument("-C", "org.globalnames.TestReporter"),
-      Tests.Argument("-oD"), // Configuring summaries has no effect when running with SBT
-      Tests.Argument("-eTNCXEHLOPQRM"), // T = full backtraces, NCXEHLOPQRM = Ignore all events that are already sent to out (SBT)
+      // Configuring summaries has no effect when running with SBT
+      Tests.Argument("-oD"),
+      // T = full backtraces, NCXEHLOPQRM = Ignore all events that are already sent to out (SBT)
+      Tests.Argument("-eTNCXEHLOPQRM"),
       Tests.Filter { testName => !testName.contains("Integration") }
     )
   )
