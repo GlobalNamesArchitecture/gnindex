@@ -89,7 +89,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
         for ((canonicalNameSplit, _) <- exactPartialCanonicalMatches) yield {
           val matchKind =
             if (canonicalNameSplit.isOriginalCanonical) MK.ExactCanonicalNameMatchByUUID
-            else MK.FuzzyCanonicalMatch
+            else MK.ExactPartialMatch
 
           val result = Result(nameMatched = canonicalNameSplit.namePartial,
                               distance = 0,
