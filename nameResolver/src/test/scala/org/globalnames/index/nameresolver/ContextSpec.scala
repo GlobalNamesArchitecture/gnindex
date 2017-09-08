@@ -10,7 +10,7 @@ import thrift.{Context, DataSource}
 import thrift.nameresolver.{NameInput, Request, Service => NameResolverService}
 import matcher.{MatcherModule, Server => MatcherServer}
 
-class ContextSpec extends SpecConfig with FeatureTestMixin {
+class ContextSpec extends WordSpecConfig with FeatureTestMixin {
   val matcherServer = new EmbeddedThriftServer(
     twitterServer = new MatcherServer,
     stage = Stage.PRODUCTION,

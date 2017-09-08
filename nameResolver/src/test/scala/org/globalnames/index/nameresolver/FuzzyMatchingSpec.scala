@@ -10,7 +10,7 @@ import thrift.MatchKind
 import thrift.nameresolver.{NameInput, Request, Service => NameResolverService}
 import matcher.{MatcherModule, Server => MatcherServer}
 
-class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
+class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
   val matcherServer = new EmbeddedThriftServer(
     twitterServer = new MatcherServer,
     stage = Stage.PRODUCTION,

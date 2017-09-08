@@ -10,7 +10,7 @@ import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
 import thrift.matcher.{Service => MatcherService}
 
-class ServerFeatureSpec extends SpecConfig with FeatureTestMixin {
+class ServerFeatureSpec extends WordSpecConfig with FeatureTestMixin {
 
   val canonicalNamesFilePath: Path = {
     def namesFileContent: String =

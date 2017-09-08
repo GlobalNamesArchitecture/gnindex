@@ -67,7 +67,7 @@ object Dependencies {
   )
   val testDeps = Seq(library.scalatest, library.pegdown, library.niceUuid)
 
-  val commonDependencies: Seq[ModuleID] = Seq(
+  val commonDependencies: Seq[ModuleID] = testDeps ++ Seq(
     library.finatraThrift,
     library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
   )

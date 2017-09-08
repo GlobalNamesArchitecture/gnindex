@@ -9,7 +9,7 @@ import com.twitter.util.Future
 import thrift.nameresolver.{Service => NameResolverService}
 import matcher.{MatcherModule, Server => MatcherServer}
 
-class DataSourceMatchSpec extends SpecConfig with FeatureTestMixin {
+class DataSourceMatchSpec extends WordSpecConfig with FeatureTestMixin {
   val matcherServer = new EmbeddedThriftServer(
     twitterServer = new MatcherServer,
     stage = Stage.PRODUCTION,

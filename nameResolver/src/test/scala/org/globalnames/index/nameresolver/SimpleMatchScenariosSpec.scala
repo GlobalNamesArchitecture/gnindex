@@ -12,7 +12,7 @@ import matcher.{MatcherModule, Server => MatcherServer}
 
 import scalaz.syntax.std.option._
 
-class SimpleMatchScenariosSpec extends SpecConfig with FeatureTestMixin {
+class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
   val matcherServer = new EmbeddedThriftServer(
     twitterServer = new MatcherServer,
     stage = Stage.PRODUCTION,

@@ -14,7 +14,7 @@ import thrift.namefilter.{Request, Service => NameFilterService}
 import util.UuidEnhanced._
 import matcher.{MatcherModule, Server => MatcherServer}
 
-class NameFilterSpec extends org.globalnames.index.namefilter.SpecConfig with FeatureTestMixin {
+class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
 
   import QueryParser._
 
