@@ -126,7 +126,6 @@ class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
     )
 
     "match 'Bryum minutum'" in {
-      pending // fix api kind
       nameTest(
         request = "Bryum minutum",
         Seq(ExpectedResult(
@@ -148,57 +147,45 @@ class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
       ))
     )
 
-    "match 'Dicranella schreberiana'" in {
-      pending // fix api kind
-      nameTest(
-        request = "Dicranella schreberiana",
-        Seq(ExpectedResult(
-          name = "Dicranella",
-          kind = MatchKind.ExactMatchPartialByGenus,
-          editDistance = 0,
-          scoreLowerBound = FairMatchScore
-        ))
-      )
-    }
+    "match 'Dicranella schreberiana'" in nameTest(
+      request = "Dicranella schreberiana",
+      Seq(ExpectedResult(
+        name = "Dicranella",
+        kind = MatchKind.ExactMatchPartialByGenus,
+        editDistance = 0,
+        scoreLowerBound = FairMatchScore
+      ))
+    )
 
-    "match 'Didymodon maschalogenus'" in {
-      pending // fix api kind
-      nameTest(
-        request = "Didymodon maschalogenus",
-        Seq(ExpectedResult(
-          name = "Dicranella",
-          kind = MatchKind.ExactMatchPartialByGenus,
-          editDistance = 0,
-          scoreLowerBound = FairMatchScore
-        ))
-      )
-    }
+    "match 'Didymodon maschalogenus'" in nameTest(
+      request = "Didymodon maschalogenus",
+      Seq(ExpectedResult(
+        name = "Didymodon",
+        kind = MatchKind.ExactMatchPartialByGenus,
+        editDistance = 0,
+        scoreLowerBound = FairMatchScore
+      ))
+    )
 
-    "match 'Ditrichum cylindricum'" in {
-      pending // fix api kind
-      nameTest(
-        request = "Ditrichum cylindricum",
-        Seq(ExpectedResult(
-          name = "Ditrichum",
-          kind = MatchKind.ExactMatchPartialByGenus,
-          editDistance = 0,
-          scoreLowerBound = FairMatchScore
-        ))
-      )
-    }
+    "match 'Ditrichum cylindricum'" in nameTest(
+      request = "Ditrichum cylindricum",
+      Seq(ExpectedResult(
+        name = "Ditrichum",
+        kind = MatchKind.ExactMatchPartialByGenus,
+        editDistance = 0,
+        scoreLowerBound = FairMatchScore
+      ))
+    )
 
-    "match 'Encalypta brevicolla'" in {
-      pending // fix api kind
-      nameTest(
-        request = "Encalypta brevicolla",
-        Seq(ExpectedResult(
-          name = "Encalypta",
-          kind = MatchKind.ExactMatchPartialByGenus,
-          editDistance = 0,
-          scoreLowerBound = FairMatchScore
-        ))
-      )
-    }
+    "match 'Encalypta brevicolla'" in nameTest(
+      request = "Encalypta brevicolla",
+      Seq(ExpectedResult(
+        name = "Encalypta",
+        kind = MatchKind.ExactMatchPartialByGenus,
+        editDistance = 0,
+        scoreLowerBound = FairMatchScore
+      ))
+    )
 
     "match 'Entosthodon muehlenbergii'" in nameTest(
       request = "Entosthodon muehlenbergii",
@@ -210,89 +197,63 @@ class FuzzyMatchingSpec extends SpecConfig with FeatureTestMixin {
       ))
     )
 
-    "match 'Hymenoloma crispulum'" in {
-      pending // Hymenoloma is far from Hymenoloma
-      nameTest(
-        request = "Hymenoloma crispulum",
-        Seq(ExpectedResult(
-          name = "Hymenosoma",
-          kind = MatchKind.FuzzyPartialMatch,
-          editDistance = 1
-        ))
-      )
-    }
+    "match 'Hymenoloma crispulum'" in nameTest(
+      request = "Hymenoloma crispulum",
+      Seq()
+    )
 
-    "match 'Hymenoloma intermedium'" in {
-      pending // Hymenoloma is far from Hymenoloma
-      nameTest(
-        request = "Hymenoloma intermedium",
-        Seq(ExpectedResult(
-          name = "Hymenosoma",
-          kind = MatchKind.FuzzyPartialMatch,
-          editDistance = 1
-        ))
-      )
-    }
+    "match 'Hymenoloma intermedium'" in nameTest(
+      request = "Hymenoloma intermedium",
+      Seq()
+    )
 
-    "match 'Hypnum cupressiforme var. brevisetum'" in {
-      pending // should be `Partial canonical form match`
-      nameTest(
-        request = "Hypnum cupressiforme var. brevisetum",
-        Seq(ExpectedResult(
-          name = "Hypnum cupressiforme Hedwig, 1801",
-          kind = MatchKind.ExactPartialMatch,
-          editDistance = 1
-        ))
-      )
-    }
+    "match 'Hypnum cupressiforme var. brevisetum'" in nameTest(
+      request = "Hypnum cupressiforme var. brevisetum",
+      Seq(ExpectedResult(
+        name = "Hypnum cupressiforme Hedwig, 1801",
+        kind = MatchKind.ExactPartialMatch,
+        editDistance = 0
+      ))
+    )
 
-    "match 'Philonotis americana'" in {
-      pending // fix kind api
-      nameTest(
-        request = "Philonotis americana",
-        Seq(ExpectedResult(
-          name = "Philonotis",
+    "match 'Philonotis americana'" in nameTest(
+      request = "Philonotis americana",
+      Seq(ExpectedResult(
+        name = "Philonotis",
+        kind = MatchKind.ExactMatchPartialByGenus,
+        editDistance = 0
+      ))
+    )
+
+    "match 'Myrinia rotundifolia'" in nameTest(
+      request = "Myrinia rotundifolia",
+      Seq(
+        ExpectedResult(
+          name = "Myrinia", // animalia
           kind = MatchKind.ExactMatchPartialByGenus,
           editDistance = 0
-        ))
-      )
-    }
-
-    "match 'Myrinia rotundifolia'" in {
-      pending // fix kind api
-      nameTest(
-        request = "Myrinia rotundifolia",
-        Seq(
-          ExpectedResult(
-            name = "Myrinia", // plantae
-            kind = MatchKind.ExactMatchPartialByGenus,
-            editDistance = 0
-          ),
-          ExpectedResult(
-            name = "Myrinia", // animalia
-            kind = MatchKind.ExactMatchPartialByGenus,
-            editDistance = 0
-          )
+        ),
+        ExpectedResult(
+          name = "Myrinia", // plantae
+          kind = MatchKind.ExactMatchPartialByGenus,
+          editDistance = 0
         )
       )
-    }
+    )
 
     "match 'Pterobryum arbuscula'" in nameTest(
       request = "Pterobryum arbuscula",
       Seq()
     )
 
-    "match 'Sanionia georgico-uncinata'" in {
-      pending // fix kind api
-      nameTest(
-        request = "Sanionia georgico-uncinata",
-        Seq(ExpectedResult(
-          name = "Sanionia georgicouncinata Ochyra, 1998",
-          kind = MatchKind.ExactPartialMatch,
-          editDistance = 1
-        ))
-      )
-    }
+    "match 'Sanionia georgico-uncinata'" in nameTest(
+      request = "Sanionia georgico-uncinata",
+      Seq(ExpectedResult(
+        name = "Sanionia georgicouncinata Ochyra, 1998",
+        kind = MatchKind.FuzzyCanonicalMatch,
+        editDistance = 1
+      ))
+    )
 
     "don't fuzzy match on genus" when {
       "empty match for 'Adarys robusulus'" in nameTest(
