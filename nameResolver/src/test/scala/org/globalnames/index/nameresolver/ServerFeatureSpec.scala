@@ -13,6 +13,7 @@ import thrift.nameresolver.{NameInput, Service => NameResolverService, Request}
 import matcher.{MatcherModule, Server => MatcherServer}
 
 class ServerFeatureSpec extends WordSpecConfig with FeatureTestMixin {
+  override def launchConditions: Boolean = matcherServer.isHealthy
 
   val canonicalNamesFilePath: Path = {
     val namesFileContent: String = s"""

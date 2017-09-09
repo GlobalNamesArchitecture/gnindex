@@ -13,6 +13,8 @@ import matcher.{MatcherModule, Server => MatcherServer}
 import scalaz.syntax.std.option._
 
 class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
+  override def launchConditions: Boolean = matcherServer.isHealthy
+
   val matcherServer = new EmbeddedThriftServer(
     twitterServer = new MatcherServer,
     stage = Stage.PRODUCTION,

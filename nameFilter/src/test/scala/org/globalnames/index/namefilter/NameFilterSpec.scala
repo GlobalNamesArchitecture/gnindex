@@ -18,6 +18,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
 
   import QueryParser._
 
+  override def launchConditions: Boolean = matcherServer.isHealthy
+
   val matcherServer = new EmbeddedThriftServer(
     twitterServer = new MatcherServer,
     stage = Stage.PRODUCTION,

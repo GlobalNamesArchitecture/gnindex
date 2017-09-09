@@ -11,6 +11,8 @@ import thrift.nameresolver.{NameInput, Request, Service => NameResolverService}
 import matcher.{MatcherModule, Server => MatcherServer}
 
 class ContextSpec extends WordSpecConfig with FeatureTestMixin {
+  override def launchConditions: Boolean = matcherServer.isHealthy
+
   val matcherServer = new EmbeddedThriftServer(
     twitterServer = new MatcherServer,
     stage = Stage.PRODUCTION,
