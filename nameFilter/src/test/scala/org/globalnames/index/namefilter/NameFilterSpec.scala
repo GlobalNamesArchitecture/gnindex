@@ -514,28 +514,18 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       }
     }
 
-    describe(".resolveDataSources") {
+    describe("nameStringsByUuid") {
       it("resolves") {
         val scala.util.Success(uuid) = u"b2cf575f-ec53-50ec-96b4-da94de2d926f".uuid
-        val results = nameFilterClient.nameStringDataSources(Seq(uuid)).value
-        for (result <- results) {
-          (result.nameUuid: UUID) shouldBe uuid
-          result.dataSourceIds should contain only (168, 169)
+        val responses = nameFilterClient.nameStringByUuid(Seq(uuid)).value
+        responses.size shouldBe 1
+        for (response <- responses) {
+          (response.uuid: UUID) shouldBe uuid
+          response.names.size shouldBe 2
+          response.names.map { _.dataSource.id } should contain only (168, 169)
+          response.names.map { _.name.uuid: UUID } should contain only uuid
         }
       }
     }
-
-    /*
-    describe(".findNameStringByUuid") {
-      it("resolves") {
-        whenReady(faceted.findNameStringByUuid(
-          UUID.fromString("073bab60-1816-5b5c-b018-87b4193db6f7"), parameters)) { res =>
-          res.matches.map {
-            _.nameString
-          } should contain only ns073bab6018165b5cb01887b4193db6f7
-        }
-      }
-    }
-    */
   }
 }
