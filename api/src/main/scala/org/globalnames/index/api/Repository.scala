@@ -4,7 +4,7 @@ package api
 
 import javax.inject.Inject
 
-import thrift.ResultScored
+import thrift.Result
 import thrift.namefilter.{Request => FSRequest, Service => NameFilterService}
 import thrift.nameresolver.{Request => NRRequest, Service => NameResolverService, _}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -25,8 +25,8 @@ class Repository @Inject() (nameResolverClient: NameResolverService.FutureIface,
     nameResolverClient.nameResolve(req).as[ScalaFuture[Responses]]
   }
 
-  def nameStrings(searchTerm: String): ScalaFuture[Seq[ResultScored]] = {
+  def nameStrings(searchTerm: String): ScalaFuture[Seq[Result]] = {
     val req = FSRequest(searchTerm = searchTerm)
-    nameFilterClient.nameString(req).as[ScalaFuture[Seq[ResultScored]]]
+    nameFilterClient.nameString(req).as[ScalaFuture[Seq[Result]]]
   }
 }

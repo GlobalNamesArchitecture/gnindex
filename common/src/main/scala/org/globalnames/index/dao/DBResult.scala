@@ -5,36 +5,40 @@ package dao
 import dao.{Tables => T}
 import thrift._
 import util.UuidEnhanced._
-import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
+import parser.ScientificNameParser.{instance => SNP}
 
-final case class DBResult(
-  nameString: T.NameStringsRow,
-  nameStringIndex: T.NameStringIndicesRow,
-  dataSource: T.DataSourcesRow,
-  acceptedNameOpt: Option[(T.NameStringsRow, T.NameStringIndicesRow)],
-  vernaculars: Seq[(T.VernacularStringIndicesRow, T.VernacularStringsRow)])
 
 object DBResult {
-  def create(nameInputParsed: SNResult,
-             dbResult: DBResult,
-             matchType: MatchType): ResultScored = {
+  def create(nameString: T.NameStringsRow,
+             nameStringIndex: T.NameStringIndicesRow,
+             dataSource: T.DataSourcesRow,
+             acceptedNameStringRow: Option[T.NameStringsRow],
+             acceptedNameStringIndexRow: Option[T.NameStringIndicesRow],
+             vernaculars: Seq[(T.VernacularStringIndicesRow, T.VernacularStringsRow)],
+             matchType: MatchType): Result = {
+    val acceptedNameOpt: Option[(T.NameStringsRow, T.NameStringIndicesRow)] = {
+      for (ns <- acceptedNameStringRow; nsi <- acceptedNameStringIndexRow)
+        yield (ns, nsi)
+    }
+
     val canonicalNameOpt =
-      for { canId <- dbResult.nameString.canonicalUuid
-            canNameValue <- dbResult.nameString.canonical
-            canNameValueRanked <- nameInputParsed.canonized(showRanks = true) }
-      yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
+      for {
+        canId <- nameString.canonicalUuid
+        canNameValue <- nameString.canonical
+        canNameValueRanked <- SNP.fromString(nameString.name).canonized(showRanks = true)
+      } yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
 
     val classification = Classification(
-      path = dbResult.nameStringIndex.classificationPath,
-      pathIds = dbResult.nameStringIndex.classificationPathIds,
-      pathRanks = dbResult.nameStringIndex.classificationPathRanks
+      path = nameStringIndex.classificationPath,
+      pathIds = nameStringIndex.classificationPathIds,
+      pathRanks = nameStringIndex.classificationPathRanks
     )
 
-    val synonym = dbResult.acceptedNameOpt.isDefined
-    val dataSource = DataSource(id = dbResult.dataSource.id, title = dbResult.dataSource.title)
+    val synonym = acceptedNameOpt.isDefined
+    val dataSourceRes = DataSource(id = dataSource.id, title = dataSource.title)
 
     val acceptedNameResult = {
-      val anOpt = for ((ns, nsi) <- dbResult.acceptedNameOpt) yield {
+      val anOpt = for ((ns, nsi) <- acceptedNameOpt) yield {
         val canonicalNameOpt =
           for { canId <- ns.canonicalUuid
                 canNameValue <- ns.canonical
@@ -50,28 +54,27 @@ object DBResult {
       }
       anOpt.getOrElse {
         AcceptedName(
-          name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
+          name = Name(uuid = nameString.id, value = nameString.name),
           canonicalName = canonicalNameOpt,
-          taxonId = dbResult.nameStringIndex.taxonId,
-          dataSourceId = dbResult.dataSource.id
+          taxonId = nameStringIndex.taxonId,
+          dataSourceId = dataSource.id
         )
       }
     }
 
     val result = Result(
-      name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
+      name = Name(uuid = nameString.id, value = nameString.name),
       canonicalName = canonicalNameOpt,
       synonym = synonym,
-      taxonId = dbResult.nameStringIndex.taxonId,
+      taxonId = nameStringIndex.taxonId,
       matchType = matchType,
       classification = classification,
-      dataSource = dataSource,
-      acceptedTaxonId = dbResult.nameStringIndex.acceptedTaxonId,
+      dataSource = dataSourceRes,
+      acceptedTaxonId = nameStringIndex.acceptedTaxonId,
       acceptedName = acceptedNameResult,
-      updatedAt = dbResult.dataSource.updatedAt.map { _.toString }
+      updatedAt = dataSource.updatedAt.map { _.toString }
     )
-    val score = ResultScores.compute(nameInputParsed, result)
-    ResultScored(result, score)
+    result
   }
 }
 

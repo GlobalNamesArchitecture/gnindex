@@ -130,6 +130,20 @@ object SchemaDefinition {
     )
   )
 
+  val NameStringOT = ObjectType(
+    "NameString", fields[Unit, Result](
+        Field("name", NameOT, resolve = _.value.name)
+      , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
+      , Field("synonym", BooleanType, resolve = _.value.synonym)
+      , Field("taxonId", StringType, resolve = _.value.taxonId)
+      , Field("classification", ClassificationOT, resolve = _.value.classification)
+      , Field("matchType", MatchTypeOT, resolve = _.value.matchType)
+      , Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
+      , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.acceptedName)
+      , Field("updatedAt", OptionType(StringType), resolve = _.value.updatedAt)
+    )
+  )
+
   val DataSourceIdsArg = Argument("dataSourceIds", OptionInputType(ListInputType(IntType)))
   val PreferredDataSourceIdsArg =
     Argument("preferredDataSourceIds", OptionInputType(ListInputType(IntType)))
@@ -151,7 +165,7 @@ object SchemaDefinition {
                        AdvancedResolutionArg)
                       (ctx.ctx.nameResolver)
       ),
-      Field("nameStrings", ListType(ResultItemOT),
+      Field("nameStrings", ListType(NameStringOT),
         arguments = List(SearchTermArg),
         resolve = ctx => ctx.withArgs(SearchTermArg)(ctx.ctx.nameStrings)
       )

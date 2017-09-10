@@ -221,7 +221,7 @@ class NameFilter @Inject()(database: Database) {
       .take(1000)
   }
 
-  def resolveString(request: Request): TwitterFuture[Seq[ResultScored]] = {
+  def resolveString(request: Request): TwitterFuture[Seq[Result]] = {
     val search = QueryParser.result(request.searchTerm)
     val resolverFunction: (String) => Query[T.NameStrings, T.NameStringsRow, Seq] =
       search.modifier match {
@@ -267,18 +267,16 @@ class NameFilter @Inject()(database: Database) {
     val nameStrings = resolverFunction(valueCleaned(search.contents, search.modifier))
     val resultFuture = database.run(queryComplete(nameStrings).result).map { dbResults =>
       val results = dbResults.map { case (ns, nsi, ds, nsiAcptOpt, nsAcptOpt) =>
-        val acceptedName = for (ns <- nsAcptOpt; nsi <- nsiAcptOpt) yield (ns, nsi)
-        val dbResult = DBResult(ns, nsi, ds, acceptedName, Seq())
         val matchType = MatchType(
           kind = MatchKind.Unknown,
           editDistance = 0,
           score = 0
         )
-        DBResult.create(SNP.fromString(ns.name), dbResult, matchType)
+        DBResult.create(ns, nsi, ds, nsAcptOpt, nsiAcptOpt, Seq(), matchType)
       }
       results
     }
-    resultFuture.as[TwitterFuture[Seq[ResultScored]]]
+    resultFuture.as[TwitterFuture[Seq[Result]]]
   }
 }
 

@@ -11,7 +11,7 @@ struct Request {
     3: i32 perPage = nameStringsMaxCount
 }
 
-struct NameStringUuidDataSources {
-    1: commondata.Uuid nameUuid
-    2: list<i32> dataSourceIds
+struct Response {
+    1: commondata.Uuid uuid
+    2: list<commondata.Result> names
 }

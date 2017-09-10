@@ -5,13 +5,12 @@ include "namefilter/data.thrift"
 include "commondata.thrift"
 
 service Service {
-    list<commondata.ResultScored> nameString(1: data.Request request) throws (
+    list<commondata.Result> nameString(1: data.Request request) throws (
         1: finatra_thrift_exceptions.ClientError clientError,
         2: finatra_thrift_exceptions.ServerError serverError
     )
 
-    list<data.NameStringUuidDataSources> nameStringDataSources(1: list<commondata.Uuid> nameUuids)
-    throws (
+    list<data.Response> nameStringDataSources(1: list<commondata.Uuid> nameUuids) throws (
         1: finatra_thrift_exceptions.ClientError clientError,
         2: finatra_thrift_exceptions.ServerError serverError
     )
