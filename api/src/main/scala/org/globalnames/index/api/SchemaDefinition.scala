@@ -144,6 +144,13 @@ object SchemaDefinition {
     )
   )
 
+  val NameResponseOT = ObjectType(
+    "NameResponse", fields[Unit, namefilter.Response](
+        Field("inputId", IDType, resolve = _.value.uuid.string)
+      , Field("names", ListType(NameStringOT), resolve = _.value.names)
+    )
+  )
+
   val DataSourceIdsArg = Argument("dataSourceIds", OptionInputType(ListInputType(IntType)))
   val PreferredDataSourceIdsArg =
     Argument("preferredDataSourceIds", OptionInputType(ListInputType(IntType)))
@@ -154,6 +161,8 @@ object SchemaDefinition {
   ))
   val NamesRequestArg = Argument("names", ListInputType(NameRequestIOT))
   val SearchTermArg = Argument("searchTerm", StringType)
+
+  val nameUuidsArg = Argument("uuids", ListInputType(IDType))
 
   val QueryTypeOT = ObjectType(
     "Query", fields[Repository, Unit](
@@ -168,6 +177,10 @@ object SchemaDefinition {
       Field("nameStrings", ListType(NameStringOT),
         arguments = List(SearchTermArg),
         resolve = ctx => ctx.withArgs(SearchTermArg)(ctx.ctx.nameStrings)
+      ),
+      Field("nameStringsByUuid", ListType(NameResponseOT),
+        arguments = List(nameUuidsArg),
+        resolve = ctx => ctx.withArgs(nameUuidsArg)(ctx.ctx.nameStringsByUuids)
       )
     )
   )

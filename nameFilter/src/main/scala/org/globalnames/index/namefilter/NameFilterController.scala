@@ -8,7 +8,7 @@ import com.twitter.finatra.thrift.Controller
 import com.twitter.finatra.thrift.internal.ThriftMethodService
 import thrift.Result
 import thrift.namefilter.{Response, Service => NameFilterService}
-import thrift.namefilter.Service.{NameString, NameStringDataSources}
+import thrift.namefilter.Service.{NameString, NameStringByUuid}
 
 @Singleton
 class NameFilterController @Inject()(nameFilter: NameFilter, nameStrindByUUID: NameStringByUUID)
@@ -21,9 +21,8 @@ class NameFilterController @Inject()(nameFilter: NameFilter, nameStrindByUUID: N
       nameFilter.resolveString(args.request)
     }
 
-  override val nameStringDataSources: ThriftMethodService[NameStringDataSources.Args,
-                                                          Seq[Response]] =
-    handle(NameStringDataSources) { args: NameStringDataSources.Args =>
+  override val nameStringByUuid: ThriftMethodService[NameStringByUuid.Args, Seq[Response]] =
+    handle(NameStringByUuid) { args: NameStringByUuid.Args =>
       info(s"Responding nameStringDataSources")
       nameStrindByUUID.resolve(args.nameUuids)
     }

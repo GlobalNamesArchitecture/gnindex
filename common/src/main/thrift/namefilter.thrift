@@ -10,7 +10,7 @@ service Service {
         2: finatra_thrift_exceptions.ServerError serverError
     )
 
-    list<data.Response> nameStringDataSources(1: list<commondata.Uuid> nameUuids) throws (
+    list<data.Response> nameStringByUuid(1: list<commondata.Uuid> nameUuids) throws (
         1: finatra_thrift_exceptions.ClientError clientError,
         2: finatra_thrift_exceptions.ServerError serverError
     )
