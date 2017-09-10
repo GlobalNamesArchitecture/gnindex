@@ -14,7 +14,7 @@ import io.gatling.sbt.GatlingKeys.Gatling
 
 object Settings {
 
-  lazy val settings = Seq(
+  lazy val settings = testSettings ++ Seq(
     version := {
       val version = "0.1.0"
       val release = sys.props.isDefinedAt("release")

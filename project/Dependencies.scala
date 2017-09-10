@@ -68,6 +68,8 @@ object Dependencies {
   val testDeps = Seq(library.scalatest, library.pegdown, library.niceUuid)
 
   val commonDependencies: Seq[ModuleID] = testDeps ++ Seq(
+    library.scalaz,
+    library.gnparser, library.gnmatcher,
     library.finatraThrift,
     library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
   )
@@ -82,9 +84,7 @@ object Dependencies {
     library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
   )
 
-  val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
-    library.gnparser, library.gnmatcher, library.scalaz
-  )
+  val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
 
   val apiDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
     library.finatraHttp, library.finatraJackson,
