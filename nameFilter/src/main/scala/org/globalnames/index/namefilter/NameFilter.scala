@@ -2,30 +2,20 @@ package org.globalnames
 package index
 package namefilter
 
-import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
-import akka.http.impl.util._
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
-import com.twitter.inject.Logging
 import com.twitter.util.{Future => TwitterFuture}
-import org.apache.commons.lang3.StringUtils
-import dao.{Tables => T}
-import thrift.matcher.{Service => MatcherService}
+import org.apache.commons.lang3.StringUtils.capitalize
+import dao.{DBResult, Tables => T}
 import thrift._
 import thrift.namefilter._
-import util.UuidEnhanced._
-import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
+import parser.ScientificNameParser.{instance => SNP}
 import slick.jdbc.PostgresProfile.api._
-import scala.util.{Try, Success, Failure}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future => ScalaFuture}
-import scalaz.syntax.std.boolean._
-import scalaz.syntax.std.option._
-import org.apache.commons.lang3.StringUtils.capitalize
-import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
+import scala.util.{Success, Try}
 
 @Singleton
 class NameFilter @Inject()(database: Database) {
@@ -33,74 +23,6 @@ class NameFilter @Inject()(database: Database) {
 
   private val unaccent = SimpleFunction.unary[String, String]("unaccent")
   private val unaccentOpt = SimpleFunction.unary[Option[String], Option[String]]("unaccent")
-
-  final case class RequestResponse(request: Request, response: ResultScored)
-  final case class DBResult(
-    nameString: T.NameStringsRow,
-    nameStringIndex: T.NameStringIndicesRow,
-    dataSource: T.DataSourcesRow,
-    acceptedNameOpt: Option[(T.NameStringsRow, T.NameStringIndicesRow)],
-    vernaculars: Seq[(T.VernacularStringIndicesRow, T.VernacularStringsRow)])
-
-  private def createResult(nameInputParsed: SNResult,
-                           dbResult: DBResult,
-                           matchType: MatchType): ResultScored = {
-    val canonicalNameOpt =
-      for { canId <- dbResult.nameString.canonicalUuid
-            canNameValue <- dbResult.nameString.canonical
-            canNameValueRanked <- nameInputParsed.canonized(true)}
-        yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
-
-    val classification = Classification(
-      path = dbResult.nameStringIndex.classificationPath,
-      pathIds = dbResult.nameStringIndex.classificationPathIds,
-      pathRanks = dbResult.nameStringIndex.classificationPathRanks
-    )
-
-    val synonym = dbResult.acceptedNameOpt.isDefined
-    val dataSource = DataSource(id = dbResult.dataSource.id,
-                                title = dbResult.dataSource.title)
-
-    val acceptedNameResult = {
-      val anOpt = for ((ns, nsi) <- dbResult.acceptedNameOpt) yield {
-        val canonicalNameOpt =
-          for { canId <- ns.canonicalUuid
-                canNameValue <- ns.canonical
-                canNameValueRanked <- SNP.fromString(ns.name).canonized(true) } yield {
-            CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
-          }
-        AcceptedName(
-          name = Name(uuid = ns.id, value = ns.name),
-          canonicalName = canonicalNameOpt,
-          taxonId = nsi.taxonId,
-          dataSourceId = nsi.dataSourceId
-        )
-      }
-      anOpt.getOrElse {
-        AcceptedName(
-          name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
-          canonicalName = canonicalNameOpt,
-          taxonId = dbResult.nameStringIndex.taxonId,
-          dataSourceId = dbResult.dataSource.id
-        )
-      }
-    }
-
-    val result = Result(
-      name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
-      canonicalName = canonicalNameOpt,
-      synonym = synonym,
-      taxonId = dbResult.nameStringIndex.taxonId,
-      matchType = matchType,
-      classification = classification,
-      dataSource = dataSource,
-      acceptedTaxonId = dbResult.nameStringIndex.acceptedTaxonId,
-      acceptedName = acceptedNameResult,
-      updatedAt = dbResult.dataSource.updatedAt.map { _.toString }
-    )
-    val score = ResultScores.compute(nameInputParsed, result)
-    ResultScored(result, score)
-  }
 
   private[namefilter] def resolveCanonical(canonicalName: String) = {
     val canonicalNameUuid = UuidGenerator.generate(canonicalName)
@@ -352,7 +274,7 @@ class NameFilter @Inject()(database: Database) {
           editDistance = 0,
           score = 0
         )
-        createResult(SNP.fromString(ns.name), dbResult, matchType)
+        DBResult.create(SNP.fromString(ns.name), dbResult, matchType)
       }
       results
     }

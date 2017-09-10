@@ -12,7 +12,7 @@ import com.twitter.inject.Logging
 import com.twitter.util.{Future => TwitterFuture}
 import org.apache.commons.lang3.StringUtils
 import MatchTypeScores._
-import dao.{Tables => T}
+import dao.{Tables => T, DBResult}
 import thrift.matcher.{Service => MatcherService}
 import thrift._
 import thrift.nameresolver._
@@ -35,72 +35,6 @@ object NameResolver {
 
   final case class NameInputParsed(nameInput: NameInput, parsed: SNResult)
   final case class RequestResponse(request: NameInputParsed, response: Response)
-  final case class DBResult(
-    nameString: T.NameStringsRow,
-    nameStringIndex: T.NameStringIndicesRow,
-    dataSource: T.DataSourcesRow,
-    acceptedNameOpt: Option[(T.NameStringsRow, T.NameStringIndicesRow)],
-    vernaculars: Seq[(T.VernacularStringIndicesRow, T.VernacularStringsRow)])
-
-  private def createResult(nameInputParsed: NameInputParsed,
-                           dbResult: DBResult,
-                           matchType: MatchType): ResultScored = {
-    val canonicalNameOpt =
-      for { canId <- dbResult.nameString.canonicalUuid
-            canNameValue <- dbResult.nameString.canonical
-            canNameValueRanked <- nameInputParsed.parsed.canonized(true) }
-        yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
-
-    val classification = Classification(
-      path = dbResult.nameStringIndex.classificationPath,
-      pathIds = dbResult.nameStringIndex.classificationPathIds,
-      pathRanks = dbResult.nameStringIndex.classificationPathRanks
-    )
-
-    val synonym = dbResult.acceptedNameOpt.isDefined
-    val dataSource = DataSource(id = dbResult.dataSource.id,
-                                title = dbResult.dataSource.title)
-
-    val acceptedNameResult = {
-      val anOpt = for ((ns, nsi) <- dbResult.acceptedNameOpt) yield {
-        val canonicalNameOpt =
-          for { canId <- ns.canonicalUuid
-                canNameValue <- ns.canonical
-                canNameValueRanked <- SNP.fromString(ns.name).canonized(true) } yield {
-            CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
-          }
-        AcceptedName(
-          name = Name(uuid = ns.id, value = ns.name),
-          canonicalName = canonicalNameOpt,
-          taxonId = nsi.taxonId,
-          dataSourceId = nsi.dataSourceId
-        )
-      }
-      anOpt.getOrElse {
-        AcceptedName(
-          name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
-          canonicalName = canonicalNameOpt,
-          taxonId = dbResult.nameStringIndex.taxonId,
-          dataSourceId = dbResult.dataSource.id
-        )
-      }
-    }
-
-    val result = Result(
-      name = Name(uuid = dbResult.nameString.id, value = dbResult.nameString.name),
-      canonicalName = canonicalNameOpt,
-      synonym = synonym,
-      taxonId = dbResult.nameStringIndex.taxonId,
-      matchType = matchType,
-      classification = classification,
-      dataSource = dataSource,
-      acceptedTaxonId = dbResult.nameStringIndex.acceptedTaxonId,
-      acceptedName = acceptedNameResult,
-      updatedAt = dbResult.dataSource.updatedAt.map { _.toString }
-    )
-    val score = ResultScores.compute(nameInputParsed.parsed, result)
-    ResultScored(result, score)
-  }
 }
 
 class NameResolver private[nameresolver](request: Request,
@@ -203,7 +137,8 @@ class NameResolver private[nameresolver](request: Request,
             }
           val acceptedName = for (ns <- nsAcptOpt; nsi <- nsiAcptOpt) yield (ns, nsi)
           val dbResult = DBResult(ns, nsi, ds, acceptedName, Seq())
-          createResult(nameParsed, dbResult, createMatchType(matchKind, editDistance = 0))
+          DBResult.create(nameParsed.parsed, dbResult,
+                          createMatchType(matchKind, editDistance = 0))
         }
 
         val responseResults = databaseMatches.map { case (ns, nsi, ds, nsiAcptOpt, nsAcptOpt) =>
@@ -255,9 +190,9 @@ class NameResolver private[nameresolver](request: Request,
             val nameInputParsed = namesParsedMap(fuzzyMatch.inputUuid)
             val results = fuzzyMatch.results.flatMap { result =>
               val canId: UUID = result.nameMatched.uuid
-              nameStringsDBMap(canId.some).map {
-                dbRes => createResult(nameInputParsed, dbRes,
-                                      createMatchType(result.matchKind, result.distance))
+              nameStringsDBMap(canId.some).map { dbRes =>
+                DBResult.create(nameInputParsed.parsed, dbRes,
+                                createMatchType(result.matchKind, result.distance))
               }
             }
             val preferredResults = fuzzyMatch.results.flatMap { result =>
@@ -265,8 +200,8 @@ class NameResolver private[nameresolver](request: Request,
               nameStringsDBMap(canId.some)
                 .filter { resp => request.preferredDataSourceIds.contains(resp.dataSource.id) }
                 .map { dbRes =>
-                  createResult(nameInputParsed, dbRes,
-                               createMatchType(result.matchKind, result.distance))
+                  DBResult.create(nameInputParsed.parsed, dbRes,
+                                  createMatchType(result.matchKind, result.distance))
                 }
               }
             val response = Response(
