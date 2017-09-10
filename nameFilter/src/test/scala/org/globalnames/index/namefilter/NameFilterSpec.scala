@@ -133,20 +133,14 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
 
     describe(".resolveYear") {
       it("resolves") {
-        val request = Request(searchTerm = s"$yearModifierStr:1752")
+        val request = Request(searchTerm = s"$yearModifierStr:1753")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 16
+        result.size shouldBe 7
         result.map { project } should contain only(
-          names(u"64d3585d-714c-5fcf-b3b9-b1790af61baa"),
-          names(u"84d6d0af-0c32-5f22-a653-592ac3d9bb63"),
-          names(u"04009880-0824-59aa-aa64-66c045d5d00f"),
-          names(u"d22a4752-cb0b-5f9b-a705-7580098ad362"),
-          names(u"30d121d1-3538-54a9-9554-2c2e75382311"),
-          names(u"e8a4da14-b793-55f2-8609-44bac11576f5"),
-          names(u"2dfec1f4-0f12-562a-83d3-8aa3ed7ebef8"),
-          names(u"bbd784e1-298f-5501-ad11-d41ff195621a"),
-          names(u"83acdb3f-5b1c-5d05-be72-bdbfac2d5af2"),
-          names(u"86bef8f4-f562-5ce3-a796-4911cf148c8f")
+          names(u"00091866-0b4e-5934-bb64-0e6cdd4187c1"),
+          names(u"000ec063-ea1b-5ce0-b8c5-f94b310fc25d"),
+          names(u"00123893-2568-56e6-844c-5204b282c87c"),
+          names(u"0014bd8e-a419-5db1-bf53-ddcedebf0e0c")
         )
       }
 
@@ -263,14 +257,12 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
 
     describe(".resolveSubspecies") {
       it("resolves") {
-        val request = Request(searchTerm = s"$subSpeciesModifierStr:Abacantha")
+        val request = Request(searchTerm = s"$subSpeciesModifierStr:Albiflorum")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 4
+        result.size shouldBe 2
         result.map { project } should contain only(
-          names(u"03e71643-d238-5859-af6f-b98a129ebe12"),
-          names(u"b498336e-5673-57bf-bcf8-f4d50eed583c"),
-          names(u"d0cf534d-0785-576b-87a8-960e5e6ce374"),
-          names(u"dc6e0eb5-3632-54aa-aa16-bfa8de8b92db")
+          names(u"000c1fa5-1592-586d-a72a-a86edffbb13f"),
+          names(u"0004b821-9a29-504e-a3b6-2f6964a3eee8")
         )
       }
 
