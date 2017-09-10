@@ -49,6 +49,16 @@ object Settings {
       "-Xlog-reflective-calls"),
 
     scalacOptions in Test ++= Seq("-Yrangepos"),
+    testOptions := Seq(
+      Tests.Argument("-h", "target/test-html"),
+      Tests.Argument("-u", "target/test-xml"),
+      Tests.Argument("-C", "org.globalnames.TestReporter"),
+      // Configuring summaries has no effect when running with SBT
+      Tests.Argument("-oD"),
+      // T = full backtraces, NCXEHLOPQRM = Ignore all events that are already sent to out (SBT)
+      Tests.Argument("-eTNCXEHLOPQRM"),
+      Tests.Filter { testName => !testName.contains("Integration") }
+    ),
 
     ivyScala := ivyScala.value.map { _.copy(overrideScalaVersion = true) },
     scroogeThriftDependencies in Compile := Seq("finatra-thrift_2.11"),
@@ -217,16 +227,6 @@ object Settings {
         "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala",
       (sourceManaged in Compile).value /
         "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala"
-    ),
-    testOptions := Seq(
-      Tests.Argument("-h", "target/test-html"),
-      Tests.Argument("-u", "target/test-xml"),
-      Tests.Argument("-C", "org.globalnames.TestReporter"),
-      // Configuring summaries has no effect when running with SBT
-      Tests.Argument("-oD"),
-      // T = full backtraces, NCXEHLOPQRM = Ignore all events that are already sent to out (SBT)
-      Tests.Argument("-eTNCXEHLOPQRM"),
-      Tests.Filter { testName => !testName.contains("Integration") }
     )
   )
 
