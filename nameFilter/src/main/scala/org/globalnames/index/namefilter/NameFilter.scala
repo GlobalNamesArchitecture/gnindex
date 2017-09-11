@@ -8,10 +8,9 @@ import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.util.{Future => TwitterFuture}
 import org.apache.commons.lang3.StringUtils.capitalize
-import dao.{DBResult, Tables => T}
+import index.dao.{DBResult, Tables => T}
 import thrift._
 import thrift.namefilter._
-import parser.ScientificNameParser.{instance => SNP}
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global

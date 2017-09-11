@@ -8,7 +8,7 @@ import javax.inject.{Inject, Singleton}
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.util.{Future => TwitterFuture}
-import dao.{DBResult, Tables => T}
+import index.dao.{DBResult, Tables => T}
 import thrift.{Uuid, MatchKind, MatchType}
 import thrift.namefilter.Response
 import util.UuidEnhanced._
