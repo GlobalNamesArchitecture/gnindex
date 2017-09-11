@@ -2,40 +2,39 @@ package org.globalnames
 package index
 package dao
 
-import dao.{Tables => T}
+import index.dao.{Tables => T}
 import thrift._
 import util.UuidEnhanced._
 import parser.ScientificNameParser.{instance => SNP}
+import slick.lifted.Rep
 
+case class DBResult(ns: T.NameStringsRow, nsi: T.NameStringIndicesRow, ds: T.DataSourcesRow,
+                    nsiAcp: Option[T.NameStringIndicesRow], nsAcp: Option[T.NameStringsRow],
+                    vernaculars: Seq[(T.VernacularStringIndicesRow, T.VernacularStringsRow)] =
+                      Seq())
 
 object DBResult {
-  def create(nameString: T.NameStringsRow,
-             nameStringIndex: T.NameStringIndicesRow,
-             dataSource: T.DataSourcesRow,
-             acceptedNameStringRow: Option[T.NameStringsRow],
-             acceptedNameStringIndexRow: Option[T.NameStringIndicesRow],
-             vernaculars: Seq[(T.VernacularStringIndicesRow, T.VernacularStringsRow)],
-             matchType: MatchType): Result = {
+  def create(dbRes: DBResult, matchType: MatchType): Result = {
     val acceptedNameOpt: Option[(T.NameStringsRow, T.NameStringIndicesRow)] = {
-      for (ns <- acceptedNameStringRow; nsi <- acceptedNameStringIndexRow)
+      for (ns <- dbRes.nsAcp; nsi <- dbRes.nsiAcp)
         yield (ns, nsi)
     }
 
     val canonicalNameOpt =
       for {
-        canId <- nameString.canonicalUuid
-        canNameValue <- nameString.canonical
-        canNameValueRanked <- SNP.fromString(nameString.name).canonized(showRanks = true)
+        canId <- dbRes.ns.canonicalUuid
+        canNameValue <- dbRes.ns.canonical
+        canNameValueRanked <- SNP.fromString(dbRes.ns.name).canonized(showRanks = true)
       } yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
 
     val classification = Classification(
-      path = nameStringIndex.classificationPath,
-      pathIds = nameStringIndex.classificationPathIds,
-      pathRanks = nameStringIndex.classificationPathRanks
+      path = dbRes.nsi.classificationPath,
+      pathIds = dbRes.nsi.classificationPathIds,
+      pathRanks = dbRes.nsi.classificationPathRanks
     )
 
     val synonym = acceptedNameOpt.isDefined
-    val dataSourceRes = DataSource(id = dataSource.id, title = dataSource.title)
+    val dataSourceRes = DataSource(id = dbRes.ds.id, title = dbRes.ds.title)
 
     val acceptedNameResult = {
       val anOpt = for ((ns, nsi) <- acceptedNameOpt) yield {
@@ -54,27 +53,33 @@ object DBResult {
       }
       anOpt.getOrElse {
         AcceptedName(
-          name = Name(uuid = nameString.id, value = nameString.name),
+          name = Name(uuid = dbRes.ns.id, value = dbRes.ns.name),
           canonicalName = canonicalNameOpt,
-          taxonId = nameStringIndex.taxonId,
-          dataSourceId = dataSource.id
+          taxonId = dbRes.nsi.taxonId,
+          dataSourceId = dbRes.ds.id
         )
       }
     }
 
     val result = Result(
-      name = Name(uuid = nameString.id, value = nameString.name),
+      name = Name(uuid = dbRes.ns.id, value = dbRes.ns.name),
       canonicalName = canonicalNameOpt,
       synonym = synonym,
-      taxonId = nameStringIndex.taxonId,
+      taxonId = dbRes.nsi.taxonId,
       matchType = matchType,
       classification = classification,
       dataSource = dataSourceRes,
-      acceptedTaxonId = nameStringIndex.acceptedTaxonId,
+      acceptedTaxonId = dbRes.nsi.acceptedTaxonId,
       acceptedName = acceptedNameResult,
-      updatedAt = dataSource.updatedAt.map { _.toString }
+      updatedAt = dbRes.ds.updatedAt.map { _.toString }
     )
     result
+  }
+
+  def ofDb(ns: T.NameStrings, nsi: T.NameStringIndices, ds: T.DataSources,
+           nsAccepted: Rep[Option[T.NameStrings]],
+           nsiAccepted: Rep[Option[T.NameStringIndices]]) = {
+    ns
   }
 }
 

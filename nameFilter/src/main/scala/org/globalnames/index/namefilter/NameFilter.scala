@@ -209,7 +209,7 @@ class NameFilter @Inject()(database: Database) {
       ds <- T.DataSources.filter { ds => ds.id === nsi.dataSourceId }
     } yield (ns, nsi, ds)
 
-    query
+    val queryJoined = query
       .joinLeft(T.NameStringIndices).on { case ((_, nsi_l, _), nsi_r) =>
         nsi_l.dataSourceId === nsi_r.dataSourceId && nsi_l.acceptedTaxonId === nsi_r.taxonId
       }
@@ -218,6 +218,10 @@ class NameFilter @Inject()(database: Database) {
         (ns, nsi, ds, nsiAccepted, nsAccepted)
       }
       .take(1000)
+
+    database.run(queryJoined.result).map { rs =>
+      rs.map { case (ns, nsi, ds, nsiAcp, nsAcp) => DBResult(ns, nsi, ds, nsiAcp, nsAcp) }
+    }
   }
 
   def resolveString(request: Request): TwitterFuture[Seq[Result]] = {
@@ -264,14 +268,14 @@ class NameFilter @Inject()(database: Database) {
           else resolveYear
       }
     val nameStrings = resolverFunction(valueCleaned(search.contents, search.modifier))
-    val resultFuture = database.run(queryComplete(nameStrings).result).map { dbResults =>
-      val results = dbResults.map { case (ns, nsi, ds, nsiAcptOpt, nsAcptOpt) =>
+    val resultFuture = queryComplete(nameStrings).map { dbResults =>
+      val results = dbResults.map { dbResult =>
         val matchType = MatchType(
           kind = MatchKind.Unknown,
           editDistance = 0,
           score = 0
         )
-        DBResult.create(ns, nsi, ds, nsAcptOpt, nsiAcptOpt, Seq(), matchType)
+        DBResult.create(dbResult, matchType)
       }
       results
     }

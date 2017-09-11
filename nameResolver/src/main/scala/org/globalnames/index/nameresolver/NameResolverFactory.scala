@@ -5,7 +5,6 @@ package nameresolver
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
-import akka.http.impl.util._
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.inject.Logging
@@ -89,7 +88,7 @@ class NameResolver private[nameresolver](request: Request,
   }
 
   private
-  def queryWithSurrogates(nameStringsQuery: NameStringsQuery) = {
+  def queryWithSurrogates(nameStringsQuery: NameStringsQuery): ScalaFuture[Seq[DBResult]] = {
     val nameStringsQuerySurrogates =
       if (request.withSurrogates) nameStringsQuery
       else nameStringsQuery.filter { ns => ns.surrogate.isEmpty || !ns.surrogate }
@@ -103,15 +102,19 @@ class NameResolver private[nameresolver](request: Request,
       }
     } yield (ns, nsi, ds)
 
-    query
+    val queryJoin = query
       .joinLeft(T.NameStringIndices).on { case ((_, nsi_l, _), nsi_r) =>
         nsi_l.acceptedTaxonId =!= "" &&
           nsi_l.dataSourceId === nsi_r.dataSourceId && nsi_l.acceptedTaxonId === nsi_r.taxonId
       }
       .joinLeft(T.NameStrings).on { case ((_, nsi), ns) => ns.id === nsi.map { _.nameStringId } }
       .map { case (((ns, nsi, ds), nsiAccepted), nsAccepted) =>
-        (ns, nsi, ds, nsiAccepted, nsAccepted)
+        (ns, nsi, ds, nsAccepted, nsiAccepted)
       }
+
+    database.run(queryJoin.result).map { rs =>
+      rs.map { case (ns, nsi, ds, nsAcp, nsiAcp) => DBResult(ns, nsi, ds, nsiAcp, nsAcp) }
+    }
   }
 
   private
@@ -119,15 +122,14 @@ class NameResolver private[nameresolver](request: Request,
     val canonicalUuids = namesParsed.flatMap { _.parsed.canonizedUuid().map { _.id } }.distinct
     val nameUuids = namesParsed.map { _.parsed.preprocessorResult.id }.distinct
     logInfo(s"[Exact match] Name UUIDs: ${nameUuids.size}. Canonical UUIDs: ${canonicalUuids.size}")
-    val qry = queryWithSurrogates(T.NameStrings.filter { ns =>
+    val qry = T.NameStrings.filter { ns =>
       ns.id.inSetBind(nameUuids) || ns.canonicalUuid.inSetBind(canonicalUuids)
-    })
-    val reqResp = database.run(qry.result).map { databaseResults =>
+    }
+    val reqResp = queryWithSurrogates(qry).map { databaseResults =>
       logInfo(s"[Exact match] Database fetched")
-      val nameUuidMatches =
-        databaseResults.groupBy { case (ns, _, _, _, _) => ns.id }.withDefaultValue(Seq())
+      val nameUuidMatches = databaseResults.groupBy { r => r.ns.id }.withDefaultValue(Seq())
       val canonicalUuidMatches =
-        databaseResults.groupBy { case (ns, _, _, _, _) => ns.canonicalUuid }
+        databaseResults.groupBy { r => r.ns.canonicalUuid }
                        .filterKeys { key => key.isDefined && key != UuidGenerator.EmptyUuid.some }
                        .withDefaultValue(Seq())
 
@@ -138,36 +140,26 @@ class NameResolver private[nameresolver](request: Request,
           (nums ++ cums).distinct
         }
 
-        def composeResult(ns: T.NameStringsRow,
-                          nsi: T.NameStringIndicesRow,
-                          ds: T.DataSourcesRow,
-                          nsiAcptOpt: Option[T.NameStringIndicesRow],
-                          nsAcptOpt: Option[T.NameStringsRow]) = {
+        def composeResult(r: DBResult) = {
           val matchKind =
-            if (ns.id == nameParsed.parsed.preprocessorResult.id) {
+            if (r.ns.id == nameParsed.parsed.preprocessorResult.id) {
               MK.ExactNameMatchByUUID
             } else if (
-              (for (nsCan <- ns.canonicalUuid; npCan <- nameParsed.parsed.canonizedUuid())
+              (for (nsCan <- r.ns.canonicalUuid; npCan <- nameParsed.parsed.canonizedUuid())
                 yield nsCan == npCan.id).getOrElse(false)) {
               MK.ExactCanonicalNameMatchByUUID
             } else {
               MK.Unknown
             }
-          val dbResult = DBResult.create(ns, nsi, ds, nsAcptOpt, nsiAcptOpt, Seq(),
-                                         createMatchType(matchKind, editDistance = 0))
+          val dbResult = DBResult.create(r, createMatchType(matchKind, editDistance = 0))
           val score = ResultScores.compute(nameParsed.parsed, dbResult)
           ResultScored(dbResult, score)
         }
 
-        val responseResults = databaseMatches.map { case (ns, nsi, ds, nsiAcptOpt, nsAcptOpt) =>
-          composeResult(ns, nsi, ds, nsiAcptOpt, nsAcptOpt)
-        }
-
+        val responseResults = databaseMatches.map { r => composeResult(r) }
         val preferredResponseResults = databaseMatches
-          .filter { case (_, _, ds, _, _) => request.preferredDataSourceIds.contains(ds.id) }
-          .map { case (ns, nsi, ds, nsiAcpt, nsAcpt) =>
-            composeResult(ns, nsi, ds, nsiAcpt, nsAcpt)
-          }
+          .filter { r => request.preferredDataSourceIds.contains(r.ds.id) }
+          .map { r => composeResult(r) }
 
         val response = Response(
           total = responseResults.size,
@@ -196,19 +188,18 @@ class NameResolver private[nameresolver](request: Request,
         logInfo("[Fuzzy match] Matcher service response received. " +
                 s"Database request for ${uuids.size} records")
         val qry = T.NameStrings.filter { ns => ns.canonicalUuid.inSetBind(uuids) }
-        database.run(queryWithSurrogates(qry).result).map { nameStringsDB =>
+        queryWithSurrogates(qry).map { nameStringsDB =>
           logInfo(s"[Fuzzy match] Database response: ${nameStringsDB.size} records")
-          val nameStringsDBMap = nameStringsDB.groupBy { case (ns, _, _, _, _) =>
-            ns.canonicalUuid
-          }.withDefaultValue(Seq())
+          val nameStringsDBMap = nameStringsDB.groupBy { r => r.ns.canonicalUuid }
+                                              .withDefaultValue(Seq())
 
           fuzzyMatches.map { fuzzyMatch =>
             val nameInputParsed = namesParsedMap(fuzzyMatch.inputUuid)
             val results = fuzzyMatch.results.flatMap { result =>
               val canId: UUID = result.nameMatched.uuid
-              nameStringsDBMap(canId.some).map { case (ns, nsi, ds, ansiOpt, ansOpt) =>
-                val dbResult = DBResult.create(ns, nsi, ds, ansOpt, ansiOpt, Seq(),
-                                               createMatchType(result.matchKind, result.distance))
+              nameStringsDBMap(canId.some).map { r =>
+                val dbResult =
+                  DBResult.create(r, createMatchType(result.matchKind, result.distance))
                 val score = ResultScores.compute(nameInputParsed.parsed, dbResult)
                 ResultScored(dbResult, score)
               }
@@ -216,10 +207,10 @@ class NameResolver private[nameresolver](request: Request,
             val preferredResults = fuzzyMatch.results.flatMap { result =>
               val canId: UUID = result.nameMatched.uuid
               nameStringsDBMap(canId.some)
-                .filter { case (_, _, ds, _, _) => request.preferredDataSourceIds.contains(ds.id) }
-                .map { case (ns, nsi, ds, ansiOpt, ansOpt) =>
-                  val dbResult = DBResult.create(ns, nsi, ds, ansOpt, ansiOpt, Seq(),
-                                                 createMatchType(result.matchKind, result.distance))
+                .filter { r => request.preferredDataSourceIds.contains(r.ds.id) }
+                .map { r =>
+                  val dbResult =
+                    DBResult.create(r, createMatchType(result.matchKind, result.distance))
                   val score = ResultScores.compute(nameInputParsed.parsed, dbResult)
                   ResultScored(dbResult, score)
                 }
