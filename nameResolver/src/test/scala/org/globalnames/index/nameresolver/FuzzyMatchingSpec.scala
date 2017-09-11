@@ -295,24 +295,5 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         dataSourceIds = Seq(7, 8)
       )
     }
-
-    "support `advancedResolution`" when {
-      "flag is false" in nameTest(
-        request = "Abarys rabastulus",
-        Seq(),
-        dataSourceIds = Seq(),
-        advancedResolution = false
-      )
-
-      "flag is true" in nameTest(
-        request = "Abarys rabastulus",
-        Seq(ExpectedResult(
-          name = "Abarys",
-          kind = MatchKind.ExactMatchPartialByGenus,
-          editDistance = 0
-        )),
-        dataSourceIds = Seq(7)
-      )
-    }
   }
 }

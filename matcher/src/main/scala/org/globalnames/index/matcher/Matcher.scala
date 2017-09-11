@@ -178,18 +178,18 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
       CanonicalNameSplit(np.preprocessorResult.verbatim)
     }
     logger.info("Recursive fuzzy match started")
-    val matches =
+    val responses =
       resolveFromPartials(
         namesParsedSuccessfullySplits, dataSourceIds.toSet, advancedResolution) ++ responsesRest
 
     if (advancedResolution) {
-      matches
+      responses
     } else {
-      for (mtch <- matches) yield {
-        mtch.copy(results = mtch.results.filter { r =>
-          r.matchKind match {
-            case MK.FuzzyPartialMatch | MK.ExactMatchPartialByGenus | MK.ExactPartialMatch => false
-            case _ => true
+      for (response <- responses) yield {
+        response.copy(results = response.results.filter { res =>
+          res.matchKind match {
+            case MK.FuzzyCanonicalMatch => true
+            case _ => false
           }
         })
       }

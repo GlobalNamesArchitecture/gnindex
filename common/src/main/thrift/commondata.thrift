@@ -22,12 +22,19 @@ enum MatchKind {
     UUIDLookup,
     ExactNameMatchByUUID,
     ExactNameMatchByString,
+
+    // NameResolver: advanced search
     ExactCanonicalNameMatchByUUID,
     ExactCanonicalNameMatchByString,
     FuzzyCanonicalMatch,
     FuzzyPartialMatch,
     ExactMatchPartialByGenus,
     ExactPartialMatch,
+
+    // NameResolver: simplified search
+    Match,
+    FuzzyMatch,
+
     Unknown
 }
 

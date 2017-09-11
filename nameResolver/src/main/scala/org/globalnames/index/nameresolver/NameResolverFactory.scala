@@ -16,7 +16,7 @@ import index.dao.{DBResult, Tables => T}
 import thrift.matcher.{Service => MatcherService}
 import thrift._
 import thrift.nameresolver._
-import thrift.{MatchKind, MatchType, Name, CanonicalName}
+import thrift.{MatchKind => MK}
 import util.UuidEnhanced._
 import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
 import slick.jdbc.PostgresProfile.api._
@@ -25,6 +25,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future => ScalaFuture}
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
+import scalaz.Lens
 
 object NameResolver {
   type NameStringsQuery =
@@ -46,6 +47,23 @@ class NameResolver private[nameresolver](request: Request,
 
   private def logInfo(message: String): Unit = {
     logger.info(s"(Request hash code: ${request.hashCode}) $message")
+  }
+
+  private val resultScoredToMatchKindLens: (ResultScored) => ResultScored = {
+    val resultScoredToResult = Lens.lensu[ResultScored, Result](
+      (a, value) => a.copy(result = value), _.result
+    )
+    val resultToMatchType = Lens.lensu[Result, MatchType](
+      (a, value) => a.copy(matchType = value), _.matchType
+    )
+    val matchTypeToKind = Lens.lensu[MatchType, MatchKind](
+      (a, value) => a.copy(kind = value), _.kind
+    )
+    (resultScoredToResult >=> resultToMatchType >=> matchTypeToKind) =>= {
+      case MK.ExactNameMatchByUUID | MK.ExactCanonicalNameMatchByUUID => MK.Match
+      case MK.FuzzyCanonicalMatch => MK.FuzzyMatch
+      case _ => MK.Unknown
+    }
   }
 
   private val dataSourceIds: Seq[Int] =
@@ -127,13 +145,13 @@ class NameResolver private[nameresolver](request: Request,
                           nsAcptOpt: Option[T.NameStringsRow]) = {
           val matchKind =
             if (ns.id == nameParsed.parsed.preprocessorResult.id) {
-              MatchKind.ExactNameMatchByUUID
+              MK.ExactNameMatchByUUID
             } else if (
               (for (nsCan <- ns.canonicalUuid; npCan <- nameParsed.parsed.canonizedUuid())
                 yield nsCan == npCan.id).getOrElse(false)) {
-              MatchKind.ExactCanonicalNameMatchByUUID
+              MK.ExactCanonicalNameMatchByUUID
             } else {
-              MatchKind.Unknown
+              MK.Unknown
             }
           val dbResult = DBResult.create(ns, nsi, ds, nsAcptOpt, nsiAcptOpt, Seq(),
                                          createMatchType(matchKind, editDistance = 0))
@@ -233,6 +251,17 @@ class NameResolver private[nameresolver](request: Request,
   }
 
   private
+  def transformMatchType(responses: Seq[Response]): Seq[Response] = {
+    if (request.advancedResolution) {
+      responses
+    } else {
+      for (response <- responses) yield {
+        response.copy(results = response.results.map(resultScoredToMatchKindLens))
+      }
+    }
+  }
+
+  private
   def rearrangeResults(responses: Seq[Response]): Seq[Response] = {
     responses.map { response =>
       val results = response.results.sortBy { _.score.value.getOrElse(0.0) }
@@ -258,7 +287,7 @@ class NameResolver private[nameresolver](request: Request,
         logInfo(s"[Resolution] Fuzzy matches count: ${fuzzyMatches.size}")
         val reqResps = exactMatchesByUuid ++ fuzzyMatches ++ unmatchedNotParsed
         val responses = reqResps.map { _.response }
-        (rearrangeResults _ andThen computeContext)(responses)
+        (transformMatchType _ andThen rearrangeResults andThen computeContext)(responses)
       }
     }
   }

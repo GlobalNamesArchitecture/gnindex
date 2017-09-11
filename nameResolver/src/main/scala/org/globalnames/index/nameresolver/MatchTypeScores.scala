@@ -16,6 +16,10 @@ object MatchTypeScores {
     case MK.ExactPartialMatch => 7
     case MK.FuzzyPartialMatch => 8
     case MK.ExactMatchPartialByGenus => 9
+
+    case MK.Match => 2
+    case MK.FuzzyMatch => 6
+
     case MK.Unknown => 10
     case _: MK.EnumUnknownMatchKind => 10
   }
