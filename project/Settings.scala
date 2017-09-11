@@ -192,6 +192,11 @@ object Settings {
       }
     },
     sourceGenerators in Compile += slickCodegen.taskValue
+
+    wartremoverExcluded ++= Seq(
+      (scalaSource in Compile).value / "org" / "globalnames" / "index" / "dao" / "Tables.scala",
+      (sourceManaged in Compile).value / "org" / "globalnames" / "index" / "dao" / "Tables.scala"
+    )
   )
 
   //////////////////
@@ -207,13 +212,7 @@ object Settings {
   ///////////////////////////
   lazy val nameResolverSettings = Seq(
     assemblyJarName in assembly := "gnnameresolver-" + version.value + ".jar",
-    Revolver.enableDebugging(port = 5006, suspend = false),
-    wartremoverExcluded ++= Seq(
-      (scalaSource in Compile).value /
-        "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala",
-      (sourceManaged in Compile).value /
-        "org" / "globalnames" / "index" / "nameresolver" / "dao" / "Tables.scala"
-    )
+    Revolver.enableDebugging(port = 5006, suspend = false)
   )
 
   /////////////////////////
@@ -221,13 +220,7 @@ object Settings {
   /////////////////////////
   lazy val nameFilterSettings = Seq(
     assemblyJarName in assembly := "gnnamefilter-" + version.value + ".jar",
-    Revolver.enableDebugging(port = 5009, suspend = false),
-    wartremoverExcluded ++= Seq(
-      (scalaSource in Compile).value /
-        "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala",
-      (sourceManaged in Compile).value /
-        "org" / "globalnames" / "index" / "namefilter" / "dao" / "Tables.scala"
-    )
+    Revolver.enableDebugging(port = 5009, suspend = false)
   )
 
   //////////////////////
