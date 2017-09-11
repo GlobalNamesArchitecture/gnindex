@@ -47,14 +47,14 @@ lazy val api = (project in file("api"))
 lazy val benchmark = (project in file("benchmark"))
     .enablePlugins(GatlingPlugin)
     .dependsOn(common % "compile->compile;test->test")
-    .settings(publishingSettings: _*)
+    .settings(noPublishingSettings: _*)
     .settings(Settings.settings: _*)
     .settings(Settings.wartremoverSettings: _*)
     .settings(Settings.benchmarkSettings: _*)
     .settings(libraryDependencies ++= benchmarkDependencies)
 
 lazy val `gnindex-root` = project.in(file("."))
-    .aggregate(benchmark, common, nameResolver, nameFilter, matcher, api)
+    .aggregate(common, nameResolver, nameFilter, matcher, api)
     .settings(noPublishingSettings: _*)
     .settings(
       crossScalaVersions := Seq("2.11.8"),
