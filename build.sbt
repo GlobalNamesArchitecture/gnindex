@@ -46,7 +46,6 @@ lazy val api = (project in file("api"))
 
 lazy val benchmark = (project in file("benchmark"))
     .enablePlugins(GatlingPlugin)
-    .dependsOn(common % "compile->compile;test->test")
     .settings(noPublishingSettings: _*)
     .settings(Settings.settings: _*)
     .settings(Settings.wartremoverSettings: _*)

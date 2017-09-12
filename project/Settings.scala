@@ -14,6 +14,19 @@ import io.gatling.sbt.GatlingKeys.Gatling
 
 object Settings {
 
+  lazy val testReporter = Seq(
+    testOptions := Seq(
+      Tests.Argument("-h", "target/test-html"),
+      Tests.Argument("-u", "target/test-xml"),
+      Tests.Argument("-C", "org.globalnames.TestReporter"),
+      // Configuring summaries has no effect when running with SBT
+      Tests.Argument("-oD"),
+      // T = full backtraces, NCXEHLOPQRM = Ignore all events that are already sent to out (SBT)
+      Tests.Argument("-eTNCXEHLOPQRM"),
+      Tests.Filter { testName => !testName.contains("Integration") }
+    )
+  )
+
   lazy val settings = testSettings ++ Seq(
     version := {
       val version = "0.1.0"
@@ -49,16 +62,6 @@ object Settings {
       "-Xlog-reflective-calls"),
 
     scalacOptions in Test ++= Seq("-Yrangepos"),
-    testOptions := Seq(
-      Tests.Argument("-h", "target/test-html"),
-      Tests.Argument("-u", "target/test-xml"),
-      Tests.Argument("-C", "org.globalnames.TestReporter"),
-      // Configuring summaries has no effect when running with SBT
-      Tests.Argument("-oD"),
-      // T = full backtraces, NCXEHLOPQRM = Ignore all events that are already sent to out (SBT)
-      Tests.Argument("-eTNCXEHLOPQRM"),
-      Tests.Filter { testName => !testName.contains("Integration") }
-    ),
 
     ivyScala := ivyScala.value.map { _.copy(overrideScalaVersion = true) },
     scroogeThriftDependencies in Compile := Seq("finatra-thrift_2.11"),
@@ -210,7 +213,7 @@ object Settings {
   ///////////////////////////
   // NameResolver settings //
   ///////////////////////////
-  lazy val nameResolverSettings = Seq(
+  lazy val nameResolverSettings = testReporter ++ Seq(
     assemblyJarName in assembly := "gnnameresolver-" + version.value + ".jar",
     Revolver.enableDebugging(port = 5006, suspend = false)
   )
@@ -218,7 +221,7 @@ object Settings {
   /////////////////////////
   // NameFilter settings //
   /////////////////////////
-  lazy val nameFilterSettings = Seq(
+  lazy val nameFilterSettings = testReporter ++ Seq(
     assemblyJarName in assembly := "gnnamefilter-" + version.value + ".jar",
     Revolver.enableDebugging(port = 5009, suspend = false)
   )
@@ -226,7 +229,7 @@ object Settings {
   //////////////////////
   // Matcher settings //
   //////////////////////
-  lazy val matcherSettings = Seq(
+  lazy val matcherSettings = testReporter ++ Seq(
     assemblyJarName in assembly := "gnmatcher-" + version.value + ".jar",
     Revolver.enableDebugging(port = 5008, suspend = false),
     javaOptions in reStart ++= Seq("-Xms4G", "-Xmx20G", "-Xss1M", "-XX:+CMSClassUnloadingEnabled")
