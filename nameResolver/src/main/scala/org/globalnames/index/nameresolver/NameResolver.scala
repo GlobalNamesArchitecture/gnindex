@@ -3,7 +3,6 @@ package index
 package nameresolver
 
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
 
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
@@ -28,26 +27,9 @@ import scalaz.syntax.std.option._
 import scalaz.Lens
 
 object NameResolver {
-  type NameStringsQuery =
-    Query[T.NameStrings, T.NameStringsRow, Seq]
-  type NameStringWithDataSourceQuery =
-    Query[(T.NameStrings, T.NameStringIndices, T.DataSources),
-          (T.NameStringsRow, T.NameStringIndicesRow, T.DataSourcesRow), Seq]
-
+  type NameStringsQuery = Query[T.NameStrings, T.NameStringsRow, Seq]
   final case class NameInputParsed(nameInput: NameInput, parsed: SNResult)
   final case class RequestResponse(request: NameInputParsed, response: Response)
-}
-
-class NameResolver private[nameresolver](request: Request,
-                                         database: Database,
-                                         matcherClient: MatcherService.FutureIface)
-  extends Logging {
-
-  import NameResolver._
-
-  private def logInfo(message: String): Unit = {
-    logger.info(s"(Request hash code: ${request.hashCode}) $message")
-  }
 
   private val resultScoredToMatchKindLens: (ResultScored) => ResultScored = {
     val resultScoredToResult = Lens.lensu[ResultScored, Result](
@@ -64,6 +46,18 @@ class NameResolver private[nameresolver](request: Request,
       case MK.FuzzyCanonicalMatch => MK.FuzzyMatch
       case _ => MK.Unknown
     }
+  }
+}
+
+class NameResolver(request: Request,
+                   database: Database,
+                   matcherClient: MatcherService.FutureIface)
+  extends Logging {
+
+  import NameResolver._
+
+  private def logInfo(message: String): Unit = {
+    logger.info(s"(Request hash code: ${request.hashCode}) $message")
   }
 
   private val dataSourceIds: Seq[Int] =
@@ -261,9 +255,9 @@ class NameResolver private[nameresolver](request: Request,
     }
   }
 
-  def resolveExact(): ScalaFuture[Responses] = {
+  def resolveExact(): TwitterFuture[Responses] = {
     logInfo(s"[Resolution] Resolution started for ${request.names.size} names")
-    queryExactMatchesByUuid().flatMap { names =>
+    val resultFuture = queryExactMatchesByUuid().flatMap { names =>
       val (exactMatchesByUuid, exactUnmatchesByUuid) =
         names.partition { resp => resp.response.results.nonEmpty }
       val (unmatched, unmatchedNotParsed) = exactUnmatchesByUuid.partition { reqResp =>
@@ -282,16 +276,6 @@ class NameResolver private[nameresolver](request: Request,
         (transformMatchType _ andThen rearrangeResults andThen computeContext)(responses)
       }
     }
+    resultFuture.as[TwitterFuture[Responses]]
   }
-}
-
-@Singleton
-class NameResolverFactory @Inject()(database: Database,
-                                    matcherClient: MatcherService.FutureIface) {
-
-  def resolveExact(request: Request): TwitterFuture[Responses] = {
-    val nameRequest = new NameResolver(request, database, matcherClient)
-    nameRequest.resolveExact().as[TwitterFuture[Responses]]
-  }
-
 }

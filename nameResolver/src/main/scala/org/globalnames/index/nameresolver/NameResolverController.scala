@@ -6,17 +6,17 @@ import javax.inject.{Inject, Singleton}
 
 import com.twitter.finatra.thrift.Controller
 import com.twitter.finatra.thrift.internal.ThriftMethodService
-import thrift.nameresolver.{Service => NameResolverService, Responses}
-import thrift.nameresolver.Service.NameResolve
+import thrift.{nameresolver => nr, matcher => mtch}
+import slick.jdbc.PostgresProfile.api._
 
 @Singleton
-class NameResolverController @Inject()(resolver: NameResolverFactory)
-  extends Controller
-     with NameResolverService.BaseServiceIface {
+class NameResolverController @Inject()(implicit database: Database,
+                                                matcherClient: mtch.Service.FutureIface)
+  extends Controller with nr.Service.BaseServiceIface {
 
-  override val nameResolve: ThriftMethodService[NameResolve.Args, Responses] =
-    handle(NameResolve) { args: NameResolve.Args =>
+  override val nameResolve: ThriftMethodService[nr.Service.NameResolve.Args, nr.Responses] =
+    handle(nr.Service.NameResolve) { args: nr.Service.NameResolve.Args =>
       info(s"Responding to nameResolve")
-      resolver.resolveExact(args.request)
+      new NameResolver(args.request, database, matcherClient).resolveExact()
     }
 }
