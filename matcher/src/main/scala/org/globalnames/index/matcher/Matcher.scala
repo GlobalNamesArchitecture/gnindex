@@ -188,7 +188,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
       for (response <- responses) yield {
         response.copy(results = response.results.filter { res =>
           res.matchKind match {
-            case MK.FuzzyCanonicalMatch => true
+            case MK.FuzzyCanonicalMatch | MK.ExactCanonicalNameMatchByUUID => true
             case _ => false
           }
         })
