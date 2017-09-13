@@ -11,7 +11,8 @@ import com.twitter.inject.Logging
 import com.twitter.util.{Future => TwitterFuture}
 import org.apache.commons.lang3.StringUtils
 import MatchTypeScores._
-import index.dao.{DBResult, Tables => T}
+import index.dao.{DBResultObj, Tables => T}
+import dao.Projections._
 import thrift.matcher.{Service => MatcherService}
 import thrift._
 import thrift.nameresolver._
@@ -88,7 +89,7 @@ class NameResolver private[nameresolver](request: Request,
   }
 
   private
-  def queryWithSurrogates(nameStringsQuery: NameStringsQuery): ScalaFuture[Seq[DBResult]] = {
+  def queryWithSurrogates(nameStringsQuery: NameStringsQuery): ScalaFuture[Seq[ResultDB]] = {
     val nameStringsQuerySurrogates =
       if (request.withSurrogates) nameStringsQuery
       else nameStringsQuery.filter { ns => ns.surrogate.isEmpty || !ns.surrogate }
@@ -107,14 +108,14 @@ class NameResolver private[nameresolver](request: Request,
         nsi_l.acceptedTaxonId =!= "" &&
           nsi_l.dataSourceId === nsi_r.dataSourceId && nsi_l.acceptedTaxonId === nsi_r.taxonId
       }
-      .joinLeft(T.NameStrings).on { case ((_, nsi), ns) => ns.id === nsi.map { _.nameStringId } }
+      .joinLeft(T.NameStrings).on { case ((_, nsi), ns) =>
+        ns.id === nsi.map { _.nameStringId }
+      }
       .map { case (((ns, nsi, ds), nsiAccepted), nsAccepted) =>
-        (ns, nsi, ds, nsAccepted, nsiAccepted)
+        DBResultObj.project(ns, nsi, ds, nsAccepted, nsiAccepted)
       }
 
-    database.run(queryJoin.result).map { rs =>
-      rs.map { case (ns, nsi, ds, nsAcp, nsiAcp) => DBResult(ns, nsi, ds, nsiAcp, nsAcp) }
-    }
+    database.run(queryJoin.result)
   }
 
   private
@@ -140,7 +141,7 @@ class NameResolver private[nameresolver](request: Request,
           (nums ++ cums).distinct
         }
 
-        def composeResult(r: DBResult) = {
+        def composeResult(r: ResultDB) = {
           val matchKind =
             if (r.ns.id == nameParsed.parsed.preprocessorResult.id) {
               MK.ExactNameMatchByUUID
@@ -151,7 +152,7 @@ class NameResolver private[nameresolver](request: Request,
             } else {
               MK.Unknown
             }
-          val dbResult = DBResult.create(r, createMatchType(matchKind, editDistance = 0))
+          val dbResult = DBResultObj.create(r, createMatchType(matchKind, editDistance = 0))
           val score = ResultScores.compute(nameParsed.parsed, dbResult)
           ResultScored(dbResult, score)
         }
@@ -199,7 +200,7 @@ class NameResolver private[nameresolver](request: Request,
               val canId: UUID = result.nameMatched.uuid
               nameStringsDBMap(canId.some).map { r =>
                 val dbResult =
-                  DBResult.create(r, createMatchType(result.matchKind, result.distance))
+                  DBResultObj.create(r, createMatchType(result.matchKind, result.distance))
                 val score = ResultScores.compute(nameInputParsed.parsed, dbResult)
                 ResultScored(dbResult, score)
               }
@@ -210,7 +211,7 @@ class NameResolver private[nameresolver](request: Request,
                 .filter { r => request.preferredDataSourceIds.contains(r.ds.id) }
                 .map { r =>
                   val dbResult =
-                    DBResult.create(r, createMatchType(result.matchKind, result.distance))
+                    DBResultObj.create(r, createMatchType(result.matchKind, result.distance))
                   val score = ResultScores.compute(nameInputParsed.parsed, dbResult)
                   ResultScored(dbResult, score)
                 }

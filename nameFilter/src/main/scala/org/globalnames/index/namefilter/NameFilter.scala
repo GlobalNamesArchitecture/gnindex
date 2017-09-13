@@ -7,8 +7,10 @@ import javax.inject.{Inject, Singleton}
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.util.{Future => TwitterFuture}
+import scala.concurrent.{Future => ScalaFuture}
 import org.apache.commons.lang3.StringUtils.capitalize
-import index.dao.{DBResult, Tables => T}
+import index.dao.{DBResultObj, Tables => T}
+import dao.Projections._
 import thrift._
 import thrift.namefilter._
 import slick.jdbc.PostgresProfile.api._
@@ -202,7 +204,7 @@ class NameFilter @Inject()(database: Database) {
   }
 
   private
-  def queryComplete(nameStringsQuery: NameStringsQuery) = {
+  def queryComplete(nameStringsQuery: NameStringsQuery): ScalaFuture[Seq[ResultDB]] = {
     val query = for {
       ns <- nameStringsQuery
       nsi <- T.NameStringIndices.filter { nsi => nsi.nameStringId === ns.id }
@@ -211,17 +213,15 @@ class NameFilter @Inject()(database: Database) {
 
     val queryJoined = query
       .joinLeft(T.NameStringIndices).on { case ((_, nsi_l, _), nsi_r) =>
-        nsi_l.dataSourceId === nsi_r.dataSourceId && nsi_l.acceptedTaxonId === nsi_r.taxonId
+        nsi_l.acceptedTaxonId =!= "" &&
+          nsi_l.dataSourceId === nsi_r.dataSourceId && nsi_l.acceptedTaxonId === nsi_r.taxonId
       }
       .joinLeft(T.NameStrings).on { case ((_, nsi), ns) => ns.id === nsi.map { _.nameStringId } }
       .map { case (((ns, nsi, ds), nsiAccepted), nsAccepted) =>
-        (ns, nsi, ds, nsiAccepted, nsAccepted)
+        DBResultObj.project(ns, nsi, ds, nsAccepted, nsiAccepted)
       }
       .take(1000)
-
-    database.run(queryJoined.result).map { rs =>
-      rs.map { case (ns, nsi, ds, nsiAcp, nsAcp) => DBResult(ns, nsi, ds, nsiAcp, nsAcp) }
-    }
+    database.run(queryJoined.result)
   }
 
   def resolveString(request: Request): TwitterFuture[Seq[Result]] = {
@@ -275,7 +275,7 @@ class NameFilter @Inject()(database: Database) {
           editDistance = 0,
           score = 0
         )
-        DBResult.create(dbResult, matchType)
+        DBResultObj.create(dbResult, matchType)
       }
       results
     }
