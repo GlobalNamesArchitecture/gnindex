@@ -17,9 +17,11 @@ object Projections {
   implicit object NameStringsShape
     extends CaseClassShape(NameStringsLifted.tupled, NameStrings.tupled)
   case class NameStrings(id: UUID, name: String,
-                         canonicalUuid: Option[UUID], canonical: Option[String])
+                         canonicalUuid: Option[UUID], canonical: Option[String],
+                         canonicalRanked: Option[String])
   case class NameStringsLifted(id: Rep[UUID], name: Rep[String],
-                               canonicalUuid: Rep[Option[UUID]], canonical: Rep[Option[String]])
+                               canonicalUuid: Rep[Option[UUID]], canonical: Rep[Option[String]],
+                               canonicalRanked: Rep[Option[String]])
 
   implicit object NameStringIndicesShape
     extends CaseClassShape(NameStringIndicesLifted.tupled, NameStringIndices.tupled)
@@ -57,7 +59,7 @@ object DBResultObj {
       for {
         canId <- dbRes.ns.canonicalUuid
         canNameValue <- dbRes.ns.canonical
-        canNameValueRanked <- SNP.fromString(dbRes.ns.name).canonized(showRanks = true)
+        canNameValueRanked <- dbRes.ns.canonicalRanked
       } yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
 
     val classification = Classification(
@@ -76,7 +78,7 @@ object DBResultObj {
         val canonicalNameOpt = for {
           nsCanId <- acpNm.canonicalUuid
           nsCan <- acpNm.canonical
-          nsCanRanked <- SNP.fromString(acpNm.name).canonized(true)
+          nsCanRanked <- acpNm.canonicalRanked
         } yield CanonicalName(uuid = nsCanId, value = nsCan, valueRanked = nsCanRanked)
         AcceptedName(
           name = Name(uuid = acpNm.id, value = acpNm.name),
@@ -115,13 +117,15 @@ object DBResultObj {
               ds: T.DataSources,
               nsAccepted: Rep[Option[T.NameStrings]],
               nsiAccepted: Rep[Option[T.NameStringIndices]]): P.ResultDBLifted = {
-    val nsRep = P.NameStringsLifted(ns.id, ns.name, ns.canonicalUuid, ns.canonical)
+    val nsRep = P.NameStringsLifted(ns.id, ns.name, ns.canonicalUuid,
+                                    ns.canonical, ns.canonicalRanked)
     val nsiRep = P.NameStringIndicesLifted(nsi.taxonId, nsi.acceptedTaxonId,
       nsi.classificationPath, nsi.classificationPathIds, nsi.classificationPathRanks)
     val dsRep = P.DataSourcesLifted(ds.id, ds.title, ds.updatedAt)
     val acpNsRep: Rep[Option[P.NameStringsLifted]] =
       for (nsAcp <- nsAccepted)
-        yield P.NameStringsLifted(nsAcp.id, nsAcp.name, nsAcp.canonicalUuid, nsAcp.canonical)
+        yield P.NameStringsLifted(nsAcp.id, nsAcp.name, nsAcp.canonicalUuid,
+                                  nsAcp.canonical, nsAcp.canonicalRanked)
     P.ResultDBLifted(nsRep, nsiRep, dsRep, acpNsRep)
   }
 }
