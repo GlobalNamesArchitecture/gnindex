@@ -49,9 +49,9 @@ object NameResolver {
   }
 }
 
-class NameResolver(request: Request,
-                   database: Database,
-                   matcherClient: MatcherService.FutureIface)
+class NameResolver(request: Request)
+                  (implicit database: Database,
+                            matcherClient: MatcherService.FutureIface)
   extends Logging {
 
   import NameResolver._

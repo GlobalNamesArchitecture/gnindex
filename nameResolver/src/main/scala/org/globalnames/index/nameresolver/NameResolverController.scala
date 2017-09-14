@@ -17,6 +17,6 @@ class NameResolverController @Inject()(implicit database: Database,
   override val nameResolve: ThriftMethodService[nr.Service.NameResolve.Args, nr.Responses] =
     handle(nr.Service.NameResolve) { args: nr.Service.NameResolve.Args =>
       info(s"Responding to nameResolve")
-      new NameResolver(args.request, database, matcherClient).resolveExact()
+      new NameResolver(args.request).resolveExact()
     }
 }
