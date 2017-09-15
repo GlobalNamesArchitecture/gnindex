@@ -63,8 +63,10 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
     if (canonicalNameSplits.isEmpty) {
       Seq()
     } else {
-      val (nonGenusSplits, genusOnlyMatchesSplits) =
-        canonicalNameSplits.partition { cnp => cnp.size > 1 }
+      val (nonGenusOrUninomialSplits, genusOnlyMatchesSplits) =
+        canonicalNameSplits.partition { cnp =>
+          (cnp.size == 1 && cnp.isOriginalCanonical) || cnp.size > 1
+        }
 
       val noFuzzyMatches =
         for (goms <- genusOnlyMatchesSplits) yield {
@@ -81,7 +83,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
         }
 
       val (exactPartialCanonicalMatches, possibleFuzzyCanonicalMatches) =
-        nonGenusSplits
+        nonGenusOrUninomialSplits
           .map { cns => (cns, canonicalNames.names(cns.namePartialStr)) }
           .partition { case (_, dsids) =>
             (dataSourceIds.isEmpty ? dsids | dataSourceIds.intersect(dsids)).nonEmpty

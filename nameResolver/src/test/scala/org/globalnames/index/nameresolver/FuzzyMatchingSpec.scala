@@ -257,13 +257,13 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
       ))
     )
 
-    "don't fuzzy match on genus" when {
-      "empty match for 'Adarys robusulus'" in nameTest(
+    "handle fuzzy match on genus" when {
+      "don't match genus for multinomials (possibly matched 'Abarys' is genus)" in nameTest(
         request = "Adarys robusulus",
         Seq()
       )
 
-      "non empty match for 'Abarys robusulus'" in nameTest(
+      "match species for multinomials" in nameTest(
         request = "Abarys robusulus",
         Seq(ExpectedResult(
           name = "Abarys robustulus",
@@ -273,7 +273,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         dataSourceIds = Seq(168)
       )
 
-      "non empty match for 'Abarys rabasulus'" in nameTest(
+      "match genus when there's no species" in nameTest(
         request = "Abarys rabasulus",
         Seq(
           ExpectedResult(
@@ -293,6 +293,19 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
           )
         ),
         dataSourceIds = Seq(7, 8)
+      )
+
+      "match uninomials" in nameTest(
+        request = "Adarys",
+        Seq(
+          ExpectedResult(
+            name = "Abarys",
+            kind = MatchKind.FuzzyCanonicalMatch,
+            editDistance = 1,
+            scoreLowerBound = FairMatchScore
+          )
+        ),
+        dataSourceIds = Seq(7)
       )
     }
   }
