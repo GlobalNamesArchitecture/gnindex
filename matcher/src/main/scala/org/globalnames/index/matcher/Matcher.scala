@@ -9,8 +9,8 @@ import thrift.matcher.{Response, Result}
 import thrift.Name
 import javax.inject.{Inject, Singleton}
 
-import parser.ScientificNameParser.{instance => SNP}
-import index.thrift.{MatchKind => MK, Uuid}
+import parser.{ScientificNameParser => snp}
+import index.thrift.{Uuid, MatchKind => MK}
 import org.apache.commons.lang3.StringUtils
 import util.UuidEnhanced.javaUuid2thriftUuid
 
@@ -24,12 +24,15 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
                         canonicalNames: CanonicalNames) extends Logging {
   private val FuzzyMatchLimit = 5
 
-  private[Matcher] case class CanonicalNameSplit(name: String, namePartialStr: String) {
+  private[Matcher] case class CanonicalNameSplit(name: snp.Result, namePartialStr: String) {
 
     val size: Int =
       namePartialStr.isEmpty ? 0 | (StringUtils.countMatches(namePartialStr, ' ') + 1)
 
-    val isOriginalCanonical: Boolean = name.length == namePartialStr.length
+    val isOriginalCanonical: Boolean = name.canonized() match {
+      case Some(can) => can.length == namePartialStr.length
+      case _ => false
+    }
 
     val isUninomial: Boolean = size == 1
 
@@ -40,14 +43,15 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
         this.copy(namePartialStr = "")
       }
 
-    def nameProvidedUuid: Uuid = UuidGenerator.generate(name)
+    def nameProvidedUuid: Uuid = name.preprocessorResult.id
 
     def namePartial: Name =
       Name(uuid = UuidGenerator.generate(namePartialStr), value = namePartialStr)
   }
 
   private object CanonicalNameSplit {
-    def apply(name: String): CanonicalNameSplit = CanonicalNameSplit(name, name)
+    def apply(name: snp.Result): CanonicalNameSplit =
+      CanonicalNameSplit(name, name.canonized().getOrElse(""))
   }
 
   private case class FuzzyMatch(canonicalNameSplit: CanonicalNameSplit,
@@ -167,16 +171,14 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
               dataSourceIds: Seq[Int],
               advancedResolution: Boolean): Seq[Response] = {
     logger.info("Started. Splitting names")
-    val namesParsed = names.map { name => SNP.fromString(name) }
+    val namesParsed = names.map { name => snp.instance.fromString(name) }
     val (namesParsedSuccessfully, namesParsedRest) = namesParsed.partition { np =>
-      np.canonized().isDefined
+      np.canonized().exists { _.nonEmpty }
     }
     val responsesRest = namesParsedRest.map { np =>
       Response(inputUuid = np.preprocessorResult.id, results = Seq())
     }
-    val namesParsedSuccessfullySplits = namesParsedSuccessfully.map { np =>
-      CanonicalNameSplit(np.preprocessorResult.verbatim)
-    }
+    val namesParsedSuccessfullySplits = namesParsedSuccessfully.map { np => CanonicalNameSplit(np) }
     logger.info("Recursive fuzzy match started")
     val responses =
       resolveFromPartials(
