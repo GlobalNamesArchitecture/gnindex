@@ -24,23 +24,21 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
                         canonicalNames: CanonicalNames) extends Logging {
   private val FuzzyMatchLimit = 5
 
-  private[Matcher] case class CanonicalNameSplit(name: snp.Result, namePartialStr: String) {
+  private[Matcher] case class CanonicalNameSplit(name: snp.Result,
+                                                 namePartialStr: String,
+                                                 isOriginalCanonical: Boolean) {
 
     val size: Int =
       namePartialStr.isEmpty ? 0 | (StringUtils.countMatches(namePartialStr, ' ') + 1)
-
-    val isOriginalCanonical: Boolean = name.canonized() match {
-      case Some(can) => can.length == namePartialStr.length
-      case _ => false
-    }
 
     val isUninomial: Boolean = size == 1
 
     def shorten: CanonicalNameSplit =
       if (size > 1) {
-        this.copy(namePartialStr = namePartialStr.substring(0, namePartialStr.lastIndexOf(' ')))
+        this.copy(namePartialStr = namePartialStr.substring(0, namePartialStr.lastIndexOf(' ')),
+                  isOriginalCanonical = false)
       } else {
-        this.copy(namePartialStr = "")
+        this.copy(namePartialStr = "", isOriginalCanonical = false)
       }
 
     def nameProvidedUuid: Uuid = name.preprocessorResult.id
@@ -51,7 +49,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
 
   private object CanonicalNameSplit {
     def apply(name: snp.Result): CanonicalNameSplit =
-      CanonicalNameSplit(name, name.canonized().getOrElse(""))
+      CanonicalNameSplit(name, name.canonized().getOrElse(""), isOriginalCanonical = true)
   }
 
   private case class FuzzyMatch(canonicalNameSplit: CanonicalNameSplit,
