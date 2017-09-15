@@ -7,18 +7,16 @@ import java.util.UUID
 import index.dao.{Tables => T}
 import thrift._
 import util.UuidEnhanced._
-import parser.ScientificNameParser.{instance => SNP}
 import slick.jdbc.PostgresProfile.api._
 import com.github.tototoshi.slick.PostgresJodaSupport._
 import org.joda.time.DateTime
-import dao.{Projections => P}
+import index.dao.{Projections => P}
 
 object Projections {
   implicit object NameStringsShape
     extends CaseClassShape(NameStringsLifted.tupled, NameStrings.tupled)
-  case class NameStrings(id: UUID, name: String,
-                         canonicalUuid: Option[UUID], canonical: Option[String],
-                         canonicalRanked: Option[String])
+  case class NameStrings(id: UUID, name: String, canonicalUuid: Option[UUID],
+                         canonical: Option[String], canonicalRanked: Option[String])
   case class NameStringsLifted(id: Rep[UUID], name: Rep[String],
                                canonicalUuid: Rep[Option[UUID]], canonical: Rep[Option[String]],
                                canonicalRanked: Rep[Option[String]])
@@ -56,11 +54,10 @@ object Projections {
 object DBResultObj {
   def create(dbRes: P.ResultDB, matchType: MatchType): Result = {
     val canonicalNameOpt =
-      for {
-        canId <- dbRes.ns.canonicalUuid
-        canNameValue <- dbRes.ns.canonical
-        canNameValueRanked <- dbRes.ns.canonicalRanked
-      } yield CanonicalName(uuid = canId, value = canNameValue, valueRanked = canNameValueRanked)
+      for (canId <- dbRes.ns.canonicalUuid; canNameValue <- dbRes.ns.canonical) yield {
+        val canonicalRanked = dbRes.ns.canonicalRanked.getOrElse(canNameValue)
+        CanonicalName(uuid = canId, value = canNameValue, valueRanked = canonicalRanked)
+      }
 
     val classification = Classification(
       path = dbRes.nsi.classificationPath,
@@ -75,11 +72,11 @@ object DBResultObj {
       val anOpt = for {
         acpNm <- dbRes.acceptedName
       } yield {
-        val canonicalNameOpt = for {
-          nsCanId <- acpNm.canonicalUuid
-          nsCan <- acpNm.canonical
-          nsCanRanked <- acpNm.canonicalRanked
-        } yield CanonicalName(uuid = nsCanId, value = nsCan, valueRanked = nsCanRanked)
+        val canonicalNameOpt =
+          for (nsCanId <- acpNm.canonicalUuid; nsCan <- acpNm.canonical) yield {
+            val canonicalRanked = dbRes.ns.canonicalRanked.getOrElse(nsCan)
+            CanonicalName(uuid = nsCanId, value = nsCan, valueRanked = canonicalRanked)
+          }
         AcceptedName(
           name = Name(uuid = acpNm.id, value = acpNm.name),
           canonicalName = canonicalNameOpt,
@@ -119,13 +116,14 @@ object DBResultObj {
               nsiAccepted: Rep[Option[T.NameStringIndices]]): P.ResultDBLifted = {
     val nsRep = P.NameStringsLifted(ns.id, ns.name, ns.canonicalUuid,
                                     ns.canonical, ns.canonicalRanked)
-    val nsiRep = P.NameStringIndicesLifted(nsi.taxonId, nsi.acceptedTaxonId,
-      nsi.classificationPath, nsi.classificationPathIds, nsi.classificationPathRanks)
+    val nsiRep = P.NameStringIndicesLifted(nsi.taxonId, nsi.acceptedTaxonId, nsi.classificationPath,
+                                           nsi.classificationPathIds, nsi.classificationPathRanks)
     val dsRep = P.DataSourcesLifted(ds.id, ds.title, ds.updatedAt)
     val acpNsRep: Rep[Option[P.NameStringsLifted]] =
-      for (nsAcp <- nsAccepted)
-        yield P.NameStringsLifted(nsAcp.id, nsAcp.name, nsAcp.canonicalUuid,
-                                  nsAcp.canonical, nsAcp.canonicalRanked)
+      for (nsAcp <- nsAccepted) yield {
+        P.NameStringsLifted(nsAcp.id, nsAcp.name, nsAcp.canonicalUuid,
+                            nsAcp.canonical, nsAcp.canonicalRanked)
+      }
     P.ResultDBLifted(nsRep, nsiRep, dsRep, acpNsRep)
   }
 }

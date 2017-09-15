@@ -104,6 +104,27 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       dataSourceIdsResponse should contain only (1, 3)
     }
 
+    "correctly return canonicalRanked" when {
+      "canonicalRanked is same as canonical" in {
+        val request = Request(names = Seq(
+          NameInput("Homo sapiens Linnaeus, 1758")
+        ), dataSourceIds = Seq(1), advancedResolution = true)
+        val response = client.nameResolve(request).value
+        response.items(0).results(0).result.canonicalName.value.value shouldBe "Homo sapiens"
+        response.items(0).results(0).result.canonicalName.value.valueRanked shouldBe "Homo sapiens"
+      }
+
+      "canonicalRanked differs from canonical" in {
+        val request = Request(names = Seq(
+          NameInput("Geonoma pohliana subsp. wittigiana (Glaz. ex Drude) A.J.Hend.")
+        ), dataSourceIds = Seq(1), advancedResolution = true)
+        val response = client.nameResolve(request).value
+        val result = response.items(0).results(0).result
+        result.canonicalName.value.value shouldBe "Geonoma pohliana wittigiana"
+        result.canonicalName.value.valueRanked shouldBe "Geonoma pohliana ssp. wittigiana"
+      }
+    }
+
     "handle preferred data sources" when {
       "data sources are provided" in {
         val inputDataSourceIds = Seq(1, 2)
