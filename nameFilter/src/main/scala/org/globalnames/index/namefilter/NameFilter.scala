@@ -6,11 +6,12 @@ import javax.inject.{Inject, Singleton}
 
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
+import com.twitter.inject.Logging
 import com.twitter.util.{Future => TwitterFuture}
 import scala.concurrent.{Future => ScalaFuture}
 import org.apache.commons.lang3.StringUtils.capitalize
 import index.dao.{DBResultObj, Tables => T}
-import dao.Projections._
+import index.dao.Projections._
 import thrift._
 import thrift.namefilter._
 import slick.jdbc.PostgresProfile.api._
@@ -19,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Try}
 
 @Singleton
-class NameFilter @Inject()(database: Database) {
+class NameFilter @Inject()(database: Database) extends Logging {
   import NameFilter._
 
   private val unaccent = SimpleFunction.unary[String, String]("unaccent")
@@ -220,12 +221,13 @@ class NameFilter @Inject()(database: Database) {
       .map { case (((ns, nsi, ds), nsiAccepted), nsAccepted) =>
         DBResultObj.project(ns, nsi, ds, nsAccepted, nsiAccepted)
       }
-      .take(1000)
+      .take(50)
     database.run(queryJoined.result)
   }
 
   def resolveString(request: Request): TwitterFuture[Seq[Result]] = {
     val search = QueryParser.result(request.searchTerm)
+    logger.info(s"query: ${search.toString}")
     val resolverFunction: (String) => Query[T.NameStrings, T.NameStringsRow, Seq] =
       search.modifier match {
         case NoModifier =>

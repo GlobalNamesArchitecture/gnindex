@@ -35,7 +35,7 @@ class NameFilterSimulation extends Simulation {
         .header("Content-Type", "application/json")
         .check(
             status.is(200)
-          , jsonPath("$..name.id").is("e529d978-6a13-578b-b3eb-bd9b8ad50a53")
+          , jsonPath("$..name.id").exists
         )
       )
   }
@@ -60,7 +60,7 @@ class NameFilterSimulation extends Simulation {
         .header("Content-Type", "application/json")
         .check(
             status.is(200)
-          , jsonPath("$..name.id").is("e529d978-6a13-578b-b3eb-bd9b8ad50a53")
+          , jsonPath("$..name.id").exists
         )
       )
   }
@@ -85,7 +85,7 @@ class NameFilterSimulation extends Simulation {
         .header("Content-Type", "application/json")
         .check(
             status.is(200)
-          , jsonPath("$..name.id").is("e529d978-6a13-578b-b3eb-bd9b8ad50a53")
+          , jsonPath("$..name.id").exists
         )
       )
   }
@@ -109,8 +109,8 @@ class NameFilterSimulation extends Simulation {
         .asJSON
         .header("Content-Type", "application/json")
         .check(
-          status.is(200)
-          , jsonPath("$..name.id").is("e529d978-6a13-578b-b3eb-bd9b8ad50a53")
+            status.is(200)
+          , jsonPath("$..name.id").exists
         )
       )
   }
@@ -119,7 +119,7 @@ class NameFilterSimulation extends Simulation {
     val graphql =
       """
         |{
-        |  nameStrings(searchTerm: "genus:Buxela") {
+        |  nameStrings(searchTerm: "gen:Buxela") {
         |    name {
         |      id
         |      value
@@ -134,8 +134,8 @@ class NameFilterSimulation extends Simulation {
         .asJSON
         .header("Content-Type", "application/json")
         .check(
-          status.is(200)
-          , jsonPath("$..name.id").is("e529d978-6a13-578b-b3eb-bd9b8ad50a53")
+            status.is(200)
+          , jsonPath("$..name.id").exists
         )
       )
   }
@@ -159,17 +159,17 @@ class NameFilterSimulation extends Simulation {
         .asJSON
         .header("Content-Type", "application/json")
         .check(
-          status.is(200)
-          , jsonPath("$..name.id").is("e529d978-6a13-578b-b3eb-bd9b8ad50a53")
+            status.is(200)
+          , jsonPath("$..name.id").exists
         )
       )
   }
 
-  val supSpeciesModifier: ScenarioBuilder = {
+  val subSpeciesModifier: ScenarioBuilder = {
     val graphql =
       """
         |{
-        |  nameStrings(searchTerm: "ssp:Abacantha") {
+        |  nameStrings(searchTerm: "ssp:pubescens") {
         |    name {
         |      id
         |      value
@@ -184,8 +184,8 @@ class NameFilterSimulation extends Simulation {
         .asJSON
         .header("Content-Type", "application/json")
         .check(
-          status.is(200)
-          , jsonPath("$..name.id").is("e529d978-6a13-578b-b3eb-bd9b8ad50a53")
+            status.is(200)
+          , jsonPath("$..name.id").exists
         )
       )
   }
@@ -194,7 +194,7 @@ class NameFilterSimulation extends Simulation {
     val graphql =
       """
         |{
-        |  nameStrings(searchTerm: "ssp:Abacantha") {
+        |  nameStrings(searchTerm: "ns:Aaadonta constricta babelthuapi") {
         |    name {
         |      id
         |      value
@@ -209,8 +209,8 @@ class NameFilterSimulation extends Simulation {
         .asJSON
         .header("Content-Type", "application/json")
         .check(
-          status.is(200)
-          , jsonPath("$..name.id").is("e529d978-6a13-578b-b3eb-bd9b8ad50a53")
+            status.is(200)
+          , jsonPath("$..name.id").exists
         )
       )
   }
@@ -234,21 +234,21 @@ class NameFilterSimulation extends Simulation {
         .asJSON
         .header("Content-Type", "application/json")
         .check(
-          status.is(200)
-          , jsonPath("$..name.id").is("e529d978-6a13-578b-b3eb-bd9b8ad50a53")
+            status.is(200)
+          , jsonPath("$..name.id").exists
         )
       )
   }
 
   setUp(
-      canonicalModifier.inject(constantUsersPerSec(10) during 5.seconds)
-    , authorModifier.inject(constantUsersPerSec(10) during 5.seconds)
-    , yearModifier.inject(constantUsersPerSec(10) during 5.seconds)
-    , uninomialModifier.inject(constantUsersPerSec(10) during 5.seconds)
-    , genusModifier.inject(constantUsersPerSec(10) during 5.seconds)
-    , speciesModifier.inject(constantUsersPerSec(10) during 5.seconds)
-    , supSpeciesModifier.inject(constantUsersPerSec(10) during 5.seconds)
-    , nameStringsModifier.inject(constantUsersPerSec(10) during 5.seconds)
-    , exactModifier.inject(constantUsersPerSec(10) during 5.seconds)
+       canonicalModifier.inject(constantUsersPerSec(10) during 5.seconds)
+     , authorModifier.inject(constantUsersPerSec(10) during 5.seconds)
+     , yearModifier.inject(constantUsersPerSec(10) during 5.seconds)
+     , uninomialModifier.inject(constantUsersPerSec(10) during 5.seconds)
+     , genusModifier.inject(constantUsersPerSec(10) during 5.seconds)
+     , speciesModifier.inject(constantUsersPerSec(10) during 5.seconds)
+     , subSpeciesModifier.inject(constantUsersPerSec(10) during 5.seconds)
+     , nameStringsModifier.inject(constantUsersPerSec(10) during 5.seconds)
+     , exactModifier.inject(constantUsersPerSec(10) during 5.seconds)
   ).protocols(httpConf)
 }

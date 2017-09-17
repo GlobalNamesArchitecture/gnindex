@@ -11,11 +11,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170912134714) do
+ActiveRecord::Schema.define(version: 20170916133024) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "unaccent"
+  enable_extension "pg_trgm"
 
   create_table "cross_maps", id: false, force: :cascade do |t|
     t.integer "data_source_id",                null: false
@@ -72,7 +73,9 @@ ActiveRecord::Schema.define(version: 20170912134714) do
   end
 
   add_index "name_strings", ["canonical"], name: "canonical_name_index", using: :btree
+  add_index "name_strings", ["canonical"], name: "namestrings_canonical__gin_index", using: :gin
   add_index "name_strings", ["canonical_uuid"], name: "index_name_strings_on_canonical_uuid", using: :btree
+  add_index "name_strings", ["name"], name: "namestrings_name__gin_index", using: :gin
 
   create_table "name_strings__author_words", id: false, force: :cascade do |t|
     t.string "author_word", limit: 100, null: false
@@ -80,6 +83,7 @@ ActiveRecord::Schema.define(version: 20170912134714) do
   end
 
   add_index "name_strings__author_words", ["author_word"], name: "index_name_strings__author_words_on_author_word", using: :btree
+  add_index "name_strings__author_words", ["author_word"], name: "ns_author_words__gin_index", using: :gin
   add_index "name_strings__author_words", ["name_uuid"], name: "index_name_strings__author_words_on_name_uuid", using: :btree
 
   create_table "name_strings__genus", id: false, force: :cascade do |t|
@@ -88,6 +92,7 @@ ActiveRecord::Schema.define(version: 20170912134714) do
   end
 
   add_index "name_strings__genus", ["genus"], name: "index_name_strings__genus_on_genus", using: :btree
+  add_index "name_strings__genus", ["genus"], name: "ns_genus__gin_index", using: :gin
   add_index "name_strings__genus", ["name_uuid"], name: "index_name_strings__genus_on_name_uuid", using: :btree
 
   create_table "name_strings__species", id: false, force: :cascade do |t|
@@ -97,6 +102,7 @@ ActiveRecord::Schema.define(version: 20170912134714) do
 
   add_index "name_strings__species", ["name_uuid"], name: "index_name_strings__species_on_name_uuid", using: :btree
   add_index "name_strings__species", ["species"], name: "index_name_strings__species_on_species", using: :btree
+  add_index "name_strings__species", ["species"], name: "ns_species__gin_index", using: :gin
 
   create_table "name_strings__subspecies", id: false, force: :cascade do |t|
     t.string "subspecies", limit: 50, null: false
@@ -105,6 +111,7 @@ ActiveRecord::Schema.define(version: 20170912134714) do
 
   add_index "name_strings__subspecies", ["name_uuid"], name: "index_name_strings__subspecies_on_name_uuid", using: :btree
   add_index "name_strings__subspecies", ["subspecies"], name: "index_name_strings__subspecies_on_subspecies", using: :btree
+  add_index "name_strings__subspecies", ["subspecies"], name: "ns_subspecies__gin_index", using: :gin
 
   create_table "name_strings__uninomial", id: false, force: :cascade do |t|
     t.string "uninomial", limit: 50, null: false
@@ -113,6 +120,7 @@ ActiveRecord::Schema.define(version: 20170912134714) do
 
   add_index "name_strings__uninomial", ["name_uuid"], name: "index_name_strings__uninomial_on_name_uuid", using: :btree
   add_index "name_strings__uninomial", ["uninomial"], name: "index_name_strings__uninomial_on_uninomial", using: :btree
+  add_index "name_strings__uninomial", ["uninomial"], name: "ns_uninomial__gin_index", using: :gin
 
   create_table "name_strings__year", id: false, force: :cascade do |t|
     t.string "year",      limit: 8, null: false
@@ -121,6 +129,7 @@ ActiveRecord::Schema.define(version: 20170912134714) do
 
   add_index "name_strings__year", ["name_uuid"], name: "index_name_strings__year_on_name_uuid", using: :btree
   add_index "name_strings__year", ["year"], name: "index_name_strings__year_on_year", using: :btree
+  add_index "name_strings__year", ["year"], name: "ns_year__gin_index", using: :gin
 
   create_table "vernacular_string_indices", id: false, force: :cascade do |t|
     t.integer "data_source_id",                   null: false
