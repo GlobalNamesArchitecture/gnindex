@@ -47,11 +47,14 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       response should have size 1
       val results = response.headOption.value.results
       results should have size 1
-      val result = results.headOption.value
-      result.result.dataSource.id shouldBe dataSourceId
-      result.result.name.value shouldBe "Homo sapiens Linnaeus, 1758"
-      result.result.canonicalName.value.value shouldBe "Homo sapiens"
-      result.result.matchType.kind shouldBe MatchKind.ExactNameMatchByUUID
+      val result = results.headOption.value.result
+      result.dataSource.id shouldBe dataSourceId
+      result.name.value shouldBe "Homo sapiens Linnaeus, 1758"
+      result.canonicalName.value.value shouldBe "Homo sapiens"
+      result.canonicalName.value.valueRanked shouldBe "Homo sapiens"
+      result.acceptedName.canonicalName.value.value shouldBe "Homo sapiens"
+      result.acceptedName.canonicalName.value.valueRanked shouldBe "Homo sapiens"
+      result.matchType.kind shouldBe MatchKind.ExactNameMatchByUUID
     }
 
     "match 'Homo sapiens XXX, 1999' exactly by canonical UUID" in {
