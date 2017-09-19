@@ -5,6 +5,7 @@ require 'sinatra/activerecord'
 require 'sinatra/activerecord/rake'
 
 include ActiveRecord::Tasks
+ActiveRecord::Base.schema_format = :sql
 
 namespace :db do
   desc 'create all the databases'
