@@ -174,7 +174,7 @@ matcher
 ~~~~~~~
 
 The Thrift microservice expects canonical names of type ``Seq[String]`` and data sources IDs of
-type ``Seq[Int]``. It tries to fuzzy match through all known canonical names and those stems 
+type ``Seq[Int]``. It tries to fuzzy match through all known canonical names and those stems
 (according to Latin stemming) with Levenstein algorithm of edit distance 1.
 
 It returns list of lists of found fuzzy matches UUIDs: one list per provided canonical name. Note
@@ -207,7 +207,15 @@ microservices requests.
 Development
 -----------
 
-TODO
+Database schema creation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Database is created and migrated using ActiveRecord gem from
+RubyOnRails package. Database is created in `sql` format, rather than `ruby`,
+because it includes configuration of external Postgresql packages.
+
+To create schema at ``./db_migration/db/structure.sql`` file run
+``bundle exec rake db:migration``.
 
 Testing
 -------
