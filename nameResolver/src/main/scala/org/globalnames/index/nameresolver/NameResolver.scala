@@ -11,7 +11,7 @@ import com.twitter.util.{Future => TwitterFuture}
 import org.apache.commons.lang3.StringUtils
 import MatchTypeScores._
 import index.dao.{DBResultObj, Tables => T}
-import dao.Projections._
+import index.dao.Projections._
 import thrift.matcher.{Service => MatcherService}
 import thrift._
 import thrift.nameresolver._
