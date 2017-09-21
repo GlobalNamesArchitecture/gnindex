@@ -23,11 +23,11 @@ class NameResolverSimulation extends Simulation {
     override def hasNext = true
 
     override def next(): Record[String] = {
-      val namesBatch = Array.fill(100)(lines(rnd.nextInt(lines.length)))
+      val namesBatch = Array.fill(500)(lines(rnd.nextInt(lines.length)))
 
       val graphql = """
           |query ($names: [name!]!, $dataSourceIds: [Int!]) {
-          |  nameResolver(names: $names, dataSourceIds: $dataSourceIds) {
+          |  nameResolver(names: $names, dataSourceIds: $dataSourceIds, advancedResolution: false) {
           |    responses {
           |      results {
           |        name {

@@ -59,10 +59,6 @@ a452e666-8f39-55d1-97dc-ca03df2dd973,A. haemastoma,1
 0045ffbf-b7e0-5203-8bd1-edd90b10edff,A. mcgrewi,1
 fe899af8-0c28-5d27-9fd3-865fec48115f,A. megacephalus,1
 c10fb044-4fba-5b97-88a0-0a6327c8e9bf,A. sp.,
-8290769d-3295-5853-a466-a33e4b67bcbd,"A. sp. """"Neblina"""" 2",1
-94bc515c-a4e8-56f4-a51b-c00394515563,"A. sp. """"Santa Maria"""" 1",1
-7c255354-f8dd-597d-b821-7339e1db5a77,"A. sp. """"Santa Maria"""" 2",1
-58444f3d-42a2-500e-a736-8ca5f45060a4,"A. sp. """"lago cipotuba""""",1
 26705be1-04b2-5816-b914-6d7b3739f593,A. sp. PEG-M2,1
 f803c0fa-b3d1-5302-8663-879dc1d20191,A. sp. PEG-M3,1
 30451f4c-8789-5c50-b68a-edd2687682b3,A. sp. Saul FG,1
@@ -311,15 +307,6 @@ f90aaf87-4e7a-59fa-aa66-d29820960e9b,Allobates insperatus,1
 19b866f8-262a-5355-a3f7-45b26c509898,Allobates nidicola,1
 3a6cb6f2-36c4-5064-8642-51a1da51ea52,Allobates niputidea,1
 5eb2c5b4-a8f6-5461-b4a4-e405a319a5e7,Allobates sp.,1
-73c790fe-77fd-5552-97bc-670f2da327b2,"Allobates sp. """"Curua Una""""",1
-b61faa80-8683-5277-a05f-5ee0128f2436,"Allobates sp. """"Cuyabeno""""",1
-5a7c03cb-c9c5-5852-a6fe-eb431e8c5aae,"Allobates sp. """"Manaus1""""",1
-fd8bcc46-5faa-5538-8e9e-fcc121f4b1ed,"Allobates sp. """"Nebulina""""",1
-89683ba1-fc5f-5a74-9805-84183681153b,"Allobates sp. """"PEGM1""""",1
-6b1b2d9b-0e80-52f8-aa21-0bf2c747cd07,"Allobates sp. """"PortoWalter2""""",1
-8cac9f39-6353-55ef-96d4-90b806588343,"Allobates sp. """"ReservaDucke""""",1
-ae7d8866-7cc7-58d0-a768-bd97bf1f9afc,"Allobates sp. """"RioItuxi""""",1
-8973fd14-0068-5430-ad39-75bb90916455,"Allobates sp. """"SaoFrancisco""""",1
 b7cebfef-dcf2-5b3b-a2d4-87732bbf37a6,Allobates sp.PEGM2,1
 6da97323-0eda-5844-aa01-15caedc6cb0a,Allobates sp.PEGM3,1
 9c6c2295-cbe2-535a-a9bd-8e6a7453e509,Allobates talamancae,1
@@ -554,7 +541,6 @@ c1d8ed0e-9b62-52cc-8408-b3ec38686829,Andropadus milanjensis,1
 cb4760da-3480-589e-95fb-1d884ae0bed0,Andropogon,1
 c4aadd45-6903-591c-ac29-a1702c55456c,Andropogon gyrans,1
 4e1c8126-4f24-58b0-bf62-dc5cd7d614ac,Andropogon ternarius,1
-312dae8a-d39f-5d84-9e23-7bb60e0cc8c1,"Andropogon virginicus, subspecies decipiens",2
 c6276a0b-55c8-5f19-b2cf-977dbb3a5761,Aneides aeneus,1
 3cc955d4-4f45-57c2-b03c-0dca231a5adb,Aneides ferreus,1
 21f61c41-2a97-5c63-a06a-cdb116902e8b,Aneides flavipunctatus,1
@@ -616,8 +602,6 @@ a970d5f7-6c13-5c70-8088-b74e384749b4,Anomaloglossus degranvillei,1
 78269f82-7f54-574e-910d-4a22fa5ab426,Anomaloglossus praderioi,1
 b1e88779-0e4c-50c1-93f1-d21db699f0fb,Anomaloglossus roraima,1
 437f9fce-eb84-5e8a-9f1f-69e2e2c4b334,Anomaloglossus sp.,1
-451a64bb-2575-51f6-afbf-f3e1e0eed9cc,"Anomaloglossus sp. """"Ayanganna""""",1
-ec0afd9c-6710-5987-b90a-1a97de08d0e4,"Anomaloglossus sp. """"Brownsberg""""",1
 cbf47fb3-dbf6-5921-8abb-6a2d085fcf5c,Anomaloglossus sp. aff. degranvillei,1
 9adb9a33-6753-5b92-91a6-8d9ad6cd4b52,Anomaloglossus stepheni,1
 7caabeea-3740-5522-b461-db9f37f65ad3,Anomaloglossus tepuyensis,1
@@ -8494,7 +8478,6 @@ aa38403a-2e0f-5917-a782-2488303bde98,P. platani,1
 3743915d-fc2b-52af-8ec3-96d4203b8410,P. rozei,1
 2f774c42-d8ff-55e9-966b-e6678a06d578,P. sagittulus,1
 841d7eaa-bf4b-56c8-8d61-a642433d49b3,P. saulius,1
-66b96a1c-18f6-5acb-ab5f-157eeff31c5d,"P. sp. """"Nouragues""""",1
 20a4381d-b973-572d-a57c-ec88e3dd94b5,P. sp. 2,1
 2cd27f08-cc8c-5483-adaf-8dc612f5fada,P. sp. 4,1
 c5f50726-4b21-58fe-9235-9be15580dd97,P. strictogaster,1
@@ -9843,7 +9826,6 @@ c0be2cb0-0698-54ba-9404-a535877a1af7,Pristimantis simonsii,1
 2efb98f4-6308-5462-a587-c7af72b55ea4,Pristimantis skydmainos,1
 2df4f5f9-59c0-5000-a140-98187e3342b4,Pristimantis sp.,1
 a01a8547-ad4a-5b24-b455-bb4e7e594f21,Pristimantis sp.2,1
-777bf5e3-1707-5117-8b44-40df92ae78ac,"Pristimantis sp.3 """"nouragues""""",1
 8e34b8c4-2cb9-5017-960d-fecff15b2830,Pristimantis sp.4,1
 75f018ce-4b49-5a99-9eab-cf9bead7a28f,Pristimantis spinosus,1
 abf63ba0-44fd-51be-9a31-636f1e17387b,Pristimantis stictogaster,1
@@ -10700,8 +10682,6 @@ eb192b83-00fb-53ba-acc8-115eeb733e1f,Rheobatrachus silus,1
 92239a12-5e1f-5b8d-bba6-0bf819a5aa8e,Rheotanytarsus pentapoda To41,2
 48fe0497-4bb1-5d10-9628-f44b84f04fbe,Rhi,1
 6d377702-03d7-5850-af3e-4ff2964e54e2,Rhinatrema bivittatum,1
-e19695d8-a704-583e-b6bd-9e697255460c,"Rhinella """"castaneotica"""" s.l.",2
-086fe955-c3cb-5613-9170-00e36a733ff2,"Rhinella """"margaritifera"""" s.l.",2
 a2f30168-4093-5511-bcbb-e6c180b2ddab,Rhinella (Bufo) ocellatus,1
 b2f04a6e-1490-56fa-9cba-f64358c70e4b,Rhinella castaenotica,1
 c413df9c-4d41-5a81-90bc-6efdc4156405,Rhinella dapsilis,1
