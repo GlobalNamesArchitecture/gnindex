@@ -29,6 +29,20 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 --
+-- Name: pg_trgm; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION pg_trgm; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching based on trigrams';
+
+
+--
 -- Name: unaccent; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -245,6 +259,14 @@ ALTER TABLE ONLY data_sources
 
 
 --
+-- Name: name_string_indices name_string_indices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY name_string_indices
+    ADD CONSTRAINT name_string_indices_pkey PRIMARY KEY (name_string_id, data_source_id, taxon_id);
+
+
+--
 -- Name: name_strings name_strings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -408,10 +430,59 @@ CREATE INDEX index_name_strings_on_canonical_uuid ON name_strings USING btree (c
 
 
 --
--- Name: name_string_indices__datasource_taxonid; Type: INDEX; Schema: public; Owner: -
+-- Name: namestrings_canonical__gin_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX name_string_indices__datasource_taxonid ON name_string_indices USING btree (data_source_id, taxon_id);
+CREATE INDEX namestrings_canonical__gin_index ON name_strings USING gin (canonical gin_trgm_ops);
+
+
+--
+-- Name: namestrings_name__gin_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX namestrings_name__gin_index ON name_strings USING gin (name gin_trgm_ops);
+
+
+--
+-- Name: ns_author_words__gin_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ns_author_words__gin_index ON name_strings__author_words USING gin (author_word gin_trgm_ops);
+
+
+--
+-- Name: ns_genus__gin_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ns_genus__gin_index ON name_strings__genus USING gin (genus gin_trgm_ops);
+
+
+--
+-- Name: ns_species__gin_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ns_species__gin_index ON name_strings__species USING gin (species gin_trgm_ops);
+
+
+--
+-- Name: ns_subspecies__gin_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ns_subspecies__gin_index ON name_strings__subspecies USING gin (subspecies gin_trgm_ops);
+
+
+--
+-- Name: ns_uninomial__gin_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ns_uninomial__gin_index ON name_strings__uninomial USING gin (uninomial gin_trgm_ops);
+
+
+--
+-- Name: ns_year__gin_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ns_year__gin_index ON name_strings__year USING gin (year gin_trgm_ops);
 
 
 --
@@ -468,4 +539,8 @@ INSERT INTO schema_migrations (version) VALUES ('20170815111416');
 INSERT INTO schema_migrations (version) VALUES ('20170829181214');
 
 INSERT INTO schema_migrations (version) VALUES ('20170912134714');
+
+INSERT INTO schema_migrations (version) VALUES ('20170916090813');
+
+INSERT INTO schema_migrations (version) VALUES ('20170916133024');
 
