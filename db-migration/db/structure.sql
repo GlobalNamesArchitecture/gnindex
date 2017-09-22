@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.4
--- Dumped by pg_dump version 9.6.4
+-- Dumped from database version 9.6.5
+-- Dumped by pg_dump version 9.6.5
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -146,7 +146,8 @@ CREATE TABLE name_strings (
     canonical_uuid uuid,
     canonical character varying(255),
     surrogate boolean,
-    canonical_ranked character varying(255)
+    canonical_ranked character varying(255),
+    parsing_quality smallint
 );
 
 
@@ -543,4 +544,6 @@ INSERT INTO schema_migrations (version) VALUES ('20170912134714');
 INSERT INTO schema_migrations (version) VALUES ('20170916090813');
 
 INSERT INTO schema_migrations (version) VALUES ('20170916133024');
+
+INSERT INTO schema_migrations (version) VALUES ('20170921222425');
 
