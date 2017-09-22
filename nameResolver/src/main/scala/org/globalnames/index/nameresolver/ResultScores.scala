@@ -1,5 +1,6 @@
 package org.globalnames
 package index
+package nameresolver
 
 import org.apache.commons.lang3.StringUtils
 import thrift._
