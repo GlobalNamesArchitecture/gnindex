@@ -153,7 +153,7 @@ class NameResolver(request: Request)
           results = responseResults,
           preferredResults = preferredResponseResults,
           suppliedId = nameParsed.nameInput.suppliedId,
-          suppliedInput = nameParsed.nameInput.value.some
+          suppliedInput = nameParsed.nameInput.value
         )
         RequestResponse(nameParsed, response = response)
       }
@@ -207,7 +207,7 @@ class NameResolver(request: Request)
               results = results,
               preferredResults = preferredResults,
               suppliedId = nameInputParsed.nameInput.suppliedId,
-              suppliedInput = nameInputParsed.nameInput.value.some
+              suppliedInput = nameInputParsed.nameInput.value
             )
             RequestResponse(request = nameInputParsed, response = response)
           }

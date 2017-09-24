@@ -23,7 +23,7 @@ struct Request {
 
 struct Response {
     1: i32 total
-    2: optional string suppliedInput
+    2: string suppliedInput
     3: optional string suppliedId
     4: list<commondata.ResultScored> results
     5: list<commondata.ResultScored> preferredResults

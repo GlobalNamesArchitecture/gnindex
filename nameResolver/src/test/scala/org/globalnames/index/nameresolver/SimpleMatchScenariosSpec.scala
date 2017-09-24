@@ -75,7 +75,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
         dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
-      response.headOption.value.suppliedInput.value shouldBe "Homo sapiens Linnaeus, 1758"
+      response.headOption.value.suppliedInput shouldBe "Homo sapiens Linnaeus, 1758"
     }
 
     "not have suppliedId if not given" in {
