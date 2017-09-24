@@ -8,7 +8,6 @@ import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.inject.Logging
 import com.twitter.util.{Future => TwitterFuture}
-import org.apache.commons.lang3.StringUtils
 import MatchTypeScores._
 import index.dao.{DBResultObj, Tables => T}
 import index.dao.Projections._
@@ -17,7 +16,6 @@ import thrift._
 import thrift.nameresolver._
 import thrift.{MatchKind => MK}
 import util.UuidEnhanced._
-import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
 import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -28,7 +26,6 @@ import scalaz.Lens
 
 object NameResolver {
   type NameStringsQuery = Query[T.NameStrings, T.NameStringsRow, Seq]
-  final case class NameInputParsed(nameInput: NameInput, parsed: SNResult)
   final case class RequestResponse(request: NameInputParsed, response: Response)
 
   private val resultScoredToMatchKindLens: (ResultScored) => ResultScored = {
@@ -65,12 +62,7 @@ class NameResolver(request: Request)
   private val takeCount: Int = request.perPage.min(1000).max(0)
   private val dropCount: Int = (request.page * request.perPage).max(0)
   private val namesParsed: Vector[NameInputParsed] =
-    request.names.toVector.map { ni =>
-      val capital = StringUtils.capitalize(ni.value)
-      NameInputParsed(nameInput = ni.copy(value = capital,
-                                          suppliedId = ni.suppliedId.map { _.trim }),
-                      parsed = SNP.fromString(capital))
-    }
+    request.names.toVector.map { ni => NameInputParsed(ni) }
   private val namesParsedMap: Map[UUID, NameInputParsed] =
     namesParsed.map { np => np.parsed.preprocessorResult.id -> np }.toMap
 
@@ -147,7 +139,7 @@ class NameResolver(request: Request)
               MK.Unknown
             }
           val dbResult = DBResultObj.create(r, createMatchType(matchKind, editDistance = 0))
-          val score = ResultScores.compute(nameParsed.parsed, dbResult)
+          val score = ResultScores(nameParsed, dbResult).compute
           ResultScored(dbResult, score)
         }
 
@@ -195,7 +187,7 @@ class NameResolver(request: Request)
               nameStringsDBMap(canId.some).map { r =>
                 val dbResult =
                   DBResultObj.create(r, createMatchType(result.matchKind, result.distance))
-                val score = ResultScores.compute(nameInputParsed.parsed, dbResult)
+                val score = ResultScores(nameInputParsed, dbResult).compute
                 ResultScored(dbResult, score)
               }
             }
@@ -206,7 +198,7 @@ class NameResolver(request: Request)
                 .map { r =>
                   val dbResult =
                     DBResultObj.create(r, createMatchType(result.matchKind, result.distance))
-                  val score = ResultScores.compute(nameInputParsed.parsed, dbResult)
+                  val score = ResultScores(nameInputParsed, dbResult).compute
                   ResultScored(dbResult, score)
                 }
               }
@@ -266,7 +258,7 @@ class NameResolver(request: Request)
       logInfo(s"[Resolution] Exact match done. Matches count: ${exactMatchesByUuid.size}. " +
               s"Unparsed count: ${unmatchedNotParsed.size}")
 
-      val namesForFuzzyMatch = unmatched.map { reqResp => reqResp.request.nameInput.value }
+      val namesForFuzzyMatch = unmatched.map { reqResp => reqResp.request.valueCapitalised }
       val fuzzyMatchesFut = fuzzyMatch(namesForFuzzyMatch, request.advancedResolution)
 
       fuzzyMatchesFut.map { fuzzyMatches =>
