@@ -1,18 +1,20 @@
 package org.globalnames
 package index
+package nameresolver
 
 import org.apache.commons.lang3.StringUtils
 import thrift._
 import thrift.MatchKind._
-import parser.ScientificNameParser.{Result => SNResult, instance => SNP}
+import parser.{ScientificNameParser => snp}
 import org.globalnames.matcher.{Author, AuthorsMatcher}
 
 import scalaz.syntax.either._
 import scalaz.syntax.bifunctor._
+import scalaz.syntax.std.boolean._
 import scalaz.\/
 import scala.util.Try
 
-object ResultScores {
+final case class ResultScores(nameInputParsed: NameInputParsed, result: Result) {
   private def sigmoid(x: Double) = 1 / (1 + math.exp(-x))
 
   private def computeScoreMessage(result: Result, authorScore: AuthorScore): String \/ Double = {
@@ -50,8 +52,9 @@ object ResultScores {
               case _ => s"Unexpected type of match type ${result.matchType} for nameType $nt".left
             }
         }
+        val firstWordEditPenalty = nameInputParsed.firstWordCorrectlyCapitalised ? 0 | -1
         res.rightMap { case (authorCoef, generalCoef) =>
-          authorScore.value * authorCoef + generalCoef
+          authorScore.value * authorCoef + generalCoef + firstWordEditPenalty
         }
       case None =>
         result.matchType.kind match {
@@ -61,12 +64,13 @@ object ResultScores {
     }
   }
 
-  def compute(scientificName: SNResult, result: Result): Score = {
+  def compute: Score = {
+    val scientificName = nameInputParsed.parsed
     val authorshipInput = scientificName.authorshipNames
       .map { asn => Author(asn.mkString(" ")) }
     val yearInput = for (yr <- scientificName.yearDelimited; y <- Try(yr.toInt).toOption) yield y
 
-    val resultParsedString = SNP.fromString(result.name.value)
+    val resultParsedString = snp.instance.fromString(result.name.value)
     val authorshipMatch = resultParsedString.authorshipNames.map { as => Author(as.mkString(" ")) }
     val yearMatch = for {
       yr <- resultParsedString.yearDelimited
