@@ -215,5 +215,33 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
         }
       }
     }
+
+    "reduces score when first word is not normalized" in {
+      val correctNameResponses = client.nameResolve(Request(
+        names = Seq(NameInput("Homo sapiens")), advancedResolution = true
+      )).value
+
+      val incorrectGenusNameResponses = client.nameResolve(Request(
+        names = Seq(NameInput("HomO sapiens")), advancedResolution = true
+      )).value
+
+      correctNameResponses.items.size shouldBe incorrectGenusNameResponses.items.size
+      correctNameResponses.items.size should be > 0
+      for {
+        (correctNameResponse, incorrectGenusNameResponse) <-
+          correctNameResponses.items.zip(incorrectGenusNameResponses.items)
+      } {
+        correctNameResponse.results.size shouldBe incorrectGenusNameResponse.results.size
+        correctNameResponse.results.size should be > 0
+
+        for {
+          (correctName, incorrectGenusName) <-
+            correctNameResponse.results.zip(incorrectGenusNameResponse.results)
+        } {
+          correctName.result.name.uuid shouldBe incorrectGenusName.result.name.uuid
+          correctName.score.value should be > incorrectGenusName.score.value
+        }
+      }
+    }
   }
 }
