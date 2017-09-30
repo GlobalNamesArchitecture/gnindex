@@ -19,7 +19,7 @@ object Dependencies {
     val slick = "3.2.0"
     val jodaMapper = "2.3.0"
     val postgres = "42.1.1.jre7"
-    val gnparser = "0.4.2-20170715_1200-SNAPSHOT"
+    val gnparser = "0.4.2"
     val gnmatcher = "0.1.2-20170718_1900-SNAPSHOT"
     val gatling = "2.2.0"
     val twitterBijection = "0.9.5"
@@ -75,13 +75,11 @@ object Dependencies {
   )
 
   val nameResolverDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
-    library.twitterBijectionCore, library.twitterBijectionUtil,
-    library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
+    library.twitterBijectionCore, library.twitterBijectionUtil
   )
 
   val nameFilterDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
-    library.twitterBijectionCore, library.twitterBijectionUtil,
-    library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
+    library.twitterBijectionCore, library.twitterBijectionUtil
   )
 
   val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
