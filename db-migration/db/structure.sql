@@ -91,7 +91,10 @@ CREATE TABLE data_sources (
     data_hash character varying(40),
     unique_names_count integer DEFAULT 0,
     created_at timestamp without time zone,
-    updated_at timestamp without time zone
+    updated_at timestamp without time zone,
+    is_curated boolean NOT NULL,
+    is_auto_curated boolean NOT NULL,
+    record_count integer NOT NULL
 );
 
 
@@ -543,4 +546,8 @@ INSERT INTO schema_migrations (version) VALUES ('20170912134714');
 INSERT INTO schema_migrations (version) VALUES ('20170916090813');
 
 INSERT INTO schema_migrations (version) VALUES ('20170916133024');
+
+INSERT INTO schema_migrations (version) VALUES ('20171002094757');
+
+INSERT INTO schema_migrations (version) VALUES ('20171002165405');
 
