@@ -36,8 +36,12 @@ object Projections {
 
   implicit object DataSourcesShape
     extends CaseClassShape(DataSourcesLifted.tupled, DataSources.tupled)
-  case class DataSources(id: Int, title: String, updatedAt: Option[DateTime])
-  case class DataSourcesLifted(id: Rep[Int], title: Rep[String], updatedAt: Rep[Option[DateTime]])
+  case class DataSources(id: Int, title: String, updatedAt: Option[DateTime],
+                         isCurated: Boolean, isAutoCurated: Boolean,
+                         recordCount: Int)
+  case class DataSourcesLifted(id: Rep[Int], title: Rep[String], updatedAt: Rep[Option[DateTime]],
+                               isCurated: Rep[Boolean], isAutoCurated: Rep[Boolean],
+                               recordCount: Rep[Int])
 
   implicit object ResultDBShape
     extends CaseClassShape(ResultDBLifted.tupled, ResultDB.tupled)
@@ -66,7 +70,13 @@ object DBResultObj {
     )
 
     val synonym = dbRes.acceptedName.isDefined
-    val dataSourceRes = DataSource(id = dbRes.ds.id, title = dbRes.ds.title)
+
+    val quality =
+      if (dbRes.ds.isCurated) DataSourceQuality.Curated
+      else if (dbRes.ds.isAutoCurated) DataSourceQuality.AutoCurated
+      else DataSourceQuality.Unknown
+    val dataSourceRes = DataSource(id = dbRes.ds.id, title = dbRes.ds.title,
+                                   quality = quality, recordCount = dbRes.ds.recordCount)
 
     val acceptedNameResult = {
       val anOpt = for {
@@ -118,7 +128,8 @@ object DBResultObj {
                                     ns.canonical, ns.canonicalRanked)
     val nsiRep = P.NameStringIndicesLifted(nsi.taxonId, nsi.acceptedTaxonId, nsi.classificationPath,
                                            nsi.classificationPathIds, nsi.classificationPathRanks)
-    val dsRep = P.DataSourcesLifted(ds.id, ds.title, ds.updatedAt)
+    val dsRep = P.DataSourcesLifted(ds.id, ds.title, ds.updatedAt, ds.isCurated,
+                                    ds.isAutoCurated, ds.recordCount)
     val acpNsRep: Rep[Option[P.NameStringsLifted]] =
       for (nsAcp <- nsAccepted) yield {
         P.NameStringsLifted(nsAcp.id, nsAcp.name, nsAcp.canonicalUuid,

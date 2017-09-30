@@ -38,6 +38,12 @@ enum MatchKind {
     Unknown
 }
 
+enum DataSourceQuality {
+    Curated,
+    AutoCurated,
+    Unknown
+}
+
 struct MatchType {
     1: MatchKind kind
     2: i32 editDistance
@@ -67,6 +73,8 @@ struct Classification {
 struct DataSource {
     1: i32 id
     2: string title
+    3: DataSourceQuality quality
+    4: i32 recordCount
 }
 
 struct AcceptedName {

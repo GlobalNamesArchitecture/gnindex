@@ -239,12 +239,23 @@ class NameResolver(request: Request)
     }
   }
 
+  private implicit val resultScoredOrdering: Ordering[ResultScored] = new Ordering[ResultScored] {
+    override def compare(x: ResultScored, y: ResultScored): Int = {
+      if (x.result.dataSource.quality == y.result.dataSource.quality) {
+        if (x.score.value == y.score.value) {
+          Ordering.Int.compare(x.result.dataSource.recordCount, y.result.dataSource.recordCount)
+        } else {
+          Ordering.Option[Double].compare(y.score.value, x.score.value)
+        }
+      } else {
+        Ordering.Int.compare(x.result.dataSource.quality.value, y.result.dataSource.quality.value)
+      }
+    }
+  }
+
   private
   def rearrangeResults(responses: Seq[Response]): Seq[Response] = {
-    responses.map { response =>
-      val results = response.results.sortBy { _.score.value.getOrElse(0.0) }
-      response.copy(results = results)
-    }
+    responses.map { response => response.copy(results = response.results.sorted) }
   }
 
   def resolveExact(): TwitterFuture[Responses] = {

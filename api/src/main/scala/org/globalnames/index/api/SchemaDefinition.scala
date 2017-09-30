@@ -79,6 +79,7 @@ object SchemaDefinition {
     "DataSource", fields[Unit, DataSource](
         Field("id", IntType, resolve = _.value.id)
       , Field("title", StringType, resolve = _.value.title)
+      , Field("quality", StringType, resolve = _.value.quality.toString)
     )
   )
 
