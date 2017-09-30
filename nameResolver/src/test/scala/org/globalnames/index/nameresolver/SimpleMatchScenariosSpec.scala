@@ -78,6 +78,13 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       response.headOption.value.suppliedInput shouldBe "Homo sapiens Linnaeus, 1758"
     }
 
+    "results should be sorted by score" in {
+      val response = client.nameResolve(Request(
+        names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
+        dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
+      response(0).results.map { _.score.value } shouldBe sorted
+    }
+
     "not have suppliedId if not given" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
