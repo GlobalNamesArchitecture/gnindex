@@ -19,11 +19,13 @@ class Repository @Inject() (nameResolverClient: ns.Service.FutureIface,
   def nameResolver(namesInput: Seq[ns.NameInput],
                    dataSourceIds: Option[Seq[Int]],
                    preferredDataSourceIds: Option[Seq[Int]],
-                   advancedResolution: Boolean): ScalaFuture[ns.Responses] = {
+                   advancedResolution: Boolean,
+                   bestMatch: Boolean): ScalaFuture[ns.Responses] = {
     val req = ns.Request(names = namesInput,
                          dataSourceIds = dataSourceIds.getOrElse(Seq()),
                          preferredDataSourceIds = preferredDataSourceIds.getOrElse(Seq()),
-                         advancedResolution = advancedResolution)
+                         advancedResolution = advancedResolution,
+                         bestMatch = bestMatch)
     nameResolverClient.nameResolve(req).as[ScalaFuture[ns.Responses]]
   }
 

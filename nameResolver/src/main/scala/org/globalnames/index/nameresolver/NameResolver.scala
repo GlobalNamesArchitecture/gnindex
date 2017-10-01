@@ -254,9 +254,11 @@ class NameResolver(request: Request)
   }
 
   private
-  def rearrangeResults(responses: Seq[Response]): Seq[Response] = {
-    responses.map { response => response.copy(results = response.results.sorted) }
-  }
+  def rearrangeResults(responses: Seq[Response]): Seq[Response] =
+    responses.map { response =>
+      val results = request.bestMatch ? Seq(response.results.min) | response.results.sorted
+      response.copy(results = results)
+    }
 
   def resolveExact(): TwitterFuture[Responses] = {
     logInfo(s"[Resolution] Resolution started for ${request.names.size} names")
