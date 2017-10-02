@@ -9,6 +9,7 @@ import com.twitter.util.Future
 import thrift.MatchKind
 import thrift.nameresolver.{NameInput, Request, Service => NameResolverService}
 import matcher.{MatcherModule, Server => MatcherServer}
+import scalaz.syntax.std.option._
 
 class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
   override def launchConditions: Boolean = matcherServer.isHealthy
@@ -32,14 +33,23 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
     )
   )
 
-  private val GoodMatchScore = Some(0.69)
-  private val FairMatchScore = Some(0.49)
+  sealed trait MatchScoreLevel
+  case object GoodMatchScore extends MatchScoreLevel
+  case object FairMatchScore extends MatchScoreLevel
+  case object PoorMatchScore extends MatchScoreLevel
+  object MatchScoreLevel {
+    def apply(v: Double): MatchScoreLevel = {
+      if (v > 0.69) GoodMatchScore
+      else if (v > 0.49) FairMatchScore
+      else PoorMatchScore
+    }
+  }
 
   val client: NameResolverService[Future] =
     server.thriftClient[NameResolverService[Future]](clientId = "nameResolverClient")
 
   private final case class ExpectedResult(name: String, kind: MatchKind, editDistance: Int,
-                                          scoreLowerBound: Option[Double] = None)
+                                          scoreLowerBound: Option[MatchScoreLevel] = None)
 
   private def nameTest(request: String,
                        expectedResults: Seq[ExpectedResult],
@@ -55,11 +65,16 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
     val results = response.results
     results.length shouldBe expectedResults.length
 
-    for ((result, expectedResult) <- results.zip(expectedResults)) {
-      result.result.name.value shouldBe expectedResult.name
-      result.result.matchType.kind shouldBe expectedResult.kind
-      result.result.matchType.editDistance shouldBe expectedResult.editDistance
-      result.score.value should be >= expectedResult.scoreLowerBound
+    if (expectedResults.nonEmpty) {
+      val resultsProject = results.map { r =>
+        ExpectedResult(
+          r.result.name.value,
+          r.result.matchType.kind,
+          r.result.matchType.editDistance,
+          r.score.value.map { MatchScoreLevel.apply }
+        )
+      }
+      resultsProject should contain only (expectedResults.distinct: _*)
     }
   }
 
@@ -70,10 +85,9 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Actinodontium rhaphidostegum Bosch & Sande Lacoste, 1862",
         kind = MatchKind.FuzzyCanonicalMatch,
         editDistance = 1,
-        scoreLowerBound = GoodMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
-
 
     "match 'Andreaea heinemanii'" in nameTest(
       request = "Andreaea heinemanii",
@@ -83,7 +97,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         // scalastyle:on
         kind = MatchKind.FuzzyCanonicalMatch,
         editDistance = 1,
-        scoreLowerBound = GoodMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -93,7 +107,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Aplodon wormskioldii R. Brown, 1823",
         kind = MatchKind.FuzzyCanonicalMatch,
         editDistance = 1,
-        scoreLowerBound = GoodMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -103,7 +117,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Arctoa anderssonii Wichura, 1859",
         kind = MatchKind.FuzzyCanonicalMatch,
         editDistance = 1,
-        scoreLowerBound = GoodMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -113,7 +127,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Bryum funkii Schwaegrichen, 1816",
         kind = MatchKind.FuzzyCanonicalMatch,
         editDistance = 1,
-        scoreLowerBound = GoodMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -123,7 +137,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Bryum",
         kind = MatchKind.ExactMatchPartialByGenus,
         editDistance = 0,
-        scoreLowerBound = FairMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -134,7 +148,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
           name = "Bryum",
           kind = MatchKind.ExactMatchPartialByGenus,
           editDistance = 0,
-          scoreLowerBound = GoodMatchScore
+          scoreLowerBound = GoodMatchScore.some
         ))
       )
     }
@@ -145,7 +159,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Calyptrochaeta japonica Iwatsuki & Noguchi, 1979",
         kind = MatchKind.FuzzyCanonicalMatch,
         editDistance = 1,
-        scoreLowerBound = FairMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -155,7 +169,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Dicranella",
         kind = MatchKind.ExactMatchPartialByGenus,
         editDistance = 0,
-        scoreLowerBound = FairMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -165,7 +179,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Didymodon",
         kind = MatchKind.ExactMatchPartialByGenus,
         editDistance = 0,
-        scoreLowerBound = FairMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -175,7 +189,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Ditrichum",
         kind = MatchKind.ExactMatchPartialByGenus,
         editDistance = 0,
-        scoreLowerBound = FairMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -185,7 +199,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Encalypta",
         kind = MatchKind.ExactMatchPartialByGenus,
         editDistance = 0,
-        scoreLowerBound = FairMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -195,7 +209,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         name = "Entosthodon muhlenbergii Fife, 1985",
         kind = MatchKind.FuzzyCanonicalMatch,
         editDistance = 1,
-        scoreLowerBound = GoodMatchScore
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -214,7 +228,8 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
       Seq(ExpectedResult(
         name = "Hypnum cupressiforme Hedwig, 1801",
         kind = MatchKind.ExactPartialMatch,
-        editDistance = 0
+        editDistance = 0,
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -223,7 +238,8 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
       Seq(ExpectedResult(
         name = "Philonotis",
         kind = MatchKind.ExactMatchPartialByGenus,
-        editDistance = 0
+        editDistance = 0,
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -233,12 +249,14 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         ExpectedResult(
           name = "Myrinia", // animalia
           kind = MatchKind.ExactMatchPartialByGenus,
-          editDistance = 0
+          editDistance = 0,
+          scoreLowerBound = GoodMatchScore.some
         ),
         ExpectedResult(
           name = "Myrinia", // plantae
           kind = MatchKind.ExactMatchPartialByGenus,
-          editDistance = 0
+          editDistance = 0,
+          scoreLowerBound = GoodMatchScore.some
         )
       )
     )
@@ -253,7 +271,8 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
       Seq(ExpectedResult(
         name = "Sanionia georgicouncinata Ochyra, 1998",
         kind = MatchKind.FuzzyCanonicalMatch,
-        editDistance = 1
+        editDistance = 1,
+        scoreLowerBound = GoodMatchScore.some
       ))
     )
 
@@ -268,7 +287,8 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
         Seq(ExpectedResult(
           name = "Abarys robustulus",
           kind = MatchKind.FuzzyCanonicalMatch,
-          editDistance = 1
+          editDistance = 1,
+          scoreLowerBound = GoodMatchScore.some
         )),
         dataSourceIds = Seq(168)
       )
@@ -279,17 +299,20 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
           ExpectedResult(
             name = "Abarys Turner, 1947",
             kind = MatchKind.ExactMatchPartialByGenus,
-            editDistance = 0
+            editDistance = 0,
+            scoreLowerBound = GoodMatchScore.some
           ),
           ExpectedResult(
             name = "Abarys Agassiz, 1846",
             kind = MatchKind.ExactMatchPartialByGenus,
-            editDistance = 0
+            editDistance = 0,
+            scoreLowerBound = GoodMatchScore.some
           ),
           ExpectedResult(
             name = "Abarys",
             kind = MatchKind.ExactMatchPartialByGenus,
-            editDistance = 0
+            editDistance = 0,
+            scoreLowerBound = GoodMatchScore.some
           )
         ),
         dataSourceIds = Seq(7, 8)
@@ -302,7 +325,7 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
             name = "Abarys",
             kind = MatchKind.FuzzyCanonicalMatch,
             editDistance = 1,
-            scoreLowerBound = FairMatchScore
+            scoreLowerBound = FairMatchScore.some
           )
         ),
         dataSourceIds = Seq(7)
