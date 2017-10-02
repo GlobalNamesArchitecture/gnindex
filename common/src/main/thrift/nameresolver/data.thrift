@@ -19,7 +19,7 @@ struct Request {
     6: bool withSurrogates = false
     7: bool withVernaculars = false
     8: bool advancedResolution
-    9: bool bestMatch
+    9: bool bestMatch = false
 }
 
 struct Response {
