@@ -6,7 +6,7 @@ import com.google.inject.Stage
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import thrift.{Context, DataSource}
+import thrift.{Context, DataSource, DataSourceQuality}
 import thrift.nameresolver.{NameInput, Request, Service => NameResolverService}
 import matcher.{MatcherModule, Server => MatcherServer}
 
@@ -80,7 +80,8 @@ class ContextSpec extends WordSpecConfig with FeatureTestMixin {
       val response = client.nameResolve(request).value
       response.context should contain only
         Context(
-          dataSource = DataSource(id = 1, title = "Catalogue of Life"),
+          dataSource = DataSource(id = 1, title = "Catalogue of Life",
+                                  quality = DataSourceQuality.Curated, recordCount = 3566161),
           clade = "Plantae|Tracheophyta"
         )
     }
