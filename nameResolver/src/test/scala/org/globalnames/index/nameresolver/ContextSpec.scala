@@ -75,7 +75,7 @@ class ContextSpec extends WordSpecConfig with FeatureTestMixin {
         NameInput("Achnatherum coronatum"),
         NameInput("Achnatherum coronatum (Thurb.) Barkworth"),
         NameInput("Homo sapiens")
-      ), advancedResolution = true, dataSourceIds = Seq(1))
+      ), dataSourceIds = Seq(1))
 
       val response = client.nameResolve(request).value
       response.context should contain only

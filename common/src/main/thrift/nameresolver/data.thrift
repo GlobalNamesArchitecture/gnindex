@@ -18,7 +18,7 @@ struct Request {
     5: i32 perPage = nameStringsMaxCount
     6: bool withSurrogates = false
     7: bool withVernaculars = false
-    8: bool advancedResolution
+    8: bool advancedResolution = true
     9: bool bestMatch = false
 }
 

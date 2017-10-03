@@ -77,7 +77,7 @@ class ServerFeatureSpec extends WordSpecConfig with FeatureTestMixin {
   }
 
   "server#nameResolve" in {
-    val request = Request(names = Seq(NameInput("Homo sapiens")), advancedResolution = true)
+    val request = Request(names = Seq(NameInput("Homo sapiens")))
     val responses = client.nameResolve(request).value.items
     responses.headOption.value.total should be > 0
   }

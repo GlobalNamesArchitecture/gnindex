@@ -43,7 +43,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
     "match 'Homo sapiens Linnaeus, 1758' exactly by name UUID" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        advancedResolution = true, dataSourceIds = Seq(dataSourceId))).value.items
+        dataSourceIds = Seq(dataSourceId))).value.items
       response should have size 1
       val results = response.headOption.value.results
       results should have size 1
@@ -60,7 +60,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
     "match 'Homo sapiens XXX, 1999' exactly by canonical UUID" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens XXX, 1999")),
-        dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
+        dataSourceIds = Seq(dataSourceId))).value.items
       response should have size 1
       val results = response.headOption.value.results
       results should have size 1
@@ -74,21 +74,21 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
     "preserve suppliedInput" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
+        dataSourceIds = Seq(dataSourceId))).value.items
       response.headOption.value.suppliedInput shouldBe "Homo sapiens Linnaeus, 1758"
     }
 
     "results should be sorted by score" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
+        dataSourceIds = Seq(dataSourceId))).value.items
       response(0).results.map { _.score.value } shouldBe sorted
     }
 
     "not have suppliedId if not given" in {
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
+        dataSourceIds = Seq(dataSourceId))).value.items
       response.headOption.value.suppliedId shouldBe None
     }
 
@@ -96,7 +96,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       val suppliedId = "abc"
       val response = client.nameResolve(Request(
         names = Seq(NameInput("Homo sapiens Linnaeus, 1758", suppliedId = suppliedId.some)),
-        dataSourceIds = Seq(dataSourceId), advancedResolution = true)).value.items
+        dataSourceIds = Seq(dataSourceId))).value.items
       response.headOption.value.suppliedId.value shouldBe suppliedId
     }
 
@@ -107,7 +107,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
         NameInput("Andreaea heinemanii"),
         NameInput("Homo sapiens"),
         NameInput("Bryum capillare")
-      ), dataSourceIds = inputDataSourceIds, advancedResolution = true)
+      ), dataSourceIds = inputDataSourceIds)
       val response = client.nameResolve(request).value.items
       val dataSourceIdsResponse =
         response.flatMap { resp => resp.results.map { res => res.result.dataSource.id }}
@@ -118,7 +118,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       "canonicalRanked is same as canonical" in {
         val request = Request(names = Seq(
           NameInput("Homo sapiens Linnaeus, 1758")
-        ), dataSourceIds = Seq(1), advancedResolution = true)
+        ), dataSourceIds = Seq(1))
         val response = client.nameResolve(request).value
         response.items(0).results(0).result.canonicalName.value.value shouldBe "Homo sapiens"
         response.items(0).results(0).result.canonicalName.value.valueRanked shouldBe "Homo sapiens"
@@ -142,8 +142,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
         val request = Request(
           names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
           dataSourceIds = inputDataSourceIds,
-          preferredDataSourceIds = preferredDataSourceIds,
-          advancedResolution = true)
+          preferredDataSourceIds = preferredDataSourceIds)
         val response = client.nameResolve(request).value.items.headOption.value
 
         val dataSourceIdsResponse = response.results.map { _.result.dataSource.id }
@@ -159,8 +158,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
         val preferredDataSourceIds = Seq(3, 4)
         val request = Request(
           names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-          preferredDataSourceIds = preferredDataSourceIds,
-          advancedResolution = true)
+          preferredDataSourceIds = preferredDataSourceIds)
         val response = client.nameResolve(request).value.items.headOption.value
 
         val dataSourceIdsResponse = response.results.map { _.result.dataSource.id }
@@ -184,7 +182,6 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
         )
 
         val request = Request(names = synonymNames.map { n => NameInput(value = n) },
-                              advancedResolution = true,
                               dataSourceIds = Seq(8))
         val response = client.nameResolve(request).value
 
@@ -205,7 +202,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
 
         val request = Request(
           names = nonSynonymNames.map { n => NameInput(value = n) },
-          dataSourceIds = Seq(1), advancedResolution = true
+          dataSourceIds = Seq(1)
         )
         val response = client.nameResolve(request).value
 
@@ -225,11 +222,11 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
 
     "reduces score when first word is not normalized" in {
       val correctNameResponses = client.nameResolve(Request(
-        names = Seq(NameInput("Homo sapiens")), advancedResolution = true
+        names = Seq(NameInput("Homo sapiens"))
       )).value
 
       val incorrectGenusNameResponses = client.nameResolve(Request(
-        names = Seq(NameInput("HomO sapiens")), advancedResolution = true
+        names = Seq(NameInput("HomO sapiens"))
       )).value
 
       correctNameResponses.items.size shouldBe incorrectGenusNameResponses.items.size
