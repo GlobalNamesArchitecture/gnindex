@@ -125,13 +125,15 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       }
 
       "canonicalRanked differs from canonical" in {
-        val request = Request(names = Seq(
-          NameInput("Geonoma pohliana subsp. wittigiana (Glaz. ex Drude) A.J.Hend.")
-        ), dataSourceIds = Seq(1), advancedResolution = true)
+        val name =
+          "Gilia ophthalmoides Brand subsp. flavocincta (A. Nelson) A.D. Grant & V.E. Grant"
+        val request = Request(names = Seq(NameInput(name)), dataSourceIds = Seq(169))
         val response = client.nameResolve(request).value
         val result = response.items(0).results(0).result
-        result.canonicalName.value.value shouldBe "Geonoma pohliana wittigiana"
-        result.canonicalName.value.valueRanked shouldBe "Geonoma pohliana ssp. wittigiana"
+        val canonicalName = result.canonicalName.value
+        canonicalName.value shouldNot be (canonicalName.valueRanked)
+        canonicalName.value shouldBe "Gilia ophthalmoides flavocincta"
+        canonicalName.valueRanked shouldBe "Gilia ophthalmoides ssp. flavocincta"
       }
     }
 
