@@ -78,11 +78,49 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       response.headOption.value.suppliedInput shouldBe "Homo sapiens Linnaeus, 1758"
     }
 
-    "results should be sorted by score" in {
-      val response = client.nameResolve(Request(
-        names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId))).value.items
-      response(0).results.map { _.score.value } shouldBe sorted
+    "results and preferredResults should be sorted" when {
+      "look at data source quality in first place" in {
+        val response = client.nameResolve(Request(
+          names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
+          preferredDataSourceIds = Seq.range(1, 15))).value.items(0)
+        response.results.map { _.result.dataSource.quality.value } shouldBe sorted
+        response.preferredResults.size should be > 1
+        response.preferredResults.map { _.result.dataSource.quality.value } shouldBe sorted
+      }
+
+      "look at score for every group of quality in second place" in {
+        val response = client.nameResolve(Request(
+          names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
+          preferredDataSourceIds = Seq.range(1, 15))).value.items(0)
+        for ((_, resByDSqual) <- response.results.groupBy { _.result.dataSource.quality }) {
+          resByDSqual.map { _.score.value }.reverse shouldBe sorted
+        }
+        response.preferredResults.size should be > 1
+        for {
+          (_, resByDSqual) <- response.preferredResults.groupBy { _.result.dataSource.quality }
+        } {
+          resByDSqual.map { _.score.value }.reverse shouldBe sorted
+        }
+      }
+
+      "look at database records count in third place" in {
+        val response = client.nameResolve(Request(
+          names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
+          preferredDataSourceIds = Seq.range(1, 15))).value.items(0)
+        for {
+          (_, resByDSqual) <- response.results.groupBy { _.result.dataSource.quality }
+          (_, resByScore) <- resByDSqual.groupBy { _.score.value }
+        } {
+          resByScore.map { _.result.dataSource.recordCount } shouldBe sorted
+        }
+        response.preferredResults.size should be > 1
+        for {
+          (_, resByDSqual) <- response.preferredResults.groupBy { _.result.dataSource.quality }
+          (_, resByScore) <- resByDSqual.groupBy { _.score.value }
+        } {
+          resByScore.map { _.result.dataSource.recordCount } shouldBe sorted
+        }
+      }
     }
 
     "not have suppliedId if not given" in {
