@@ -257,7 +257,17 @@ class NameResolver(request: Request)
   def rearrangeResults(responses: Seq[Response]): Seq[Response] =
     responses.map { response =>
       val results = request.bestMatch ? Seq(response.results.min) | response.results.sorted
-      response.copy(results = results)
+      val preferredResultsSorted = response.preferredResults.sorted
+      val preferredResults =
+        if (request.bestMatch) {
+          for {
+            pdsId <- request.preferredDataSourceIds
+            rs <- preferredResultsSorted.find { _.result.dataSource.id == pdsId }
+          } yield rs
+        } else {
+          preferredResultsSorted
+        }
+      response.copy(results = results, preferredResults = preferredResults)
     }
 
   def resolveExact(): TwitterFuture[Responses] = {
