@@ -214,7 +214,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       "looking at core results" in {
         val responseBestMatch = client.nameResolve(
           Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-                  bestMatch = true)).value.items(0)
+                  bestMatchOnly = true)).value.items(0)
         val responseAll = client.nameResolve(
           Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")))).value.items(0)
 
@@ -228,7 +228,7 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
         val prefDSs = Seq.range(1, 15)
         val responseBestMatch = client.nameResolve(
           Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-                  bestMatch = true,
+                  bestMatchOnly = true,
                   preferredDataSourceIds = prefDSs)).value.items(0)
         val responseAll = client.nameResolve(
           Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),

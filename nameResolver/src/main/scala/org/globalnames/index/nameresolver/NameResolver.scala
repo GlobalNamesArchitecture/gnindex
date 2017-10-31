@@ -256,10 +256,10 @@ class NameResolver(request: Request)
   private
   def rearrangeResults(responses: Seq[Response]): Seq[Response] =
     responses.map { response =>
-      val results = request.bestMatch ? Seq(response.results.min) | response.results.sorted
+      val results = request.bestMatchOnly ? Seq(response.results.min) | response.results.sorted
       val preferredResultsSorted = response.preferredResults.sorted
       val preferredResults =
-        if (request.bestMatch) {
+        if (request.bestMatchOnly) {
           for {
             pdsId <- request.preferredDataSourceIds
             rs <- preferredResultsSorted.find { _.result.dataSource.id == pdsId }
