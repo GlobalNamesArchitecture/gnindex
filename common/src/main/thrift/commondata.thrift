@@ -73,8 +73,17 @@ struct Classification {
 struct DataSource {
     1: i32 id
     2: string title
-    3: DataSourceQuality quality
-    4: i32 recordCount
+    3: optional string description
+    4: optional string logoUrl
+    5: optional string webSiteUrl
+    6: optional string dataUrl
+    7: optional i32 refreshPeriodDays
+    8: optional i32 uniqueNamesCount
+    9: optional string createdAt
+    10: optional string updatedAt
+    11: optional string dataHash
+    12: DataSourceQuality quality
+    13: i32 recordCount
 }
 
 struct AcceptedName {

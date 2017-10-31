@@ -40,10 +40,28 @@ object Projections {
 
   implicit object DataSourcesShape
     extends CaseClassShape(DataSourcesLifted.tupled, DataSources.tupled)
-  case class DataSources(id: Int, title: String, updatedAt: Option[DateTime],
+  case class DataSources(id: Int, title: String,
+                         description: Option[String],
+                         logoUrl: Option[String],
+                         webSiteUrl: Option[String],
+                         dataUrl: Option[String],
+                         refreshPeriodDays: Option[Int],
+                         uniqueNamesCount: Option[Int],
+                         createdAt: Option[DateTime],
+                         updatedAt: Option[DateTime],
+                         dataHash: Option[String],
                          isCurated: Boolean, isAutoCurated: Boolean,
                          recordCount: Int)
-  case class DataSourcesLifted(id: Rep[Int], title: Rep[String], updatedAt: Rep[Option[DateTime]],
+  case class DataSourcesLifted(id: Rep[Int], title: Rep[String],
+                               description: Rep[Option[String]],
+                               logoUrl: Rep[Option[String]],
+                               webSiteUrl: Rep[Option[String]],
+                               dataUrl: Rep[Option[String]],
+                               refreshPeriodDays: Rep[Option[Int]],
+                               uniqueNamesCount: Rep[Option[Int]],
+                               createdAt: Rep[Option[DateTime]],
+                               updatedAt: Rep[Option[DateTime]],
+                               dataHash: Rep[Option[String]],
                                isCurated: Rep[Boolean], isAutoCurated: Rep[Boolean],
                                recordCount: Rep[Int])
 
@@ -80,7 +98,16 @@ object DBResultObj {
       else if (dbRes.ds.isAutoCurated) DataSourceQuality.AutoCurated
       else DataSourceQuality.Unknown
     val dataSourceRes = DataSource(id = dbRes.ds.id, title = dbRes.ds.title,
-                                   quality = quality, recordCount = dbRes.ds.recordCount)
+                                   description = dbRes.ds.description,
+                                   logoUrl = dbRes.ds.logoUrl,
+                                   webSiteUrl = dbRes.ds.webSiteUrl,
+                                   dataUrl = dbRes.ds.dataUrl,
+                                   refreshPeriodDays = dbRes.ds.refreshPeriodDays,
+                                   uniqueNamesCount = dbRes.ds.uniqueNamesCount,
+                                   createdAt = dbRes.ds.createdAt.map { _.toString },
+                                   updatedAt = dbRes.ds.updatedAt.map { _.toString },
+                                   quality = quality,
+                                   recordCount = dbRes.ds.recordCount)
 
     val acceptedNameResult = {
       val anOpt = for {
@@ -135,7 +162,17 @@ object DBResultObj {
     val nsiRep = P.NameStringIndicesLifted(nsi.taxonId, nsi.acceptedTaxonId, nsi.localId, nsi.url,
                                            nsi.classificationPath, nsi.classificationPathIds,
                                            nsi.classificationPathRanks)
-    val dsRep = P.DataSourcesLifted(ds.id, ds.title, ds.updatedAt, ds.isCurated,
+    val dsRep = P.DataSourcesLifted(ds.id, ds.title,
+                                    ds.description,
+                                    ds.logoUrl,
+                                    ds.webSiteUrl,
+                                    ds.dataUrl,
+                                    ds.refreshPeriodDays,
+                                    ds.uniqueNamesCount,
+                                    ds.createdAt,
+                                    ds.updatedAt,
+                                    ds.dataHash,
+                                    ds.isCurated,
                                     ds.isAutoCurated, ds.recordCount)
     val acpNsRep: Rep[Option[P.NameStringsLifted]] =
       for (nsAcp <- nsAccepted) yield {
