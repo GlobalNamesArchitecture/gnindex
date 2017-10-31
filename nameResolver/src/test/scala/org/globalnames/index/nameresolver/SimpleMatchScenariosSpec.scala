@@ -210,6 +210,36 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       }
     }
 
+    "handle `bestMatch`" when {
+      "looking at core results" in {
+        val responseBestMatch = client.nameResolve(
+          Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
+                  bestMatch = true)).value.items(0)
+        val responseAll = client.nameResolve(
+          Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")))).value.items(0)
+
+        responseBestMatch.results.size shouldBe 1
+        responseAll.results.size should be > 1
+
+        responseBestMatch.results(0) shouldBe responseAll.results(0)
+      }
+
+      "looking at results from preferred data sources" in {
+        val prefDSs = Seq.range(1, 15)
+        val responseBestMatch = client.nameResolve(
+          Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
+                  bestMatch = true,
+                  preferredDataSourceIds = prefDSs)).value.items(0)
+        val responseAll = client.nameResolve(
+          Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
+                  preferredDataSourceIds = prefDSs)).value.items(0)
+
+        responseBestMatch.preferredResults.size should be <= prefDSs.size
+        responseAll.preferredResults should contain
+          allElementsOf(responseBestMatch.preferredResults)
+      }
+    }
+
     "return correct value for synonym field" when {
       "name is a synonym" in {
         val synonymNames = Seq(
