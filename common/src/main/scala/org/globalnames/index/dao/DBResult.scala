@@ -25,11 +25,15 @@ object Projections {
     extends CaseClassShape(NameStringIndicesLifted.tupled, NameStringIndices.tupled)
   case class NameStringIndices(taxonId: String,
                                acceptedTaxonId: Option[String],
+                               localId: Option[String],
+                               url: Option[String],
                                classificationPath: Option[String],
                                classificationPathIds: Option[String],
                                classificationPathRanks: Option[String])
   case class NameStringIndicesLifted(taxonId: Rep[String],
                                      acceptedTaxonId: Rep[Option[String]],
+                                     localId: Rep[Option[String]],
+                                     url: Rep[Option[String]],
                                      classificationPath: Rep[Option[String]],
                                      classificationPathIds: Rep[Option[String]],
                                      classificationPathRanks: Rep[Option[String]])
@@ -126,8 +130,9 @@ object DBResultObj {
               nsiAccepted: Rep[Option[T.NameStringIndices]]): P.ResultDBLifted = {
     val nsRep = P.NameStringsLifted(ns.id, ns.name, ns.canonicalUuid,
                                     ns.canonical, ns.canonicalRanked)
-    val nsiRep = P.NameStringIndicesLifted(nsi.taxonId, nsi.acceptedTaxonId, nsi.classificationPath,
-                                           nsi.classificationPathIds, nsi.classificationPathRanks)
+    val nsiRep = P.NameStringIndicesLifted(nsi.taxonId, nsi.acceptedTaxonId, nsi.localId, nsi.url,
+                                           nsi.classificationPath, nsi.classificationPathIds,
+                                           nsi.classificationPathRanks)
     val dsRep = P.DataSourcesLifted(ds.id, ds.title, ds.updatedAt, ds.isCurated,
                                     ds.isAutoCurated, ds.recordCount)
     val acpNsRep: Rep[Option[P.NameStringsLifted]] =
