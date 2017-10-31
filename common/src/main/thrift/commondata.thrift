@@ -95,11 +95,13 @@ struct Result {
     3: bool synonym
     4: MatchType matchType
     5: string taxonId
-    6: Classification classification
-    7: DataSource dataSource
-    8: optional string acceptedTaxonId
-    9: AcceptedName acceptedName
-    10: optional Timestamp updatedAt
+    6: optional string localId
+    7: optional string url
+    8: Classification classification
+    9: DataSource dataSource
+    10: optional string acceptedTaxonId
+    11: AcceptedName acceptedName
+    12: optional Timestamp updatedAt
 }
 
 struct ResultScored {

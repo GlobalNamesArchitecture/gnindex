@@ -113,6 +113,8 @@ object DBResultObj {
       canonicalName = canonicalNameOpt,
       synonym = synonym,
       taxonId = dbRes.nsi.taxonId,
+      localId = dbRes.nsi.localId,
+      url = dbRes.nsi.url,
       matchType = matchType,
       classification = classification,
       dataSource = dataSourceRes,

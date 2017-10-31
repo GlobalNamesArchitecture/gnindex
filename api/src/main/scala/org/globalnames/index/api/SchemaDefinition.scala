@@ -105,6 +105,8 @@ object SchemaDefinition {
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.result.canonicalName)
       , Field("synonym", BooleanType, resolve = _.value.result.synonym)
       , Field("taxonId", StringType, resolve = _.value.result.taxonId)
+      , Field("localId", OptionType(StringType), resolve = _.value.result.localId)
+      , Field("url", OptionType(StringType), resolve = _.value.result.url)
       , Field("classification", ClassificationOT, resolve = _.value.result.classification)
       , Field("matchType", MatchTypeOT, resolve = _.value.result.matchType)
       , Field("score", ScoreOT, resolve = _.value.score)

@@ -122,7 +122,8 @@
 {
   nameResolver(names: [{value: "Homo sapiens", suppliedId: "foo"}],
     					 dataSourceIds: [1, 2, 3],
-    					 preferredDataSourceIds: [3, 4]) {
+    					 preferredDataSourceIds: [3, 4],
+    					 bestMatchOnly: false) {
     responses {
       total
       suppliedId
@@ -162,6 +163,14 @@
           value
           parsingQuality
         }
+      }
+      preferredResults {
+        name {
+          id
+          value
+        }
+        localId
+        url
       }
     }
     context {
