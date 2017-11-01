@@ -78,6 +78,25 @@ object Projections {
 }
 
 object DBResultObj {
+  def createDatasource(ds: P.DataSources): DataSource = {
+    val quality =
+      if (ds.isCurated) DataSourceQuality.Curated
+      else if (ds.isAutoCurated) DataSourceQuality.AutoCurated
+      else DataSourceQuality.Unknown
+    val dataSourceRes = DataSource(id = ds.id, title = ds.title,
+      description = ds.description,
+      logoUrl = ds.logoUrl,
+      webSiteUrl = ds.webSiteUrl,
+      dataUrl = ds.dataUrl,
+      refreshPeriodDays = ds.refreshPeriodDays,
+      uniqueNamesCount = ds.uniqueNamesCount,
+      createdAt = ds.createdAt.map { _.toString },
+      updatedAt = ds.updatedAt.map { _.toString },
+      quality = quality,
+      recordCount = ds.recordCount)
+    dataSourceRes
+  }
+
   def create(dbRes: P.ResultDB, matchType: MatchType): Result = {
     val canonicalNameOpt =
       for (canId <- dbRes.ns.canonicalUuid; canNameValue <- dbRes.ns.canonical) yield {
@@ -93,21 +112,7 @@ object DBResultObj {
 
     val synonym = dbRes.acceptedName.isDefined
 
-    val quality =
-      if (dbRes.ds.isCurated) DataSourceQuality.Curated
-      else if (dbRes.ds.isAutoCurated) DataSourceQuality.AutoCurated
-      else DataSourceQuality.Unknown
-    val dataSourceRes = DataSource(id = dbRes.ds.id, title = dbRes.ds.title,
-                                   description = dbRes.ds.description,
-                                   logoUrl = dbRes.ds.logoUrl,
-                                   webSiteUrl = dbRes.ds.webSiteUrl,
-                                   dataUrl = dbRes.ds.dataUrl,
-                                   refreshPeriodDays = dbRes.ds.refreshPeriodDays,
-                                   uniqueNamesCount = dbRes.ds.uniqueNamesCount,
-                                   createdAt = dbRes.ds.createdAt.map { _.toString },
-                                   updatedAt = dbRes.ds.updatedAt.map { _.toString },
-                                   quality = quality,
-                                   recordCount = dbRes.ds.recordCount)
+    val dataSourceRes = createDatasource(dbRes.ds)
 
     val acceptedNameResult = {
       val anOpt = for {
@@ -152,6 +157,21 @@ object DBResultObj {
     result
   }
 
+  def projectDataSources(ds: T.DataSources): P.DataSourcesLifted = {
+    P.DataSourcesLifted(ds.id, ds.title,
+      ds.description,
+      ds.logoUrl,
+      ds.webSiteUrl,
+      ds.dataUrl,
+      ds.refreshPeriodDays,
+      ds.uniqueNamesCount,
+      ds.createdAt,
+      ds.updatedAt,
+      ds.dataHash,
+      ds.isCurated,
+      ds.isAutoCurated, ds.recordCount)
+  }
+
   def project(ns: T.NameStrings,
               nsi: T.NameStringIndices,
               ds: T.DataSources,
@@ -162,18 +182,7 @@ object DBResultObj {
     val nsiRep = P.NameStringIndicesLifted(nsi.taxonId, nsi.acceptedTaxonId, nsi.localId, nsi.url,
                                            nsi.classificationPath, nsi.classificationPathIds,
                                            nsi.classificationPathRanks)
-    val dsRep = P.DataSourcesLifted(ds.id, ds.title,
-                                    ds.description,
-                                    ds.logoUrl,
-                                    ds.webSiteUrl,
-                                    ds.dataUrl,
-                                    ds.refreshPeriodDays,
-                                    ds.uniqueNamesCount,
-                                    ds.createdAt,
-                                    ds.updatedAt,
-                                    ds.dataHash,
-                                    ds.isCurated,
-                                    ds.isAutoCurated, ds.recordCount)
+    val dsRep = projectDataSources(ds)
     val acpNsRep: Rep[Option[P.NameStringsLifted]] =
       for (nsAcp <- nsAccepted) yield {
         P.NameStringsLifted(nsAcp.id, nsAcp.name, nsAcp.canonicalUuid,

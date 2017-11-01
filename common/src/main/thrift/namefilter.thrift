@@ -14,4 +14,9 @@ service Service {
         1: finatra_thrift_exceptions.ClientError clientError,
         2: finatra_thrift_exceptions.ServerError serverError
     )
+
+    list<commondata.DataSource> dataSourceById(1: list<i32> dataSourceIds) throws (
+        1: finatra_thrift_exceptions.ClientError clientError,
+        2: finatra_thrift_exceptions.ServerError serverError
+    )
 }

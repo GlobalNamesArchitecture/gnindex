@@ -4,7 +4,7 @@ package api
 
 import javax.inject.Inject
 
-import thrift.{Result, Uuid}
+import thrift.{Result, Uuid, DataSource}
 import thrift.{namefilter => nf, nameresolver => ns}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future => ScalaFuture}
@@ -37,6 +37,12 @@ class Repository @Inject() (nameResolverClient: ns.Service.FutureIface,
   def nameStringsByUuids(uuids: Seq[String]): ScalaFuture[Seq[nf.Response]] = {
     nameFilterClient.nameStringByUuid(uuids.map { u => UUID.fromString(u): Uuid })
                     .as[ScalaFuture[Seq[nf.Response]]]
+  }
+
+  def dataSourceById(idsOpt: Option[Seq[Int]]): ScalaFuture[Seq[DataSource]] = {
+    val ids = idsOpt.getOrElse(Seq())
+    nameFilterClient.dataSourceById(ids)
+                    .as[ScalaFuture[Seq[DataSource]]]
   }
 
 }

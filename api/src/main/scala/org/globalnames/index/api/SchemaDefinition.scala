@@ -194,6 +194,10 @@ object SchemaDefinition {
       Field("nameStringsByUuid", ListType(NameResponseOT),
         arguments = List(nameUuidsArg),
         resolve = ctx => ctx.withArgs(nameUuidsArg)(ctx.ctx.nameStringsByUuids)
+      ),
+      Field("dataSourceById", ListType(DataSourceOT),
+        arguments = List(DataSourceIdsArg),
+        resolve = ctx => ctx.withArgs(DataSourceIdsArg)(ctx.ctx.dataSourceById)
       )
     )
   )

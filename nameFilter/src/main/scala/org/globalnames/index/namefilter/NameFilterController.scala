@@ -6,12 +6,14 @@ import javax.inject.{Inject, Singleton}
 
 import com.twitter.finatra.thrift.Controller
 import com.twitter.finatra.thrift.internal.ThriftMethodService
-import thrift.Result
+import thrift.{DataSource, Result}
 import thrift.namefilter.{Response, Service => NameFilterService}
-import thrift.namefilter.Service.{NameString, NameStringByUuid}
+import thrift.namefilter.Service.{DataSourceById, NameString, NameStringByUuid}
 
 @Singleton
-class NameFilterController @Inject()(nameFilter: NameFilter, nameStrindByUUID: NameStringByUUID)
+class NameFilterController @Inject()(nameFilter: NameFilter,
+                                     nameStrindByUUID: NameStringByUUID,
+                                     dataSourceByIdResolver: DataSourceByIdResolver)
   extends Controller
      with NameFilterService.BaseServiceIface {
 
@@ -25,5 +27,11 @@ class NameFilterController @Inject()(nameFilter: NameFilter, nameStrindByUUID: N
     handle(NameStringByUuid) { args: NameStringByUuid.Args =>
       info(s"Responding nameStringDataSources")
       nameStrindByUUID.resolve(args.nameUuids)
+    }
+
+  override val dataSourceById: ThriftMethodService[DataSourceById.Args, Seq[DataSource]] =
+    handle(DataSourceById) { args: DataSourceById.Args =>
+      info(s"Responding dataSourceById")
+      dataSourceByIdResolver.resolve(args.dataSourceIds)
     }
 }
