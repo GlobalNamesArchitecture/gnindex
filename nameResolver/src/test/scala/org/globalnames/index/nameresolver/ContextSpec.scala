@@ -78,12 +78,13 @@ class ContextSpec extends WordSpecConfig with FeatureTestMixin {
       ), dataSourceIds = Seq(1))
 
       val response = client.nameResolve(request).value
-      response.context should contain only
-        Context(
-          dataSource = DataSource(id = 1, title = "Catalogue of Life",
-                                  quality = DataSourceQuality.Curated, recordCount = 3566161),
-          clade = "Plantae|Tracheophyta"
-        )
+      response.context.size shouldBe 1
+
+      val ctx = response.context.headOption.value
+      ctx.dataSource.id shouldBe 1
+      ctx.dataSource.title shouldBe "Catalogue of Life"
+      ctx.dataSource.quality shouldBe DataSourceQuality.Curated
+      ctx.clade shouldBe "Plantae|Tracheophyta"
     }
   }
 }
