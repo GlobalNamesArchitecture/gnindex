@@ -27,7 +27,7 @@ metadata:
   name: gnmatcher-api
   namespace: gn
 spec:
-  replicas: 3
+  replicas: 5
   template:
     metadata:
       name: gnmatcher-api
@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: gnmatcher
-          image: gnames/gnindex-debug:gnmatcher-0.1.0-20170919_0642_CDT-SNAPSHOT
+          image: gnames/gnindex-debug:gnmatcher-0.1.0-20171213_1311_CST-SNAPSHOT
           ports:
             - containerPort: 9999
               name: thrift-api

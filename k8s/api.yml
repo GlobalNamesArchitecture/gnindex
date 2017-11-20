@@ -27,7 +27,7 @@ metadata:
   name: gnindex-api
   namespace: gn
 spec:
-  replicas: 1
+  replicas: 3
   template:
     metadata:
       name: gnindex-api
@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: gnindex
-          image: gnames/gnindex-debug:gnindexapi-0.1.0-20170919_0642_CDT-SNAPSHOT
+          image: gnames/gnindex-debug:gnindexapi-0.1.0-20171213_1311_CST-SNAPSHOT
           readinessProbe:
             httpGet:
               path: /admin/ping
