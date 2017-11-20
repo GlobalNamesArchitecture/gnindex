@@ -2,17 +2,12 @@ package org.globalnames
 package index
 package namefilter
 
-import java.util.UUID
-
-import biz.neumann.NiceUUID._
 import com.google.inject.Stage
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import thrift.Result
-import thrift.namefilter.{Request, Service => NameFilterService}
-import util.UuidEnhanced._
-import matcher.{MatcherModule, Server => MatcherServer}
+import org.globalnames.index.matcher.{MatcherModule, Server => MatcherServer}
+import org.globalnames.index.thrift.namefilter.{Service => NameFilterService}
 
 class DataSourceByIdSpec extends FunSpecConfig with FeatureTestMixin {
   override def launchConditions: Boolean = matcherServer.isHealthy
@@ -63,6 +58,17 @@ class DataSourceByIdSpec extends FunSpecConfig with FeatureTestMixin {
         results.size shouldBe 2
 
         results.map { _.id } should contain theSameElementsAs dataSourceIds
+      }
+
+      it("handles repeated IDs") {
+        val dataSourceId = 1
+        val dataSourceIds = Seq(dataSourceId, dataSourceId)
+
+        val results = nameFilterClient.dataSourceById(dataSourceIds).value
+        results.size shouldBe 1
+
+        val result = results.headOption.value
+        result.id shouldBe dataSourceId
       }
 
       it("handles non-existing ID") {
