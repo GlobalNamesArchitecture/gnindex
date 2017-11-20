@@ -14,9 +14,15 @@ RUN apt-get update \
        libxslt-dev supervisor build-essential nodejs supervisor \
        zlib1g-dev libssl-dev libreadline-dev libyaml-dev \
        libxml2-dev libxslt-dev nodejs libpq-dev liblzma-dev \
-       openjdk-8-jdk curl postgresql-client git \
+       openjdk-8-jdk curl postgresql-client git locales \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN locale-gen en_US.UTF-8
+
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
 RUN curl -sL "https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz" | \
     gunzip | tar -x -C /usr/local && \
