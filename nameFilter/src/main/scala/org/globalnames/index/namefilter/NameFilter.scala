@@ -19,6 +19,8 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Try}
 
+import scalaz.syntax.std.boolean._
+
 @Singleton
 class NameFilter @Inject()(database: Database) extends Logging {
   import NameFilter._
@@ -228,52 +230,44 @@ class NameFilter @Inject()(database: Database) extends Logging {
   def resolveString(request: Request): TwitterFuture[Seq[Result]] = {
     val search = QueryParser.result(request.searchTerm)
     logger.info(s"query: ${search.toString}")
-    val resolverFunction: (String) => Query[T.NameStrings, T.NameStringsRow, Seq] =
-      search.modifier match {
-        case NoModifier =>
-          if (search.wildcard) resolveWildcard
-          else resolve
-        case ExactModifier =>
-//          paramsRes = paramsRes.copy(matchType = MatchKind.ExactNameMatchByUUID)
-          resolveExact
-        case NameStringModifier =>
-          if (search.wildcard) resolveNameStringsLike
-          else {
-//            paramsRes = paramsRes.copy(matchType = MatchKind.ExactNameMatchByString)
-            resolveNameStrings
-          }
-        case CanonicalModifier =>
-          if (search.wildcard) {
-//            paramsRes = paramsRes.copy(matchType = MatchKind.ExactCanonicalNameMatchByUUID)
-            resolveCanonicalLike
-          } else {
-//            paramsRes = paramsRes.copy(matchType = MatchKind.ExactCanonicalNameMatchByString)
-            resolveCanonical
-          }
-        case UninomialModifier =>
-          if (search.wildcard) resolveUninomialWildcard
-          else resolveUninomial
-        case GenusModifier =>
-          if (search.wildcard) resolveGenusWildcard
-          else resolveGenus
-        case SpeciesModifier =>
-          if (search.wildcard) resolveSpeciesWildcard
-          else resolveSpecies
-        case SubspeciesModifier =>
-          if (search.wildcard) resolveSubspeciesWildcard
-          else resolveSubspecies
-        case AuthorModifier =>
-          if (search.wildcard) resolveAuthorWildcard
-          else resolveAuthor
-        case YearModifier =>
-          if (search.wildcard) resolveYearWildcard
-          else resolveYear
-      }
+    val matchKind: MatchKind = search.modifier match {
+      case ExactModifier =>
+        MatchKind.ExactNameMatchByUUID
+      case NameStringModifier if !search.wildcard =>
+        MatchKind.ExactNameMatchByUUID
+      case CanonicalModifier =>
+        if (search.wildcard) MatchKind.ExactCanonicalNameMatchByUUID
+        else MatchKind.ExactCanonicalNameMatchByString
+      case _ =>
+        MatchKind.ExactNameMatchByString
+    }
+    val resolverFunction = search.modifier match {
+      case NoModifier =>
+        search.wildcard ? resolveWildcard _ | resolve
+      case ExactModifier =>
+        resolveExact _
+      case NameStringModifier =>
+        search.wildcard ? resolveNameStringsLike _ | resolveNameStrings
+      case CanonicalModifier =>
+        search.wildcard ? resolveCanonicalLike _ | resolveCanonical
+      case UninomialModifier =>
+        search.wildcard ? resolveUninomialWildcard _ | resolveUninomial
+      case GenusModifier =>
+        search.wildcard ? resolveGenusWildcard _ | resolveGenus
+      case SpeciesModifier =>
+        search.wildcard ? resolveSpeciesWildcard _ | resolveSpecies
+      case SubspeciesModifier =>
+        search.wildcard ? resolveSubspeciesWildcard _ | resolveSubspecies
+      case AuthorModifier =>
+        search.wildcard ? resolveAuthorWildcard _ | resolveAuthor
+      case YearModifier =>
+        search.wildcard ? resolveYearWildcard _ | resolveYear
+    }
     val nameStrings = resolverFunction(valueCleaned(search.contents, search.modifier))
     val resultFuture = queryComplete(nameStrings).map { dbResults =>
       val results = dbResults.map { dbResult =>
         val matchType = MatchType(
-          kind = MatchKind.Unknown,
+          kind = matchKind,
           editDistance = 0,
           score = 0
         )
