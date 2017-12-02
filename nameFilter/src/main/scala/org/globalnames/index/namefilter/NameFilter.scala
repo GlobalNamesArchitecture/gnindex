@@ -295,12 +295,13 @@ class NameFilter @Inject()(database: Database) extends Logging {
       .toVector
       .sortBy { r => r.name.value }
 
-      val totalPages =
+      val pagesCount =
         results.size / request.perPage + (results.size % request.perPage > 0).compare(false)
       ResponseNameStrings(
         page = request.page,
         perPage = request.perPage,
-        totalPages = totalPages,
+        pagesCount = pagesCount,
+        resultsCount = results.size,
         results = results.slice(request.perPage * request.page,
                                 request.perPage * (request.page + 1))
       )

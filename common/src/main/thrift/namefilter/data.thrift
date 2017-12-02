@@ -29,8 +29,9 @@ struct ResultNameStrings {
 struct ResponseNameStrings {
     1: i32 page
     2: i32 perPage
-    3: i32 totalPages
-    4: list<ResultNameStrings> results
+    3: i32 pagesCount
+    4: i32 resultsCount
+    5: list<ResultNameStrings> results
 }
 
 struct Response {

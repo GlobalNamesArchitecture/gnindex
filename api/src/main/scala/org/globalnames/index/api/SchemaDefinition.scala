@@ -175,7 +175,8 @@ object SchemaDefinition {
     "ResponseNameStrings", fields[Unit, nf.ResponseNameStrings](
         Field("page", IntType, resolve = _.value.page)
       , Field("perPage", IntType, resolve = _.value.perPage)
-      , Field("totalPages", IntType, resolve = _.value.totalPages)
+      , Field("pagesCount", IntType, resolve = _.value.pagesCount)
+      , Field("resultsCount", IntType, resolve = _.value.resultsCount)
       , Field("results", ListType(ResultNameStringsOT), resolve = _.value.results)
     )
   )
