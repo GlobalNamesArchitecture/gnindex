@@ -227,7 +227,7 @@ class NameFilter @Inject()(database: Database) extends Logging {
     database.run(queryJoined.result)
   }
 
-  def resolveString(request: Request): TwitterFuture[Seq[ResponseNameStrings]] = {
+  def resolveString(request: Request): TwitterFuture[ResponseNameStrings] = {
     val search = QueryParser.result(request.searchTerm)
     logger.info(s"query: ${search.toString}")
     val matchKind: MatchKind = search.modifier match {
@@ -276,7 +276,7 @@ class NameFilter @Inject()(database: Database) extends Logging {
       .groupBy { r => r.name.uuid }
       .values.flatMap { rs =>
         rs.headOption.map { response =>
-          ResponseNameStrings(
+          ResultNameStrings(
             name = response.name,
             canonicalName = response.canonicalName,
             synonym = response.synonym,
@@ -291,12 +291,21 @@ class NameFilter @Inject()(database: Database) extends Logging {
             updatedAt = response.updatedAt
           )
         }
-      }.toSeq
-      results.sortBy { r => r.name.value }
-             .slice(request.perPage * request.page,
-                    request.perPage * (request.page + 1))
+      }
+      .toVector
+      .sortBy { r => r.name.value }
+
+      val totalPages =
+        results.size / request.perPage + (results.size % request.perPage > 0).compare(false)
+      ResponseNameStrings(
+        page = request.page,
+        perPage = request.perPage,
+        totalPages = totalPages,
+        results = results.slice(request.perPage * request.page,
+                                request.perPage * (request.page + 1))
+      )
     }
-    resultFuture.as[TwitterFuture[Seq[ResponseNameStrings]]]
+    resultFuture.as[TwitterFuture[ResponseNameStrings]]
   }
 }
 

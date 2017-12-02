@@ -11,7 +11,7 @@ struct Request {
     3: i32 perPage = nameStringsMaxCount
 }
 
-struct ResponseNameStrings {
+struct ResultNameStrings {
     1: commondata.Name name
     2: optional commondata.CanonicalName canonicalName
     3: bool synonym
@@ -24,6 +24,13 @@ struct ResponseNameStrings {
     10: optional string acceptedTaxonId
     11: commondata.AcceptedName acceptedName
     12: optional commondata.Timestamp updatedAt
+}
+
+struct ResponseNameStrings {
+    1: i32 page
+    2: i32 perPage
+    3: i32 totalPages
+    4: list<ResultNameStrings> results
 }
 
 struct Response {

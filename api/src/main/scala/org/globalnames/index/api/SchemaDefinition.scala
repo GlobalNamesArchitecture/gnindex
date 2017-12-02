@@ -157,8 +157,8 @@ object SchemaDefinition {
     )
   )
 
-  val ResponseNameStringsOT = ObjectType(
-    "ResponseNameStrings", fields[Unit, nf.ResponseNameStrings](
+  val ResultNameStringsOT = ObjectType(
+    "ResultNameStrings", fields[Unit, nf.ResultNameStrings](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
       , Field("synonym", BooleanType, resolve = _.value.synonym)
@@ -168,6 +168,15 @@ object SchemaDefinition {
       , Field("dataSources", ListType(DataSourceOT), resolve = _.value.dataSources)
       , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.acceptedName)
       , Field("updatedAt", OptionType(StringType), resolve = _.value.updatedAt)
+    )
+  )
+
+  val ResponseNameStringsOT = ObjectType(
+    "ResponseNameStrings", fields[Unit, nf.ResponseNameStrings](
+        Field("page", IntType, resolve = _.value.page)
+      , Field("perPage", IntType, resolve = _.value.perPage)
+      , Field("totalPages", IntType, resolve = _.value.totalPages)
+      , Field("results", ListType(ResultNameStringsOT), resolve = _.value.results)
     )
   )
 
@@ -204,7 +213,7 @@ object SchemaDefinition {
                        AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg)
                       (ctx.ctx.nameResolver)
       ),
-      Field("nameStrings", ListType(ResponseNameStringsOT),
+      Field("nameStrings", ResponseNameStringsOT,
         arguments = List(SearchTermArg, PageArg, PerPageArg),
         resolve = ctx => ctx.withArgs(SearchTermArg, PageArg, PerPageArg)(ctx.ctx.nameStrings)
       ),

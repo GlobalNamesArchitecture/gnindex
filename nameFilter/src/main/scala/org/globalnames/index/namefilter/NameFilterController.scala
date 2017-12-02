@@ -16,7 +16,7 @@ class NameFilterController @Inject()(nameFilter: NameFilter,
   extends Controller with nf.Service.BaseServiceIface {
 
   override val nameString: ThriftMethodService[nf.Service.NameString.Args,
-                                               Seq[nf.ResponseNameStrings]] =
+                                               nf.ResponseNameStrings] =
     handle(nf.Service.NameString) { args: nf.Service.NameString.Args =>
       info(s"Responding to nameFilter")
       nameFilter.resolveString(args.request)
