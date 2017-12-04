@@ -5,7 +5,7 @@ package api
 import sangria.schema._
 import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
 import thrift.{Context => ResponsesContext, _}
-import thrift.{namefilter => nf, nameresolver => nr}
+import thrift.{namefilter => nf, nameresolver => nr, namebrowser => nb}
 import util.UuidEnhanced.ThriftUuidEnhanced
 
 object SchemaDefinition {
@@ -171,6 +171,13 @@ object SchemaDefinition {
     )
   )
 
+  val TripletOT = ObjectType(
+    "Triplet", fields[Unit, nb.Triplet](
+        Field("value", StringType, resolve = _.value.value)
+      , Field("active", BooleanType, resolve = _.value.active)
+    )
+  )
+
   val ResponseNameStringsOT = ObjectType(
     "ResponseNameStrings", fields[Unit, nf.ResponseNameStrings](
         Field("page", IntType, resolve = _.value.page)
@@ -182,7 +189,7 @@ object SchemaDefinition {
   )
 
   val NameResponseOT = ObjectType(
-    "NameResponse", fields[Unit, namefilter.Response](
+    "NameResponse", fields[Unit, nf.Response](
         Field("inputId", IDType, resolve = _.value.uuid.string)
       , Field("names", ListType(NameStringOT), resolve = _.value.names)
     )
@@ -201,6 +208,7 @@ object SchemaDefinition {
   val SearchTermArg = Argument("searchTerm", StringType)
   val PageArg = Argument("page", OptionInputType(IntType), 0)
   val PerPageArg = Argument("perPage", OptionInputType(IntType), nameStringsMaxCount)
+  val LetterArg = Argument("letter", StringType)
 
   val nameUuidsArg = Argument("uuids", ListInputType(IDType))
 
@@ -225,6 +233,10 @@ object SchemaDefinition {
       Field("dataSourceById", ListType(DataSourceOT),
         arguments = List(DataSourceIdsArg),
         resolve = ctx => ctx.withArgs(DataSourceIdsArg)(ctx.ctx.dataSourceById)
+      ),
+      Field("nameBrowser_triplets", ListType(TripletOT),
+        arguments = List(LetterArg),
+        resolve = ctx => ctx.withArgs(LetterArg)(ctx.ctx.tripletsStartingWith)
       )
     )
   )

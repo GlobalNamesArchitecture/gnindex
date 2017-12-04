@@ -226,6 +226,14 @@ object Settings {
     Revolver.enableDebugging(port = 5009, suspend = false)
   )
 
+  //////////////////////////
+  // nameBrowser settings //
+  //////////////////////////
+  lazy val nameBrowserSettings = testReporter ++ Seq(
+    assemblyJarName in assembly := "gnnamebrowser-" + version.value + ".jar",
+    Revolver.enableDebugging(port = 5010, suspend = false)
+  )
+
   //////////////////////
   // Matcher settings //
   //////////////////////

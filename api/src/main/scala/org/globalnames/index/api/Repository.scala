@@ -5,7 +5,7 @@ package api
 import javax.inject.Inject
 
 import thrift.{Uuid, DataSource}
-import thrift.{namefilter => nf, nameresolver => ns}
+import thrift.{namefilter => nf, nameresolver => ns, namebrowser => nb}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future => ScalaFuture}
 import com.twitter.bijection.Conversion.asMethod
@@ -14,7 +14,8 @@ import util.UuidEnhanced._
 import java.util.UUID
 
 class Repository @Inject() (nameResolverClient: ns.Service.FutureIface,
-                            nameFilterClient: nf.Service.FutureIface) {
+                            nameFilterClient: nf.Service.FutureIface,
+                            nameBrowserClient: nb.Service.FutureIface) {
 
   def nameResolver(namesInput: Seq[ns.NameInput],
                    dataSourceIds: Option[Seq[Int]],
@@ -46,6 +47,15 @@ class Repository @Inject() (nameResolverClient: ns.Service.FutureIface,
     val ids = idsOpt.getOrElse(Seq())
     nameFilterClient.dataSourceById(ids)
                     .as[ScalaFuture[Seq[DataSource]]]
+  }
+
+  def tripletsStartingWith(letter: String): ScalaFuture[Seq[nb.Triplet]] = {
+    if (letter.length != 1) {
+      ScalaFuture.successful(Seq())
+    } else {
+      nameBrowserClient.tripletsStartingWith(letter.charAt(0).toByte)
+                       .as[ScalaFuture[Seq[nb.Triplet]]]
+    }
   }
 
 }

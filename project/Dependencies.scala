@@ -82,6 +82,10 @@ object Dependencies {
     library.twitterBijectionCore, library.twitterBijectionUtil
   )
 
+  val nameBrowserDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
+    library.twitterBijectionCore, library.twitterBijectionUtil
+  )
+
   val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
 
   val apiDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(

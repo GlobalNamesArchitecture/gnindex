@@ -6,8 +6,7 @@ import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
 import com.twitter.finagle.ThriftMux
 import com.twitter.inject.TwitterModule
-import thrift.nameresolver.{Service => NameResolverService}
-import thrift.namefilter.{Service => NameFilterService}
+import thrift.{nameresolver => nr, namefilter => nf, namebrowser => nb}
 
 import scala.util.Properties
 
@@ -24,13 +23,24 @@ object ApiModule extends TwitterModule {
     default = Properties.envOrElse("NAMEFILTER_ADDRESS", "")
   )
 
-  @Singleton
-  @Provides
-  def provideNameResolverClient: NameResolverService.FutureIface =
-    ThriftMux.client.newIface[NameResolverService.FutureIface](nameResolverServiceAddress())
+  val namebrowserServiceAddress: Flag[String] = flag(
+    name = "namebrowserServiceAddress",
+    help = "Host and port of namebrowser service",
+    default = Properties.envOrElse("NAMEBROWSER_ADDRESS", "")
+  )
 
   @Singleton
   @Provides
-  def provideNameFilterClient: NameFilterService.FutureIface =
-    ThriftMux.client.newIface[NameFilterService.FutureIface](namefilterServiceAddress())
+  def provideNameResolverClient: nr.Service.FutureIface =
+    ThriftMux.client.newIface[nr.Service.FutureIface](nameResolverServiceAddress())
+
+  @Singleton
+  @Provides
+  def provideNameFilterClient: nf.Service.FutureIface =
+    ThriftMux.client.newIface[nf.Service.FutureIface](namefilterServiceAddress())
+
+  @Singleton
+  @Provides
+  def provideBrowserClient: nb.Service.FutureIface =
+    ThriftMux.client.newIface[nb.Service.FutureIface](namebrowserServiceAddress())
 }
