@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.5
--- Dumped by pg_dump version 9.6.5
+-- Dumped from database version 9.6.6
+-- Dumped by pg_dump version 9.6.6
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -57,6 +57,17 @@ COMMENT ON EXTENSION unaccent IS 'text search dictionary that removes accents';
 
 
 SET search_path = public, pg_catalog;
+
+--
+-- Name: f_unaccent(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION f_unaccent(text) RETURNS text
+    LANGUAGE sql IMMUTABLE
+    AS $_$
+             SELECT public.unaccent('public.unaccent', $1)
+             $_$;
+
 
 SET default_tablespace = '';
 
@@ -433,6 +444,13 @@ CREATE INDEX index_name_strings_on_canonical_uuid ON name_strings USING btree (c
 
 
 --
+-- Name: name_strings__name_unaccent; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX name_strings__name_unaccent ON name_strings USING btree (f_unaccent((name)::text) text_pattern_ops);
+
+
+--
 -- Name: namestrings_canonical__gin_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -550,4 +568,6 @@ INSERT INTO schema_migrations (version) VALUES ('20170916133024');
 INSERT INTO schema_migrations (version) VALUES ('20171002094757');
 
 INSERT INTO schema_migrations (version) VALUES ('20171002165405');
+
+INSERT INTO schema_migrations (version) VALUES ('20171204101828');
 

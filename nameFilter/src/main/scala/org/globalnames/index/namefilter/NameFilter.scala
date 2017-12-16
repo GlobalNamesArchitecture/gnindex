@@ -26,6 +26,7 @@ class NameFilter @Inject()(database: Database) extends Logging {
   import NameFilter._
 
   private val unaccent = SimpleFunction.unary[String, String]("unaccent")
+  private val fUnaccent = SimpleFunction.unary[String, String]("f_unaccent")
   private val unaccentOpt = SimpleFunction.unary[Option[String], Option[String]]("unaccent")
 
   private[namefilter] def resolveCanonical(canonicalName: String) = {
@@ -163,11 +164,11 @@ class NameFilter @Inject()(database: Database) extends Logging {
   }
 
   private[namefilter] def resolveNameStringsLike(nameStringQuery: String) = {
-    if (nameStringQuery.length <= 3) {
+    if (nameStringQuery.length < 3) {
       T.NameStrings.take(0)
     } else {
       val nameStringQueryLike = nameStringQuery + "%"
-      T.NameStrings.filter { ns => unaccent(ns.name).like(unaccent(nameStringQueryLike)) }
+      T.NameStrings.filter { ns => fUnaccent(ns.name).like(fUnaccent(nameStringQueryLike)) }
     }
   }
 
