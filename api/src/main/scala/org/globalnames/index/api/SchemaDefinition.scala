@@ -109,7 +109,7 @@ object SchemaDefinition {
     )
   )
 
-  val ResultItemOT = ObjectType(
+  val ResultItemScoredOT = ObjectType(
     "ResultItem", fields[Unit, ResultScored](
         Field("name", NameOT, resolve = _.value.result.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.result.canonicalName)
@@ -126,13 +126,35 @@ object SchemaDefinition {
     )
   )
 
+  val ResultItemOT = ObjectType(
+    "ResultItem", fields[Unit, Result](
+        Field("name", NameOT, resolve = _.value.name)
+      , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
+      , Field("synonym", BooleanType, resolve = _.value.synonym)
+      , Field("taxonId", StringType, resolve = _.value.taxonId)
+      , Field("localId", OptionType(StringType), resolve = _.value.localId)
+      , Field("url", OptionType(StringType), resolve = _.value.url)
+      , Field("classification", ClassificationOT, resolve = _.value.classification)
+      , Field("matchType", MatchTypeOT, resolve = _.value.matchType)
+      , Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
+      , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.acceptedName)
+    )
+  )
+
+  val ResultsPerDataSourceOT = ObjectType(
+    "ResultsPerDataSourceItem", fields[Unit, nf.ResultsPerDataSource](
+        Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
+      , Field("results", ListType(ResultItemOT), resolve = _.value.results)
+    )
+  )
+
   val ResponseOT = ObjectType(
     "Response", fields[Unit, nr.Response](
         Field("total", IntType, None, resolve = _.value.total)
       , Field("suppliedInput", OptionType(StringType), None, resolve = _.value.suppliedInput)
       , Field("suppliedId", OptionType(StringType), None, resolve = _.value.suppliedId)
-      , Field("results", ListType(ResultItemOT), None, resolve = _.value.results)
-      , Field("preferredResults", ListType(ResultItemOT), resolve = _.value.preferredResults)
+      , Field("results", ListType(ResultItemScoredOT), None, resolve = _.value.results)
+      , Field("preferredResults", ListType(ResultItemScoredOT), resolve = _.value.preferredResults)
     )
   )
 
@@ -161,13 +183,7 @@ object SchemaDefinition {
     "ResultNameStrings", fields[Unit, nf.ResultNameStrings](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
-      , Field("synonym", BooleanType, resolve = _.value.synonym)
-      , Field("taxonId", StringType, resolve = _.value.taxonId)
-      , Field("classification", ClassificationOT, resolve = _.value.classification)
-      , Field("matchType", MatchTypeOT, resolve = _.value.matchType)
-      , Field("dataSources", ListType(DataSourceOT), resolve = _.value.dataSources)
-      , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.acceptedName)
-      , Field("updatedAt", OptionType(StringType), resolve = _.value.updatedAt)
+      , Field("resultsPerDataSource", ListType(ResultsPerDataSourceOT), resolve = _.value.results)
     )
   )
 
@@ -184,7 +200,7 @@ object SchemaDefinition {
       , Field("perPage", IntType, resolve = _.value.perPage)
       , Field("pagesCount", IntType, resolve = _.value.pagesCount)
       , Field("resultsCount", IntType, resolve = _.value.resultsCount)
-      , Field("results", ListType(ResultNameStringsOT), resolve = _.value.results)
+      , Field("names", ListType(ResultNameStringsOT), resolve = _.value.names)
     )
   )
 

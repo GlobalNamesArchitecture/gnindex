@@ -228,6 +228,20 @@ class NameFilter @Inject()(database: Database) extends Logging {
     database.run(queryJoined.result)
   }
 
+  private val dataSourceOrdering: Ordering[DataSource] = new Ordering[DataSource] {
+    override def compare(x: DataSource, y: DataSource): Int = {
+      (x.id, y.id) match {
+        case (1, 1) => 0
+        case (11, 11) => 0
+        case (1, _) => 1
+        case (_, 1) => -1
+        case (11, _) => 1
+        case (_, 11) => -1
+        case (_, _) => Ordering.String.compare(y.title.toLowerCase, x.title.toLowerCase)
+      }
+    }
+  }
+
   def resolveString(request: Request): TwitterFuture[ResponseNameStrings] = {
     val search = QueryParser.result(request.searchTerm)
     logger.info(s"query: ${search.toString}")
@@ -275,21 +289,19 @@ class NameFilter @Inject()(database: Database) extends Logging {
         DBResultObj.create(dbResult, matchType)
       }
       .groupBy { r => r.name.uuid }
-      .values.flatMap { rs =>
-        rs.headOption.map { response =>
+      .values.flatMap { results =>
+        val rpdss =
+         for ((ds, vs) <- results.groupBy { r => r.dataSource }) yield {
+           ResultsPerDataSource(
+             dataSource = ds,
+             results = vs
+           )
+         }
+        for (response <- results.headOption) yield {
           ResultNameStrings(
             name = response.name,
             canonicalName = response.canonicalName,
-            synonym = response.synonym,
-            matchType = response.matchType,
-            taxonId = response.taxonId,
-            localId = response.localId,
-            url = response.url,
-            classification = response.classification,
-            dataSources = rs.map { r => r.dataSource }.distinct,
-            acceptedTaxonId = response.acceptedTaxonId,
-            acceptedName = response.acceptedName,
-            updatedAt = response.updatedAt
+            results = rpdss.toVector.sortBy { rpds => rpds.dataSource }(dataSourceOrdering.reverse)
           )
         }
       }
@@ -303,8 +315,8 @@ class NameFilter @Inject()(database: Database) extends Logging {
         perPage = request.perPage,
         pagesCount = pagesCount,
         resultsCount = results.size,
-        results = results.slice(request.perPage * request.page,
-                                request.perPage * (request.page + 1))
+        names = results.slice(request.perPage * request.page,
+                              request.perPage * (request.page + 1))
       )
     }
     resultFuture.as[TwitterFuture[ResponseNameStrings]]
