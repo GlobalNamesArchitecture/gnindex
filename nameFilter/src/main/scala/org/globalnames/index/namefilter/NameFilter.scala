@@ -292,7 +292,8 @@ class NameFilter @Inject()(database: Database) extends Logging {
           )
         }
       }.toSeq
-      results.slice(request.perPage * request.page,
+      results.sortBy { r => r.name.value }
+             .slice(request.perPage * request.page,
                     request.perPage * (request.page + 1))
     }
     resultFuture.as[TwitterFuture[Seq[ResponseNameStrings]]]
