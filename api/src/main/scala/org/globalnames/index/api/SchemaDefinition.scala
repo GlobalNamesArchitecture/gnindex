@@ -9,6 +9,7 @@ import thrift.{namefilter => nf, nameresolver => nr}
 import util.UuidEnhanced.ThriftUuidEnhanced
 
 object SchemaDefinition {
+  private val nameStringsMaxCount = 50
 
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf",
                           "org.wartremover.warts.Throw"))
@@ -188,6 +189,8 @@ object SchemaDefinition {
   ))
   val NamesRequestArg = Argument("names", ListInputType(NameRequestIOT))
   val SearchTermArg = Argument("searchTerm", StringType)
+  val PageArg = Argument("page", OptionInputType(IntType), 0)
+  val PerPageArg = Argument("perPage", OptionInputType(IntType), nameStringsMaxCount)
 
   val nameUuidsArg = Argument("uuids", ListInputType(IDType))
 
@@ -202,8 +205,8 @@ object SchemaDefinition {
                       (ctx.ctx.nameResolver)
       ),
       Field("nameStrings", ListType(ResponseNameStringsOT),
-        arguments = List(SearchTermArg),
-        resolve = ctx => ctx.withArgs(SearchTermArg)(ctx.ctx.nameStrings)
+        arguments = List(SearchTermArg, PageArg, PerPageArg),
+        resolve = ctx => ctx.withArgs(SearchTermArg, PageArg, PerPageArg)(ctx.ctx.nameStrings)
       ),
       Field("nameStringsByUuid", ListType(NameResponseOT),
         arguments = List(nameUuidsArg),

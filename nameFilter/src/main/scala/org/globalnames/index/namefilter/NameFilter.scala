@@ -285,16 +285,15 @@ class NameFilter @Inject()(database: Database) extends Logging {
             localId = response.localId,
             url = response.url,
             classification = response.classification,
-            dataSources = rs.map {
-              r => r.dataSource
-            }.distinct,
+            dataSources = rs.map { r => r.dataSource }.distinct,
             acceptedTaxonId = response.acceptedTaxonId,
             acceptedName = response.acceptedName,
             updatedAt = response.updatedAt
           )
         }
       }.toSeq
-      results
+      results.slice(request.perPage * request.page,
+                    request.perPage * (request.page + 1))
     }
     resultFuture.as[TwitterFuture[Seq[ResponseNameStrings]]]
   }
