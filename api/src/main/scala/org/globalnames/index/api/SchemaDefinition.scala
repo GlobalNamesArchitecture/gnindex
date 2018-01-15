@@ -198,10 +198,10 @@ object SchemaDefinition {
     "Query", fields[Repository, Unit](
       Field("nameResolver", ResponsesOT,
         arguments = List(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg,
-                         AdvancedResolutionArg, BestMatchOnlyArg),
+                         AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg),
         resolve = ctx =>
           ctx.withArgs(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg,
-                       AdvancedResolutionArg, BestMatchOnlyArg)
+                       AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg)
                       (ctx.ctx.nameResolver)
       ),
       Field("nameStrings", ListType(ResponseNameStringsOT),

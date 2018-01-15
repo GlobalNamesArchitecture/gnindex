@@ -270,7 +270,9 @@ class NameResolver(request: Request)
         } else {
           preferredResultsSorted
         }
-      response.copy(results = results, preferredResults = preferredResults)
+      response.copy(results = results.slice(request.perPage * request.page,
+                                            request.perPage * (request.page + 1)),
+                    preferredResults = preferredResults)
     }
 
   def resolveExact(): TwitterFuture[Responses] = {
