@@ -5,7 +5,7 @@ include "namefilter/data.thrift"
 include "commondata.thrift"
 
 service Service {
-    list<commondata.Result> nameString(1: data.Request request) throws (
+    list<data.ResponseNameStrings> nameString(1: data.Request request) throws (
         1: finatra_thrift_exceptions.ClientError clientError,
         2: finatra_thrift_exceptions.ServerError serverError
     )

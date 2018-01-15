@@ -4,7 +4,7 @@ package api
 
 import javax.inject.Inject
 
-import thrift.{Result, Uuid, DataSource}
+import thrift.{Uuid, DataSource}
 import thrift.{namefilter => nf, nameresolver => ns}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future => ScalaFuture}
@@ -29,9 +29,9 @@ class Repository @Inject() (nameResolverClient: ns.Service.FutureIface,
     nameResolverClient.nameResolve(req).as[ScalaFuture[ns.Responses]]
   }
 
-  def nameStrings(searchTerm: String): ScalaFuture[Seq[Result]] = {
+  def nameStrings(searchTerm: String): ScalaFuture[Seq[nf.ResponseNameStrings]] = {
     val req = nf.Request(searchTerm = searchTerm)
-    nameFilterClient.nameString(req).as[ScalaFuture[Seq[Result]]]
+    nameFilterClient.nameString(req).as[ScalaFuture[Seq[nf.ResponseNameStrings]]]
   }
 
   def nameStringsByUuids(uuids: Seq[String]): ScalaFuture[Seq[nf.Response]] = {

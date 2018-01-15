@@ -5,19 +5,19 @@ package api
 import sangria.schema._
 import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
 import thrift.{Context => ResponsesContext, _}
-import thrift.nameresolver._
+import thrift.{namefilter => nf, nameresolver => nr}
 import util.UuidEnhanced.ThriftUuidEnhanced
 
 object SchemaDefinition {
 
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf",
                           "org.wartremover.warts.Throw"))
-  private implicit val nameInputFromInput: FromInput[NameInput] = new FromInput[NameInput] {
+  private implicit val nameInputFromInput: FromInput[nr.NameInput] = new FromInput[nr.NameInput] {
     val marshaller: CoercedScalaResultMarshaller = CoercedScalaResultMarshaller.default
 
-    def fromResult(node: marshaller.Node): NameInput = node match {
+    def fromResult(node: marshaller.Node): nr.NameInput = node match {
       case nodeMap: Map[String, Any] @unchecked =>
-        NameInput(
+        nr.NameInput(
           value = nodeMap("value").asInstanceOf[String],
           suppliedId = nodeMap.get("suppliedId").flatMap { _.asInstanceOf[Option[String]] }
         )
@@ -126,7 +126,7 @@ object SchemaDefinition {
   )
 
   val ResponseOT = ObjectType(
-    "Response", fields[Unit, Response](
+    "Response", fields[Unit, nr.Response](
         Field("total", IntType, None, resolve = _.value.total)
       , Field("suppliedInput", OptionType(StringType), None, resolve = _.value.suppliedInput)
       , Field("suppliedId", OptionType(StringType), None, resolve = _.value.suppliedId)
@@ -136,7 +136,7 @@ object SchemaDefinition {
   )
 
   val ResponsesOT = ObjectType(
-    "Responses", fields[Unit, Responses](
+    "Responses", fields[Unit, nr.Responses](
         Field("responses", ListType(ResponseOT), resolve = _.value.items)
       , Field("context", ListType(ContextOT), resolve = _.value.context)
     )
@@ -156,6 +156,20 @@ object SchemaDefinition {
     )
   )
 
+  val ResponseNameStringsOT = ObjectType(
+    "ResponseNameStrings", fields[Unit, nf.ResponseNameStrings](
+        Field("name", NameOT, resolve = _.value.name)
+      , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
+      , Field("synonym", BooleanType, resolve = _.value.synonym)
+      , Field("taxonId", StringType, resolve = _.value.taxonId)
+      , Field("classification", ClassificationOT, resolve = _.value.classification)
+      , Field("matchType", MatchTypeOT, resolve = _.value.matchType)
+      , Field("dataSources", ListType(DataSourceOT), resolve = _.value.dataSources)
+      , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.acceptedName)
+      , Field("updatedAt", OptionType(StringType), resolve = _.value.updatedAt)
+    )
+  )
+
   val NameResponseOT = ObjectType(
     "NameResponse", fields[Unit, namefilter.Response](
         Field("inputId", IDType, resolve = _.value.uuid.string)
@@ -168,7 +182,7 @@ object SchemaDefinition {
     Argument("preferredDataSourceIds", OptionInputType(ListInputType(IntType)))
   val AdvancedResolutionArg = Argument("advancedResolution", OptionInputType(BooleanType), false)
   val BestMatchOnlyArg = Argument("bestMatchOnly", OptionInputType(BooleanType), false)
-  val NameRequestIOT = InputObjectType[NameInput]("name", List(
+  val NameRequestIOT = InputObjectType[nr.NameInput]("name", List(
       InputField("value", StringType)
     , InputField("suppliedId", OptionInputType(StringType))
   ))
@@ -187,7 +201,7 @@ object SchemaDefinition {
                        AdvancedResolutionArg, BestMatchOnlyArg)
                       (ctx.ctx.nameResolver)
       ),
-      Field("nameStrings", ListType(NameStringOT),
+      Field("nameStrings", ListType(ResponseNameStringsOT),
         arguments = List(SearchTermArg),
         resolve = ctx => ctx.withArgs(SearchTermArg)(ctx.ctx.nameStrings)
       ),

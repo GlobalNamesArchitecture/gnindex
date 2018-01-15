@@ -11,6 +11,21 @@ struct Request {
     3: i32 perPage = nameStringsMaxCount
 }
 
+struct ResponseNameStrings {
+    1: commondata.Name name
+    2: optional commondata.CanonicalName canonicalName
+    3: bool synonym
+    4: commondata.MatchType matchType
+    5: string taxonId
+    6: optional string localId
+    7: optional string url
+    8: commondata.Classification classification
+    9: list<commondata.DataSource> dataSources
+    10: optional string acceptedTaxonId
+    11: commondata.AcceptedName acceptedName
+    12: optional commondata.Timestamp updatedAt
+}
+
 struct Response {
     1: commondata.Uuid uuid
     2: list<commondata.Result> names

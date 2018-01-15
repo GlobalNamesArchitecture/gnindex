@@ -223,11 +223,11 @@ class NameFilter @Inject()(database: Database) extends Logging {
       .map { case (((ns, nsi, ds), nsiAccepted), nsAccepted) =>
         DBResultObj.project(ns, nsi, ds, nsAccepted, nsiAccepted)
       }
-      .take(50)
+      .take(1000)
     database.run(queryJoined.result)
   }
 
-  def resolveString(request: Request): TwitterFuture[Seq[Result]] = {
+  def resolveString(request: Request): TwitterFuture[Seq[ResponseNameStrings]] = {
     val search = QueryParser.result(request.searchTerm)
     logger.info(s"query: ${search.toString}")
     val matchKind: MatchKind = search.modifier match {
@@ -273,9 +273,30 @@ class NameFilter @Inject()(database: Database) extends Logging {
         )
         DBResultObj.create(dbResult, matchType)
       }
+      .groupBy { r => r.name.uuid }
+      .values.flatMap { rs =>
+        rs.headOption.map { response =>
+          ResponseNameStrings(
+            name = response.name,
+            canonicalName = response.canonicalName,
+            synonym = response.synonym,
+            matchType = response.matchType,
+            taxonId = response.taxonId,
+            localId = response.localId,
+            url = response.url,
+            classification = response.classification,
+            dataSources = rs.map {
+              r => r.dataSource
+            }.distinct,
+            acceptedTaxonId = response.acceptedTaxonId,
+            acceptedName = response.acceptedName,
+            updatedAt = response.updatedAt
+          )
+        }
+      }.toSeq
       results
     }
-    resultFuture.as[TwitterFuture[Seq[Result]]]
+    resultFuture.as[TwitterFuture[Seq[ResponseNameStrings]]]
   }
 }
 
