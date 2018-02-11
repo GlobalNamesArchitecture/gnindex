@@ -9,6 +9,7 @@ struct Request {
     1: string searchTerm
     2: i32 page = 0
     3: i32 perPage = nameStringsMaxCount
+    4: list<i32> dataSourceIds
 }
 
 struct ResultsPerDataSource {

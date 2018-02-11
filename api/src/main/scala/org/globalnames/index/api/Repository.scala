@@ -32,9 +32,13 @@ class Repository @Inject() (nameResolverClient: ns.Service.FutureIface,
     nameResolverClient.nameResolve(req).as[ScalaFuture[ns.Responses]]
   }
 
-  def nameStrings(searchTerm: String, page: Int, perPage: Int):
+  def nameStrings(searchTerm: String,
+                  page: Int, perPage: Int,
+                  dataSourceIds: Option[Seq[Int]]):
       ScalaFuture[nf.ResponseNameStrings] = {
-    val req = nf.Request(searchTerm = searchTerm, page = page, perPage = perPage)
+    val req = nf.Request(searchTerm = searchTerm,
+                         page = page, perPage = perPage,
+                         dataSourceIds = dataSourceIds.getOrElse(Seq()).distinct)
     nameFilterClient.nameString(req).as[ScalaFuture[nf.ResponseNameStrings]]
   }
 

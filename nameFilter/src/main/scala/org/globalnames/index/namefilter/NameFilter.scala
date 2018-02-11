@@ -208,14 +208,22 @@ class NameFilter @Inject()(database: Database) extends Logging {
   }
 
   private
-  def queryComplete(nameStringsQuery: NameStringsQuery): ScalaFuture[Seq[ResultDB]] = {
+  def queryComplete(nameStringsQuery: NameStringsQuery,
+                    dataSourceIds: Seq[Int]): ScalaFuture[Seq[ResultDB]] = {
     val query = for {
       ns <- nameStringsQuery
       nsi <- T.NameStringIndices.filter { nsi => nsi.nameStringId === ns.id }
       ds <- T.DataSources.filter { ds => ds.id === nsi.dataSourceId }
     } yield (ns, nsi, ds)
 
-    val queryJoined = query
+    val queryWithDataSources =
+      if (dataSourceIds.isEmpty) {
+        query
+      } else {
+        query.filter { case (_, _, ds) => ds.id.inSetBind(dataSourceIds) }
+      }
+
+    val queryJoined = queryWithDataSources
       .joinLeft(T.NameStringIndices).on { case ((_, nsi_l, _), nsi_r) =>
         nsi_l.acceptedTaxonId =!= "" &&
           nsi_l.dataSourceId === nsi_r.dataSourceId && nsi_l.acceptedTaxonId === nsi_r.taxonId
@@ -279,7 +287,7 @@ class NameFilter @Inject()(database: Database) extends Logging {
         search.wildcard ? resolveYearWildcard _ | resolveYear
     }
     val nameStrings = resolverFunction(valueCleaned(search.contents, search.modifier))
-    val resultFuture = queryComplete(nameStrings).map { dbResults =>
+    val resultFuture = queryComplete(nameStrings, request.dataSourceIds).map { dbResults =>
       val results = dbResults.map { dbResult =>
         val matchType = MatchType(
           kind = matchKind,

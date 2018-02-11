@@ -239,8 +239,10 @@ object SchemaDefinition {
                       (ctx.ctx.nameResolver)
       ),
       Field("nameStrings", ResponseNameStringsOT,
-        arguments = List(SearchTermArg, PageArg, PerPageArg),
-        resolve = ctx => ctx.withArgs(SearchTermArg, PageArg, PerPageArg)(ctx.ctx.nameStrings)
+        arguments = List(SearchTermArg, PageArg, PerPageArg, DataSourceIdsArg),
+        resolve = ctx =>
+          ctx.withArgs(SearchTermArg, PageArg, PerPageArg, DataSourceIdsArg)
+                      (ctx.ctx.nameStrings)
       ),
       Field("nameStringsByUuid", ListType(NameResponseOT),
         arguments = List(nameUuidsArg),
