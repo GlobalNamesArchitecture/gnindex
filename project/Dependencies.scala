@@ -17,6 +17,7 @@ object Dependencies {
     val scalaz = "7.2.13"
     val json4sJackson = "3.5.2"
     val slick = "3.2.0"
+    val parboiled2 = "2.1.4"
     val jodaMapper = "2.3.0"
     val postgres = "42.1.1.jre7"
     val gnparser = "0.4.2"
@@ -39,6 +40,7 @@ object Dependencies {
     val finatraThrift        = "com.twitter"                   %% "finatra-thrift"               % version.finatra
     val finatraHttp          = "com.twitter"                   %% "finatra-http"                 % version.finatra
     val finatraJackson       = "com.twitter"                   %% "finatra-jackson"              % version.finatra
+    val parboiled2           = "org.parboiled"                 %% "parboiled"                    % version.parboiled2
     val sangria              = "org.sangria-graphql"           %% "sangria"                      % version.sangria
     val sangriaJackson       = "org.sangria-graphql"           %% "sangria-json4s-jackson"       % version.sangriaJackson
     val json4sJackson        = "org.json4s"                    %% "json4s-jackson"               % version.json4sJackson
