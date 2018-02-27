@@ -218,14 +218,17 @@ class NameFilter @Inject()(database: Database) extends Logging {
   }
 
   private val dataSourceOrdering: Ordering[DataSource] = new Ordering[DataSource] {
+    private val colDsId = 1
+    private val gbifDsId = 11
+
     override def compare(x: DataSource, y: DataSource): Int = {
       (x.id, y.id) match {
-        case (1, 1) => 0
-        case (11, 11) => 0
-        case (1, _) => 1
-        case (_, 1) => -1
-        case (11, _) => 1
-        case (_, 11) => -1
+        case (`colDsId`, `colDsId`) => 0
+        case (`gbifDsId`, `gbifDsId`) => 0
+        case (`colDsId`, _) => 1
+        case (_, `colDsId`) => -1
+        case (`gbifDsId`, _) => 1
+        case (_, `gbifDsId`) => -1
         case (_, _) => Ordering.String.compare(y.title.toLowerCase, x.title.toLowerCase)
       }
     }
