@@ -70,24 +70,26 @@ class QueryParser(val input: ParserInput) extends Parser {
     searchParts ~ EOI
   }
 
-  def searchParts = rule { zeroOrMore(searchPart) }
+  private def searchParts = rule { zeroOrMore(searchPart) }
 
-  def searchPart = rule {
+  private def searchPart = rule {
     modifier ~> {(m: ModifierAST) => SearchPartAST(m, Seq()) } ~ spacing.? ~
       zeroOrMore(word ~ spacing.? ~>
         { (sp: SearchPartAST, word: String) => sp.copy(words = sp.words :+ word) }
       )
   }
 
-  def word: Rule1[String] = rule { !modifier ~ capture(oneOrMore(CharPredicate.Visible)) }
+  private def word = rule {
+    !modifier ~ capture(oneOrMore(CharPredicate.Visible))
+  }
 
-  def modifier: Rule1[ModifierAST] = rule {
+  private def modifier = rule {
     capture(oneOrMore(CharPredicate.LowerAlpha)) ~ modifierDelimiter ~> ModifierAST
   }
 
-  def spacing = rule { oneOrMore(space) }
+  private def spacing: Rule0 = rule { oneOrMore(space) }
 
-  val space = " "
-  val modifierDelimiter = ":"
+  private val space = " "
+  private val modifierDelimiter = ":"
 
 }
