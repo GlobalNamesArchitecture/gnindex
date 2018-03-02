@@ -17,6 +17,7 @@ object QueryParser {
   private[namefilter] val subSpeciesModifierStr = "ssp"
   private[namefilter] val nameStringModifierStr = "ns"
   private[namefilter] val exactStringModifierStr = "exact"
+  private[namefilter] val wordModifierStr = "w"
 
   def parse(query: String): Try[SearchQuery] = {
     new QueryParser(query).searchQuery.run().map { x => SearchQuery(searchPostprocess(x)) }
@@ -34,6 +35,7 @@ object QueryParser {
         case `subSpeciesModifierStr` => SubspeciesModifier
         case `nameStringModifierStr` => NameStringModifier
         case `exactStringModifierStr` => ExactModifier
+        case `wordModifierStr` => WordModifier
         case _ => UnknownModifier(partAst.modifier.v)
       }
       SearchPart(modifier, partAst.words)
@@ -54,6 +56,7 @@ object QueryParser {
   case object SubspeciesModifier extends Modifier
   case object AuthorModifier extends Modifier
   case object YearModifier extends Modifier
+  case object WordModifier extends Modifier
   final case class UnknownModifier(v: String) extends Modifier
 
   final case class SearchPart(modifier: Modifier, words: Seq[String])

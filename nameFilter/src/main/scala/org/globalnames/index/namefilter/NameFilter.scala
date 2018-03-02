@@ -172,6 +172,10 @@ final case class NameFilterQueryBuilder(qry: NameFilter.NameStringsQuery) {
     val exactUuid = UuidGenerator.generate(exact)
     qry.filter { ns => ns.id === exactUuid }
   }
+
+  private[namefilter] def resolveWord(word: String) = {
+    qry.filter { ns => ns.name.like(s"%$word%") }
+  }
 }
 
 @Singleton
@@ -262,6 +266,8 @@ class NameFilter @Inject()(database: Database) extends Logging {
             sp.words.foldLeft(ns) { (n, word) => n.resolveAuthor(word) }
           case YearModifier =>
             sp.words.foldLeft(ns) { (n, word) => n.resolveYear(word) }
+          case WordModifier =>
+            sp.words.foldLeft(ns) { (n, word) => n.resolveWord(word) }
           case UnknownModifier(_) =>
             ns
         }
