@@ -246,30 +246,67 @@ class NameFilter @Inject()(database: Database) extends Logging {
     logger.info(s"query: $searches")
 
     val nameStringsBuilder =
-      searches.parts.foldLeft(NameFilterQueryBuilder(T.NameStrings)) { (ns, sp) =>
+      searches.parts.foldLeft(NameFilterQueryBuilder(T.NameStrings)) { (queryBuilder, sp) =>
         sp.modifier match {
           case ExactModifier =>
-            ns.resolveExact(sp.words.mkString(" "))
+            val word = sp.words.map { _.value }.mkString(" ")
+            queryBuilder.resolveExact(word)
+
           case NameStringModifier =>
-            ns.resolveNameStrings(sp.words.mkString(" "))
+            val wildcard = sp.words.lastOption.exists { _.wildcard }
+            val word = sp.words.map { _.value }.mkString(" ")
+            if (wildcard) queryBuilder.resolveNameStringsLike(word)
+            else queryBuilder.resolveNameStrings(word)
+
           case CanonicalModifier =>
-            ns.resolveCanonical(sp.words.mkString(" "))
+            val wildcard = sp.words.lastOption.exists { _.wildcard }
+            val word = sp.words.map { _.value }.mkString(" ")
+            if (wildcard) queryBuilder.resolveCanonicalLike(word)
+            else queryBuilder.resolveCanonical(word)
+
           case UninomialModifier =>
-            sp.words.foldLeft(ns) { (n, word) => n.resolveUninomial(word) }
+            sp.words.foldLeft(queryBuilder) { (qb, word) =>
+              if (word.wildcard) qb.resolveUninomialWildcard(word.value)
+              else qb.resolveUninomial(word.value)
+            }
+
           case GenusModifier =>
-            sp.words.foldLeft(ns) { (n, word) => n.resolveGenus(word) }
+            sp.words.foldLeft(queryBuilder) { (qb, word) =>
+              if (word.wildcard) qb.resolveGenusWildcard(word.value)
+              else qb.resolveGenus(word.value)
+            }
+
           case SpeciesModifier =>
-            sp.words.foldLeft(ns) { (n, word) => n.resolveSpecies(word) }
+            sp.words.foldLeft(queryBuilder) { (qb, word) =>
+              if (word.wildcard) qb.resolveSpeciesWildcard(word.value)
+              else qb.resolveSpecies(word.value)
+            }
+
           case SubspeciesModifier =>
-            sp.words.foldLeft(ns) { (n, word) => n.resolveSubspecies(word) }
+            sp.words.foldLeft(queryBuilder) { (qb, word) =>
+              if (word.wildcard) qb.resolveSubspeciesWildcard(word.value)
+              else qb.resolveSubspecies(word.value)
+            }
+
           case AuthorModifier =>
-            sp.words.foldLeft(ns) { (n, word) => n.resolveAuthor(word) }
+            sp.words.foldLeft(queryBuilder) { (qb, word) =>
+              if (word.wildcard) qb.resolveAuthorWildcard(word.value)
+              else qb.resolveAuthor(word.value)
+            }
+
           case YearModifier =>
-            sp.words.foldLeft(ns) { (n, word) => n.resolveYear(word) }
+            sp.words.foldLeft(queryBuilder) { (qb, word) =>
+              if (word.wildcard) qb.resolveYearWildcard(word.value)
+              else qb.resolveYear(word.value)
+            }
+
           case WordModifier =>
-            sp.words.foldLeft(ns) { (n, word) => n.resolveWord(word) }
+            sp.words.foldLeft(queryBuilder) { (qb, word) =>
+              qb.resolveWord(word.value)
+            }
+
           case UnknownModifier(_) =>
-            ns
+            queryBuilder
         }
       }
     val nameStrings = nameStringsBuilder.qry

@@ -23,9 +23,9 @@ object QueryParser {
     new QueryParser(query).searchQuery.run().map { x => SearchQuery(searchPostprocess(x)) }
   }
 
-  private def searchPostprocess(partsAst: Seq[SearchPartAST]) = {
+  private def searchPostprocess(partsAst: Seq[AST.SearchPart]) = {
     val searchParts = partsAst.map { partAst =>
-      val modifier = partAst.modifier.v match {
+      val modifier = partAst.modifier.value match {
         case `canonicalModifierStr` => CanonicalModifier
         case `authorModifierStr` => AuthorModifier
         case `yearModifierStr` => YearModifier
@@ -36,15 +36,19 @@ object QueryParser {
         case `nameStringModifierStr` => NameStringModifier
         case `exactStringModifierStr` => ExactModifier
         case `wordModifierStr` => WordModifier
-        case _ => UnknownModifier(partAst.modifier.v)
+        case _ => UnknownModifier(partAst.modifier.value)
       }
-      SearchPart(modifier, partAst.words)
+      SearchPart(modifier, partAst.words.map { w => Word(w.value, w.wildcard) })
     }
     searchParts
   }
 
-  final case class ModifierAST(v: String)
-  final case class SearchPartAST(modifier: ModifierAST, words: Seq[String])
+  object AST {
+    final case class Modifier(value: String)
+    final case class Word(value: String, wildcard: Boolean)
+    final case class SearchPart(modifier: Modifier, words: Seq[Word])
+    case object Wildcard
+  }
 
   sealed trait Modifier
   case object ExactModifier extends Modifier
@@ -59,7 +63,8 @@ object QueryParser {
   case object WordModifier extends Modifier
   final case class UnknownModifier(v: String) extends Modifier
 
-  final case class SearchPart(modifier: Modifier, words: Seq[String])
+  final case class Word(value: String, wildcard: Boolean)
+  final case class SearchPart(modifier: Modifier, words: Seq[Word])
   final case class SearchQuery(parts: Seq[SearchPart])
 }
 
@@ -69,25 +74,33 @@ object QueryParser {
 class QueryParser(val input: ParserInput) extends Parser {
   import QueryParser._
 
-  def searchQuery: Rule1[Seq[SearchPartAST]] = rule {
+  def searchQuery: Rule1[Seq[AST.SearchPart]] = rule {
     searchParts ~ EOI
   }
 
-  private def searchParts = rule { zeroOrMore(searchPart) }
+  private def searchParts = rule {
+    zeroOrMore(searchPart)
+  }
 
   private def searchPart = rule {
-    modifier ~> {(m: ModifierAST) => SearchPartAST(m, Seq()) } ~ spacing.? ~
-      zeroOrMore(word ~ spacing.? ~>
-        { (sp: SearchPartAST, word: String) => sp.copy(words = sp.words :+ word) }
-      )
+    modifier ~> {(m: AST.Modifier) => AST.SearchPart(m, Seq()) } ~ spacing.? ~
+      zeroOrMore(word ~ spacing.? ~> {
+        (sp: AST.SearchPart, word: AST.Word) => sp.copy(words = sp.words :+ word)
+      })
+  }
+
+  private def wildcardChar = rule {
+    "*" ~ push(AST.Wildcard)
   }
 
   private def word = rule {
-    !modifier ~ capture(oneOrMore(CharPredicate.Visible))
+    !modifier ~ capture(oneOrMore(CharPredicate.Visible)) ~ wildcardChar.? ~> {
+      (w: String, wildcard: Option[AST.Wildcard.type]) => AST.Word(w, wildcard.isDefined)
+    }
   }
 
   private def modifier = rule {
-    capture(oneOrMore(CharPredicate.LowerAlpha)) ~ modifierDelimiter ~> ModifierAST
+    capture(oneOrMore(CharPredicate.LowerAlpha)) ~ modifierDelimiter ~> AST.Modifier
   }
 
   private def spacing: Rule0 = rule { oneOrMore(space) }
