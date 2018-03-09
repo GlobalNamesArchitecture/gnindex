@@ -2,7 +2,6 @@ import Dependencies._
 import Settings._
 import com.github.tototoshi.sbt.slick.CodegenPlugin
 import scoverage.ScoverageKeys._
-import io.gatling.sbt.GatlingPlugin
 
 lazy val common = (project in file("common"))
     .enablePlugins(CodegenPlugin)

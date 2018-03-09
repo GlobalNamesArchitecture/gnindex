@@ -10,7 +10,6 @@ import slick.{ model => m }
 import com.github.tototoshi.sbt.slick.CodegenPlugin.autoImport._
 import spray.revolver.RevolverPlugin.autoImport._
 import wartremover.WartRemover.autoImport._
-import io.gatling.sbt.GatlingKeys.Gatling
 
 object Settings {
 
@@ -34,7 +33,7 @@ object Settings {
       if (release) version
       else version + sys.props.get("buildNumber").map { "-" + _ }.getOrElse("") + "-SNAPSHOT"
     },
-    scalaVersion := "2.11.11",
+    scalaVersion := "2.11.12",
     homepage := Some(new URL("http://globalnames.org/")),
     organization in ThisBuild := "org.globalnames",
     description := "Family of Global Names microservices",
@@ -63,7 +62,6 @@ object Settings {
 
     scalacOptions in Test ++= Seq("-Yrangepos"),
 
-    ivyScala := ivyScala.value.map { _.copy(overrideScalaVersion = true) },
     scroogeThriftDependencies in Compile := Seq("finatra-thrift_2.11"),
 
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
@@ -194,7 +192,7 @@ object Settings {
         }
       }
     },
-    sourceGenerators in Compile += slickCodegen.taskValue
+    sourceGenerators in Compile += slickCodegen.taskValue,
 
     wartremoverExcluded ++= Seq(
       (scalaSource in Compile).value / "org" / "globalnames" / "index" / "dao" / "Tables.scala",
@@ -247,8 +245,7 @@ object Settings {
   // Benchmark settings //
   ////////////////////////
   lazy val benchmarkSettings = Seq(
-    assemblyJarName in assembly := "gnbenchmark-" + version.value + ".jar",
-    javaOptions in Gatling := Seq("-Xms1024m", "-Xmx2048m")
+    assemblyJarName in assembly := "gnbenchmark-" + version.value + ".jar"
   )
 
 }

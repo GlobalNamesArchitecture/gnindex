@@ -22,7 +22,7 @@ object Dependencies {
     val postgres = "42.1.1.jre7"
     val gnparser = "0.4.2"
     val gnmatcher = "0.1.2-20170718_1900-SNAPSHOT"
-    val gatling = "2.2.0"
+    val gatling = "2.3.0"
     val twitterBijection = "0.9.5"
   }
 
