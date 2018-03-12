@@ -22,12 +22,17 @@ struct Request {
     9: bool bestMatchOnly = false
 }
 
+struct ResultScored {
+    1: commondata.Result result
+    2: commondata.Score score
+}
+
 struct Response {
     1: i32 total
     2: string suppliedInput
     3: optional string suppliedId
-    4: list<commondata.ResultScored> results
-    5: list<commondata.ResultScored> preferredResults
+    4: list<ResultScored> results
+    5: list<ResultScored> preferredResults
 }
 
 struct Responses {

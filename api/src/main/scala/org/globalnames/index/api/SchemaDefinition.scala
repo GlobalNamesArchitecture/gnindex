@@ -4,7 +4,6 @@ package api
 
 import sangria.schema._
 import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
-import thrift.{Context => ResponsesContext, _}
 import thrift.{namefilter => nf, nameresolver => nr, namebrowser => nb}
 import util.UuidEnhanced.ThriftUuidEnhanced
 
@@ -28,7 +27,7 @@ object SchemaDefinition {
   }
 
   val MatchTypeOT = ObjectType(
-    "MatchType", fields[Unit, MatchType](
+    "MatchType", fields[Unit, thrift.MatchType](
         Field("kind", StringType, resolve = _.value.kind.name)
       , Field("score", IntType, resolve = _.value.score)
       , Field("editDistance", IntType, resolve = _.value.editDistance)
@@ -36,14 +35,14 @@ object SchemaDefinition {
   )
 
   val NameOT = ObjectType(
-    "Name", fields[Unit, Name](
+    "Name", fields[Unit, thrift.Name](
         Field("id", IDType, resolve = _.value.uuid.string)
       , Field("value", StringType, resolve = _.value.value)
     )
   )
 
   val CanonicalNameOT = ObjectType(
-    "Name", fields[Unit, CanonicalName](
+    "Name", fields[Unit, thrift.CanonicalName](
         Field("id", IDType, resolve = _.value.uuid.string)
       , Field("value", StringType, resolve = _.value.value)
       , Field("valueRanked", StringType, resolve = _.value.valueRanked)
@@ -51,7 +50,7 @@ object SchemaDefinition {
   )
 
   val AuthorScoreOT = ObjectType(
-    "AuthorScore", fields[Unit, AuthorScore](
+    "AuthorScore", fields[Unit, thrift.AuthorScore](
         Field("authorshipInput", StringType, resolve = _.value.authorshipInput)
       , Field("authorshipMatch", StringType, resolve = _.value.authorshipMatch)
       , Field("value", FloatType, resolve = _.value.value)
@@ -59,7 +58,7 @@ object SchemaDefinition {
   )
 
   val ScoreOT = ObjectType(
-    "Score", fields[Unit, Score](
+    "Score", fields[Unit, thrift.Score](
         Field("nameType", OptionType(IntType), resolve = _.value.nameType)
       , Field("authorScore", AuthorScoreOT, resolve = _.value.authorScore)
       , Field("parsingQuality", IntType, resolve = _.value.parsingQuality)
@@ -69,7 +68,7 @@ object SchemaDefinition {
   )
 
   val ClassificationOT = ObjectType(
-    "Classification", fields[Unit, Classification](
+    "Classification", fields[Unit, thrift.Classification](
         Field("path", OptionType(StringType), resolve = _.value.path)
       , Field("pathIds", OptionType(StringType), resolve = _.value.pathIds)
       , Field("pathRanks", OptionType(StringType), resolve = _.value.pathRanks)
@@ -77,7 +76,7 @@ object SchemaDefinition {
   )
 
   val DataSourceOT = ObjectType(
-    "DataSource", fields[Unit, DataSource](
+    "DataSource", fields[Unit, thrift.DataSource](
         Field("id", IntType, resolve = _.value.id)
       , Field("title", StringType, resolve = _.value.title)
       , Field("description", OptionType(StringType), resolve = _.value.description)
@@ -94,7 +93,7 @@ object SchemaDefinition {
   )
 
   val AcceptedNameOT = ObjectType(
-    "AcceptedName", fields[Unit, AcceptedName](
+    "AcceptedName", fields[Unit, thrift.AcceptedName](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
       , Field("taxonId", StringType, resolve = _.value.taxonId)
@@ -103,14 +102,14 @@ object SchemaDefinition {
   )
 
   val ContextOT = ObjectType(
-    "Context", fields[Unit, ResponsesContext](
+    "Context", fields[Unit, thrift.Context](
         Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
       , Field("clade", StringType, resolve = _.value.clade)
     )
   )
 
   val ResultItemScoredOT = ObjectType(
-    "ResultItem", fields[Unit, ResultScored](
+    "ResultItem", fields[Unit, nr.ResultScored](
         Field("name", NameOT, resolve = _.value.result.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.result.canonicalName)
       , Field("synonym", BooleanType, resolve = _.value.result.synonym)
@@ -127,7 +126,7 @@ object SchemaDefinition {
   )
 
   val ResultItemOT = ObjectType(
-    "ResultItem", fields[Unit, Result](
+    "ResultItem", fields[Unit, thrift.Result](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
       , Field("synonym", BooleanType, resolve = _.value.synonym)
@@ -166,7 +165,7 @@ object SchemaDefinition {
   )
 
   val NameStringOT = ObjectType(
-    "NameString", fields[Unit, Result](
+    "NameString", fields[Unit, thrift.Result](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
       , Field("synonym", BooleanType, resolve = _.value.synonym)

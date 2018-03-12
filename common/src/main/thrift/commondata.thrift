@@ -112,8 +112,3 @@ struct Result {
     11: AcceptedName acceptedName
     12: optional Timestamp updatedAt
 }
-
-struct ResultScored {
-    1: Result result
-    2: Score score
-}
