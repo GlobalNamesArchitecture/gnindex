@@ -33,8 +33,8 @@ final case class GraphqlRequest(query: String,
 @Singleton
 class ApiController @Inject()(repository: Repository) extends Controller {
   private def errorsResponse(errorMessages: Vector[String]): JValue = {
-    val resultsFieldName = SchemaDefinition.ResponseOT.fieldsByName("results")
-                                           .headOption.map { _.name }.getOrElse("results")
+    val resultsFieldName = NameResolver.ResponseOT.fieldsByName("results")
+                                       .headOption.map { _.name }.getOrElse("results")
     JObject(
       resultsFieldName -> JArray(List()),
       "meta" -> JObject("errors" -> JArray(errorMessages.map { JString(_) }.toList))

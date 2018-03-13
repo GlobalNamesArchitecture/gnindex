@@ -7,25 +7,7 @@ import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
 import thrift.{namefilter => nf, nameresolver => nr, namebrowser => nb}
 import util.UuidEnhanced.ThriftUuidEnhanced
 
-object SchemaDefinition {
-  private val nameStringsMaxCount = 50
-
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf",
-                          "org.wartremover.warts.Throw"))
-  private implicit val nameInputFromInput: FromInput[nr.NameInput] = new FromInput[nr.NameInput] {
-    val marshaller: CoercedScalaResultMarshaller = CoercedScalaResultMarshaller.default
-
-    def fromResult(node: marshaller.Node): nr.NameInput = node match {
-      case nodeMap: Map[String, Any] @unchecked =>
-        nr.NameInput(
-          value = nodeMap("value").asInstanceOf[String],
-          suppliedId = nodeMap.get("suppliedId").flatMap { _.asInstanceOf[Option[String]] }
-        )
-      case _ =>
-        throw sangria.schema.SchemaMaterializationException(s"$node has inappropriate type")
-    }
-  }
-
+object Common {
   val MatchTypeOT = ObjectType(
     "MatchType", fields[Unit, thrift.MatchType](
         Field("kind", StringType, resolve = _.value.kind.name)
@@ -108,23 +90,6 @@ object SchemaDefinition {
     )
   )
 
-  val ResultItemScoredOT = ObjectType(
-    "ResultItem", fields[Unit, nr.ResultScored](
-        Field("name", NameOT, resolve = _.value.result.name)
-      , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.result.canonicalName)
-      , Field("synonym", BooleanType, resolve = _.value.result.synonym)
-      , Field("taxonId", StringType, resolve = _.value.result.taxonId)
-      , Field("localId", OptionType(StringType), resolve = _.value.result.localId)
-      , Field("url", OptionType(StringType), resolve = _.value.result.url)
-      , Field("classification", ClassificationOT, resolve = _.value.result.classification)
-      , Field("matchType", MatchTypeOT, resolve = _.value.result.matchType)
-      , Field("score", ScoreOT, resolve = _.value.score)
-      , Field("dataSource", DataSourceOT, resolve = _.value.result.dataSource)
-      , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.result.acceptedName)
-      , Field("updatedAt", OptionType(StringType), resolve = _.value.result.updatedAt)
-    )
-  )
-
   val ResultItemOT = ObjectType(
     "ResultItem", fields[Unit, thrift.Result](
         Field("name", NameOT, resolve = _.value.name)
@@ -137,30 +102,6 @@ object SchemaDefinition {
       , Field("matchType", MatchTypeOT, resolve = _.value.matchType)
       , Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
       , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.acceptedName)
-    )
-  )
-
-  val ResultsPerDataSourceOT = ObjectType(
-    "ResultsPerDataSourceItem", fields[Unit, nf.ResultsPerDataSource](
-        Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
-      , Field("results", ListType(ResultItemOT), resolve = _.value.results)
-    )
-  )
-
-  val ResponseOT = ObjectType(
-    "Response", fields[Unit, nr.Response](
-        Field("total", IntType, None, resolve = _.value.total)
-      , Field("suppliedInput", OptionType(StringType), None, resolve = _.value.suppliedInput)
-      , Field("suppliedId", OptionType(StringType), None, resolve = _.value.suppliedId)
-      , Field("results", ListType(ResultItemScoredOT), None, resolve = _.value.results)
-      , Field("preferredResults", ListType(ResultItemScoredOT), resolve = _.value.preferredResults)
-    )
-  )
-
-  val ResponsesOT = ObjectType(
-    "Responses", fields[Unit, nr.Responses](
-        Field("responses", ListType(ResponseOT), resolve = _.value.items)
-      , Field("context", ListType(ContextOT), resolve = _.value.context)
     )
   )
 
@@ -177,19 +118,23 @@ object SchemaDefinition {
       , Field("updatedAt", OptionType(StringType), resolve = _.value.updatedAt)
     )
   )
+}
+
+object NameFilter {
+  import Common._
+
+  val ResultsPerDataSourceOT = ObjectType(
+    "ResultsPerDataSourceItem", fields[Unit, nf.ResultsPerDataSource](
+        Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
+      , Field("results", ListType(ResultItemOT), resolve = _.value.results)
+    )
+  )
 
   val ResultNameStringsOT = ObjectType(
     "ResultNameStrings", fields[Unit, nf.ResultNameStrings](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
       , Field("resultsPerDataSource", ListType(ResultsPerDataSourceOT), resolve = _.value.results)
-    )
-  )
-
-  val TripletOT = ObjectType(
-    "Triplet", fields[Unit, nb.Triplet](
-        Field("value", StringType, resolve = _.value.value)
-      , Field("active", BooleanType, resolve = _.value.active)
     )
   )
 
@@ -209,6 +154,73 @@ object SchemaDefinition {
       , Field("names", ListType(NameStringOT), resolve = _.value.names)
     )
   )
+}
+
+object NameResolver {
+  import Common._
+
+  val ResultItemScoredOT = ObjectType(
+    "ResultItem", fields[Unit, nr.ResultScored](
+        Field("name", NameOT, resolve = _.value.result.name)
+      , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.result.canonicalName)
+      , Field("synonym", BooleanType, resolve = _.value.result.synonym)
+      , Field("taxonId", StringType, resolve = _.value.result.taxonId)
+      , Field("localId", OptionType(StringType), resolve = _.value.result.localId)
+      , Field("url", OptionType(StringType), resolve = _.value.result.url)
+      , Field("classification", ClassificationOT, resolve = _.value.result.classification)
+      , Field("matchType", MatchTypeOT, resolve = _.value.result.matchType)
+      , Field("score", ScoreOT, resolve = _.value.score)
+      , Field("dataSource", DataSourceOT, resolve = _.value.result.dataSource)
+      , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.result.acceptedName)
+      , Field("updatedAt", OptionType(StringType), resolve = _.value.result.updatedAt)
+    )
+  )
+
+  val ResponseOT = ObjectType(
+    "Response", fields[Unit, nr.Response](
+        Field("total", IntType, None, resolve = _.value.total)
+      , Field("suppliedInput", OptionType(StringType), None, resolve = _.value.suppliedInput)
+      , Field("suppliedId", OptionType(StringType), None, resolve = _.value.suppliedId)
+      , Field("results", ListType(ResultItemScoredOT), None, resolve = _.value.results)
+      , Field("preferredResults", ListType(ResultItemScoredOT), resolve = _.value.preferredResults)
+    )
+  )
+
+  val ResponsesOT = ObjectType(
+    "Responses", fields[Unit, nr.Responses](
+        Field("responses", ListType(ResponseOT), resolve = _.value.items)
+      , Field("context", ListType(ContextOT), resolve = _.value.context)
+    )
+  )
+}
+
+object NameBrowser {
+  val TripletOT = ObjectType(
+    "Triplet", fields[Unit, nb.Triplet](
+        Field("value", StringType, resolve = _.value.value)
+      , Field("active", BooleanType, resolve = _.value.active)
+    )
+  )
+}
+
+object SchemaDefinition {
+  private val nameStringsMaxCount = 50
+
+  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf",
+                          "org.wartremover.warts.Throw"))
+  private implicit val nameInputFromInput: FromInput[nr.NameInput] = new FromInput[nr.NameInput] {
+    val marshaller: CoercedScalaResultMarshaller = CoercedScalaResultMarshaller.default
+
+    def fromResult(node: marshaller.Node): nr.NameInput = node match {
+      case nodeMap: Map[String, Any] @unchecked =>
+        nr.NameInput(
+          value = nodeMap("value").asInstanceOf[String],
+          suppliedId = nodeMap.get("suppliedId").flatMap { _.asInstanceOf[Option[String]] }
+        )
+      case _ =>
+        throw sangria.schema.SchemaMaterializationException(s"$node has inappropriate type")
+    }
+  }
 
   val DataSourceIdsArg = Argument("dataSourceIds", OptionInputType(ListInputType(IntType)))
   val PreferredDataSourceIdsArg =
@@ -229,7 +241,7 @@ object SchemaDefinition {
 
   val QueryTypeOT = ObjectType(
     "Query", fields[Repository, Unit](
-      Field("nameResolver", ResponsesOT,
+      Field("nameResolver", NameResolver.ResponsesOT,
         arguments = List(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg,
                          AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg),
         resolve = ctx =>
@@ -237,21 +249,21 @@ object SchemaDefinition {
                        AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg)
                       (ctx.ctx.nameResolver)
       ),
-      Field("nameStrings", ResponseNameStringsOT,
+      Field("nameStrings", NameFilter.ResponseNameStringsOT,
         arguments = List(SearchTermArg, PageArg, PerPageArg, DataSourceIdsArg),
         resolve = ctx =>
           ctx.withArgs(SearchTermArg, PageArg, PerPageArg, DataSourceIdsArg)
                       (ctx.ctx.nameStrings)
       ),
-      Field("nameStringsByUuid", ListType(NameResponseOT),
+      Field("nameStringsByUuid", ListType(NameFilter.NameResponseOT),
         arguments = List(nameUuidsArg),
         resolve = ctx => ctx.withArgs(nameUuidsArg)(ctx.ctx.nameStringsByUuids)
       ),
-      Field("dataSourceById", ListType(DataSourceOT),
+      Field("dataSourceById", ListType(Common.DataSourceOT),
         arguments = List(DataSourceIdsArg),
         resolve = ctx => ctx.withArgs(DataSourceIdsArg)(ctx.ctx.dataSourceById)
       ),
-      Field("nameBrowser_triplets", ListType(TripletOT),
+      Field("nameBrowser_triplets", ListType(NameBrowser.TripletOT),
         arguments = List(LetterArg),
         resolve = ctx => ctx.withArgs(LetterArg)(ctx.ctx.tripletsStartingWith)
       )
