@@ -2,14 +2,15 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.6.6
--- Dumped by pg_dump version 9.6.6
+-- Dumped from database version 9.6.8 (Homebrew petere/postgresql)
+-- Dumped by pg_dump version 9.6.8 (Homebrew petere/postgresql)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
 SET client_min_messages = warning;
 SET row_security = off;
@@ -56,13 +57,11 @@ CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public;
 COMMENT ON EXTENSION unaccent IS 'text search dictionary that removes accents';
 
 
-SET search_path = public, pg_catalog;
-
 --
 -- Name: f_unaccent(text); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION f_unaccent(text) RETURNS text
+CREATE FUNCTION public.f_unaccent(text) RETURNS text
     LANGUAGE sql IMMUTABLE
     AS $_$
              SELECT public.unaccent('public.unaccent', $1)
@@ -77,7 +76,7 @@ SET default_with_oids = false;
 -- Name: cross_maps; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE cross_maps (
+CREATE TABLE public.cross_maps (
     data_source_id integer NOT NULL,
     name_string_id uuid NOT NULL,
     cm_local_id character varying(50) NOT NULL,
@@ -90,7 +89,7 @@ CREATE TABLE cross_maps (
 -- Name: data_sources; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE data_sources (
+CREATE TABLE public.data_sources (
     id integer NOT NULL,
     title character varying(255) NOT NULL,
     description text,
@@ -113,7 +112,7 @@ CREATE TABLE data_sources (
 -- Name: data_sources_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE data_sources_id_seq
+CREATE SEQUENCE public.data_sources_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -125,14 +124,14 @@ CREATE SEQUENCE data_sources_id_seq
 -- Name: data_sources_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE data_sources_id_seq OWNED BY data_sources.id;
+ALTER SEQUENCE public.data_sources_id_seq OWNED BY public.data_sources.id;
 
 
 --
 -- Name: name_string_indices; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE name_string_indices (
+CREATE TABLE public.name_string_indices (
     data_source_id integer NOT NULL,
     name_string_id uuid NOT NULL,
     url character varying(255),
@@ -154,7 +153,7 @@ CREATE TABLE name_string_indices (
 -- Name: name_strings; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE name_strings (
+CREATE TABLE public.name_strings (
     id uuid NOT NULL,
     name character varying(255) NOT NULL,
     canonical_uuid uuid,
@@ -168,7 +167,7 @@ CREATE TABLE name_strings (
 -- Name: name_strings__author_words; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE name_strings__author_words (
+CREATE TABLE public.name_strings__author_words (
     author_word character varying(100) NOT NULL,
     name_uuid uuid NOT NULL
 );
@@ -178,7 +177,7 @@ CREATE TABLE name_strings__author_words (
 -- Name: name_strings__genus; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE name_strings__genus (
+CREATE TABLE public.name_strings__genus (
     genus character varying(50) NOT NULL,
     name_uuid uuid NOT NULL
 );
@@ -188,7 +187,7 @@ CREATE TABLE name_strings__genus (
 -- Name: name_strings__species; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE name_strings__species (
+CREATE TABLE public.name_strings__species (
     species character varying(50) NOT NULL,
     name_uuid uuid NOT NULL
 );
@@ -198,7 +197,7 @@ CREATE TABLE name_strings__species (
 -- Name: name_strings__subspecies; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE name_strings__subspecies (
+CREATE TABLE public.name_strings__subspecies (
     subspecies character varying(50) NOT NULL,
     name_uuid uuid NOT NULL
 );
@@ -208,7 +207,7 @@ CREATE TABLE name_strings__subspecies (
 -- Name: name_strings__uninomial; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE name_strings__uninomial (
+CREATE TABLE public.name_strings__uninomial (
     uninomial character varying(50) NOT NULL,
     name_uuid uuid NOT NULL
 );
@@ -218,7 +217,7 @@ CREATE TABLE name_strings__uninomial (
 -- Name: name_strings__year; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE name_strings__year (
+CREATE TABLE public.name_strings__year (
     year character varying(8) NOT NULL,
     name_uuid uuid NOT NULL
 );
@@ -228,7 +227,7 @@ CREATE TABLE name_strings__year (
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE schema_migrations (
+CREATE TABLE public.schema_migrations (
     version character varying NOT NULL
 );
 
@@ -237,7 +236,7 @@ CREATE TABLE schema_migrations (
 -- Name: vernacular_string_indices; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE vernacular_string_indices (
+CREATE TABLE public.vernacular_string_indices (
     data_source_id integer NOT NULL,
     taxon_id character varying(255) NOT NULL,
     vernacular_string_id uuid NOT NULL,
@@ -251,7 +250,7 @@ CREATE TABLE vernacular_string_indices (
 -- Name: vernacular_strings; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE vernacular_strings (
+CREATE TABLE public.vernacular_strings (
     id uuid NOT NULL,
     name character varying(255) NOT NULL
 );
@@ -261,14 +260,14 @@ CREATE TABLE vernacular_strings (
 -- Name: data_sources id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY data_sources ALTER COLUMN id SET DEFAULT nextval('data_sources_id_seq'::regclass);
+ALTER TABLE ONLY public.data_sources ALTER COLUMN id SET DEFAULT nextval('public.data_sources_id_seq'::regclass);
 
 
 --
 -- Name: data_sources data_sources_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY data_sources
+ALTER TABLE ONLY public.data_sources
     ADD CONSTRAINT data_sources_pkey PRIMARY KEY (id);
 
 
@@ -276,7 +275,7 @@ ALTER TABLE ONLY data_sources
 -- Name: name_string_indices name_string_indices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY name_string_indices
+ALTER TABLE ONLY public.name_string_indices
     ADD CONSTRAINT name_string_indices_pkey PRIMARY KEY (name_string_id, data_source_id, taxon_id);
 
 
@@ -284,7 +283,7 @@ ALTER TABLE ONLY name_string_indices
 -- Name: name_strings name_strings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY name_strings
+ALTER TABLE ONLY public.name_strings
     ADD CONSTRAINT name_strings_pkey PRIMARY KEY (id);
 
 
@@ -292,7 +291,7 @@ ALTER TABLE ONLY name_strings
 -- Name: vernacular_strings vernacular_strings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY vernacular_strings
+ALTER TABLE ONLY public.vernacular_strings
     ADD CONSTRAINT vernacular_strings_pkey PRIMARY KEY (id);
 
 
@@ -300,217 +299,217 @@ ALTER TABLE ONLY vernacular_strings
 -- Name: canonical_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX canonical_name_index ON name_strings USING btree (canonical text_pattern_ops);
+CREATE INDEX canonical_name_index ON public.name_strings USING btree (canonical text_pattern_ops);
 
 
 --
 -- Name: index__cmdsid_clid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index__cmdsid_clid ON cross_maps USING btree (cm_data_source_id, cm_local_id);
+CREATE INDEX index__cmdsid_clid ON public.cross_maps USING btree (cm_data_source_id, cm_local_id);
 
 
 --
 -- Name: index__dsid_tid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index__dsid_tid ON vernacular_string_indices USING btree (data_source_id, taxon_id);
+CREATE INDEX index__dsid_tid ON public.vernacular_string_indices USING btree (data_source_id, taxon_id);
 
 
 --
 -- Name: index__nsid_dsid_tid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index__nsid_dsid_tid ON cross_maps USING btree (data_source_id, name_string_id, taxon_id);
+CREATE INDEX index__nsid_dsid_tid ON public.cross_maps USING btree (data_source_id, name_string_id, taxon_id);
 
 
 --
 -- Name: index__vsid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index__vsid ON vernacular_string_indices USING btree (vernacular_string_id);
+CREATE INDEX index__vsid ON public.vernacular_string_indices USING btree (vernacular_string_id);
 
 
 --
 -- Name: index_name_string_indices_on_data_source_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_string_indices_on_data_source_id ON name_string_indices USING btree (data_source_id);
+CREATE INDEX index_name_string_indices_on_data_source_id ON public.name_string_indices USING btree (data_source_id);
 
 
 --
 -- Name: index_name_string_indices_on_data_source_id_and_taxon_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_string_indices_on_data_source_id_and_taxon_id ON name_string_indices USING btree (data_source_id, taxon_id);
+CREATE INDEX index_name_string_indices_on_data_source_id_and_taxon_id ON public.name_string_indices USING btree (data_source_id, taxon_id);
 
 
 --
 -- Name: index_name_string_indices_on_name_string_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_string_indices_on_name_string_id ON name_string_indices USING btree (name_string_id);
+CREATE INDEX index_name_string_indices_on_name_string_id ON public.name_string_indices USING btree (name_string_id);
 
 
 --
 -- Name: index_name_strings__author_words_on_author_word; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__author_words_on_author_word ON name_strings__author_words USING btree (author_word);
+CREATE INDEX index_name_strings__author_words_on_author_word ON public.name_strings__author_words USING btree (author_word);
 
 
 --
 -- Name: index_name_strings__author_words_on_name_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__author_words_on_name_uuid ON name_strings__author_words USING btree (name_uuid);
+CREATE INDEX index_name_strings__author_words_on_name_uuid ON public.name_strings__author_words USING btree (name_uuid);
 
 
 --
 -- Name: index_name_strings__genus_on_genus; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__genus_on_genus ON name_strings__genus USING btree (genus);
+CREATE INDEX index_name_strings__genus_on_genus ON public.name_strings__genus USING btree (genus);
 
 
 --
 -- Name: index_name_strings__genus_on_name_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__genus_on_name_uuid ON name_strings__genus USING btree (name_uuid);
+CREATE INDEX index_name_strings__genus_on_name_uuid ON public.name_strings__genus USING btree (name_uuid);
 
 
 --
 -- Name: index_name_strings__species_on_name_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__species_on_name_uuid ON name_strings__species USING btree (name_uuid);
+CREATE INDEX index_name_strings__species_on_name_uuid ON public.name_strings__species USING btree (name_uuid);
 
 
 --
 -- Name: index_name_strings__species_on_species; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__species_on_species ON name_strings__species USING btree (species);
+CREATE INDEX index_name_strings__species_on_species ON public.name_strings__species USING btree (species);
 
 
 --
 -- Name: index_name_strings__subspecies_on_name_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__subspecies_on_name_uuid ON name_strings__subspecies USING btree (name_uuid);
+CREATE INDEX index_name_strings__subspecies_on_name_uuid ON public.name_strings__subspecies USING btree (name_uuid);
 
 
 --
 -- Name: index_name_strings__subspecies_on_subspecies; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__subspecies_on_subspecies ON name_strings__subspecies USING btree (subspecies);
+CREATE INDEX index_name_strings__subspecies_on_subspecies ON public.name_strings__subspecies USING btree (subspecies);
 
 
 --
 -- Name: index_name_strings__uninomial_on_name_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__uninomial_on_name_uuid ON name_strings__uninomial USING btree (name_uuid);
+CREATE INDEX index_name_strings__uninomial_on_name_uuid ON public.name_strings__uninomial USING btree (name_uuid);
 
 
 --
 -- Name: index_name_strings__uninomial_on_uninomial; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__uninomial_on_uninomial ON name_strings__uninomial USING btree (uninomial);
+CREATE INDEX index_name_strings__uninomial_on_uninomial ON public.name_strings__uninomial USING btree (uninomial);
 
 
 --
 -- Name: index_name_strings__year_on_name_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__year_on_name_uuid ON name_strings__year USING btree (name_uuid);
+CREATE INDEX index_name_strings__year_on_name_uuid ON public.name_strings__year USING btree (name_uuid);
 
 
 --
 -- Name: index_name_strings__year_on_year; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings__year_on_year ON name_strings__year USING btree (year);
+CREATE INDEX index_name_strings__year_on_year ON public.name_strings__year USING btree (year);
 
 
 --
 -- Name: index_name_strings_on_canonical_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_name_strings_on_canonical_uuid ON name_strings USING btree (canonical_uuid);
+CREATE INDEX index_name_strings_on_canonical_uuid ON public.name_strings USING btree (canonical_uuid);
 
 
 --
 -- Name: name_strings__name_unaccent; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX name_strings__name_unaccent ON name_strings USING btree (f_unaccent((name)::text) text_pattern_ops);
+CREATE INDEX name_strings__name_unaccent ON public.name_strings USING btree (public.f_unaccent((name)::text) text_pattern_ops);
 
 
 --
 -- Name: namestrings_canonical__gin_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX namestrings_canonical__gin_index ON name_strings USING gin (canonical gin_trgm_ops);
+CREATE INDEX namestrings_canonical__gin_index ON public.name_strings USING gin (canonical public.gin_trgm_ops);
 
 
 --
 -- Name: namestrings_name__gin_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX namestrings_name__gin_index ON name_strings USING gin (name gin_trgm_ops);
+CREATE INDEX namestrings_name__gin_index ON public.name_strings USING gin (name public.gin_trgm_ops);
 
 
 --
 -- Name: ns_author_words__gin_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX ns_author_words__gin_index ON name_strings__author_words USING gin (author_word gin_trgm_ops);
+CREATE INDEX ns_author_words__gin_index ON public.name_strings__author_words USING gin (author_word public.gin_trgm_ops);
 
 
 --
 -- Name: ns_genus__gin_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX ns_genus__gin_index ON name_strings__genus USING gin (genus gin_trgm_ops);
+CREATE INDEX ns_genus__gin_index ON public.name_strings__genus USING gin (genus public.gin_trgm_ops);
 
 
 --
 -- Name: ns_species__gin_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX ns_species__gin_index ON name_strings__species USING gin (species gin_trgm_ops);
+CREATE INDEX ns_species__gin_index ON public.name_strings__species USING gin (species public.gin_trgm_ops);
 
 
 --
 -- Name: ns_subspecies__gin_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX ns_subspecies__gin_index ON name_strings__subspecies USING gin (subspecies gin_trgm_ops);
+CREATE INDEX ns_subspecies__gin_index ON public.name_strings__subspecies USING gin (subspecies public.gin_trgm_ops);
 
 
 --
 -- Name: ns_uninomial__gin_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX ns_uninomial__gin_index ON name_strings__uninomial USING gin (uninomial gin_trgm_ops);
+CREATE INDEX ns_uninomial__gin_index ON public.name_strings__uninomial USING gin (uninomial public.gin_trgm_ops);
 
 
 --
 -- Name: ns_year__gin_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX ns_year__gin_index ON name_strings__year USING gin (year gin_trgm_ops);
+CREATE INDEX ns_year__gin_index ON public.name_strings__year USING gin (year public.gin_trgm_ops);
 
 
 --
 -- Name: unique_schema_migrations; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX unique_schema_migrations ON schema_migrations USING btree (version);
+CREATE UNIQUE INDEX unique_schema_migrations ON public.schema_migrations USING btree (version);
 
 
 --
