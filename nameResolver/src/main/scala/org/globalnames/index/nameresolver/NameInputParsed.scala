@@ -7,18 +7,20 @@ import thrift.nameresolver.NameInput
 import parser.{ScientificNameParser => snp}
 
 class NameInputParsed private (ni: NameInput) {
-  require(ni.value.nonEmpty)
-
   val (firstWordCorrectlyCapitalised: Boolean, valueCapitalised: String) = {
-    val parts = ni.value.split("\\s", 2)
-    val firstWord = parts(0)
-    val rest = parts.drop(1).headOption.map { x =>
-      ni.value.charAt(firstWord.length).toString + x
-    }.getOrElse("")
-    val firstWordCapitalised = WordUtils.capitalize(firstWord.toLowerCase)
-    val firstWordIsCapitalised = firstWordCapitalised == firstWord
-    val valueCapitalised = firstWordCapitalised + rest
-    (firstWordIsCapitalised, valueCapitalised)
+    if (ni.value.isEmpty) {
+      (true, ni.value)
+    } else {
+      val parts = ni.value.split("\\s", 2)
+      val firstWord = parts(0)
+      val rest = parts.drop(1).headOption.map { x =>
+        ni.value.charAt(firstWord.length).toString + x
+      }.getOrElse("")
+      val firstWordCapitalised = WordUtils.capitalize(firstWord.toLowerCase)
+      val firstWordIsCapitalised = firstWordCapitalised == firstWord
+      val valueCapitalised = firstWordCapitalised + rest
+      (firstWordIsCapitalised, valueCapitalised)
+    }
   }
 
   val parsed: snp.Result =

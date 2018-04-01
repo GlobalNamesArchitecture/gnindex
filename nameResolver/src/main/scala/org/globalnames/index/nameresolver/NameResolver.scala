@@ -96,7 +96,7 @@ class NameResolver(request: nr.Request)
   private val takeCount: Int = request.perPage.min(1000).max(0)
   private val dropCount: Int = (request.page * request.perPage).max(0)
   private val namesParsed: Vector[NameInputParsed] =
-    request.names.toVector.map { ni => NameInputParsed(ni) }
+    request.names.toVector.withFilter { ni => ni.value.nonEmpty }.map { ni => NameInputParsed(ni) }
   private val namesParsedMap: Map[UUID, NameInputParsed] =
     namesParsed.map { np => np.parsed.preprocessorResult.id -> np }.toMap
 
