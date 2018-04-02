@@ -308,7 +308,7 @@ class NameFilter @Inject()(database: Database) extends Logging {
       .values.flatMap { results =>
         val rpdss =
          for ((ds, vs) <- results.groupBy { r => r.dataSource }) yield {
-           ResultsPerDataSource(
+           ResultPerDataSource(
              dataSource = ds,
              results = vs
            )
@@ -317,7 +317,7 @@ class NameFilter @Inject()(database: Database) extends Logging {
           ResultNameStrings(
             name = response.name,
             canonicalName = response.canonicalName,
-            results =
+            resultsPerDataSource =
               rpdss.toVector.sortBy { rpds => rpds.dataSource }(util.DataSource.ordering.reverse)
           )
         }
@@ -332,8 +332,8 @@ class NameFilter @Inject()(database: Database) extends Logging {
         perPage = request.perPage,
         pagesCount = pagesCount,
         resultsCount = results.size,
-        names = results.slice(request.perPage * request.page,
-                              request.perPage * (request.page + 1))
+        resultNameStrings =
+          results.slice(request.perPage * request.page, request.perPage * (request.page + 1))
       )
     }
     resultFuture.as[TwitterFuture[ResponseNameStrings]]

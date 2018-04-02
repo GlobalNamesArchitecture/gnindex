@@ -11,7 +11,7 @@ struct NameInput {
 }
 
 struct Request {
-    1: list<NameInput> names
+    1: list<NameInput> nameInputs
     2: list<i32> dataSourceIds = []
     3: list<i32> preferredDataSourceIds = []
     4: i32 page = 0
@@ -29,24 +29,24 @@ struct ResultScored {
 
 struct ResultScoredPerDataSource {
     1: commondata.DataSource dataSource
-    2: list<ResultScored> results
+    2: list<ResultScored> resultsScored
 }
 
 struct ResultScoredNameString {
     1: commondata.Name name
     2: optional commondata.CanonicalName canonicalName
-    3: list<ResultScoredPerDataSource> results
+    3: list<ResultScoredPerDataSource> resultsScoredPerDataSource
 }
 
 struct Response {
     1: i32 total
     2: string suppliedInput
     3: optional string suppliedId
-    4: list<ResultScoredNameString> results
-    5: list<ResultScored> preferredResults
+    4: list<ResultScoredNameString> resultScoredNameStrings
+    5: list<ResultScored> preferredResultsScored
 }
 
 struct Responses {
-    1: list<Response> items
-    2: list<commondata.Context> context
+    1: list<Response> responses
+    2: list<commondata.Context> contexts
 }

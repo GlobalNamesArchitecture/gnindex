@@ -124,7 +124,7 @@ object NameFilter {
   import Common._
 
   val ResultsPerDataSourceOT = ObjectType(
-    "ResultsPerDataSourceItem", fields[Unit, nf.ResultsPerDataSource](
+    "ResultsPerDataSourceItem", fields[Unit, nf.ResultPerDataSource](
         Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
       , Field("results", ListType(ResultItemOT), resolve = _.value.results)
     )
@@ -134,7 +134,8 @@ object NameFilter {
     "ResultNameStrings", fields[Unit, nf.ResultNameStrings](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
-      , Field("resultsPerDataSource", ListType(ResultsPerDataSourceOT), resolve = _.value.results)
+      , Field("resultsPerDataSource", ListType(ResultsPerDataSourceOT),
+              resolve = _.value.resultsPerDataSource)
     )
   )
 
@@ -144,14 +145,14 @@ object NameFilter {
       , Field("perPage", IntType, resolve = _.value.perPage)
       , Field("pagesCount", IntType, resolve = _.value.pagesCount)
       , Field("resultsCount", IntType, resolve = _.value.resultsCount)
-      , Field("names", ListType(ResultNameStringsOT), resolve = _.value.names)
+      , Field("names", ListType(ResultNameStringsOT), resolve = _.value.resultNameStrings)
     )
   )
 
   val NameResponseOT = ObjectType(
     "NameResponse", fields[Unit, nf.Response](
         Field("inputId", IDType, resolve = _.value.uuid.string)
-      , Field("names", ListType(NameStringOT), resolve = _.value.names)
+      , Field("names", ListType(NameStringOT), resolve = _.value.results)
     )
   )
 }
@@ -179,7 +180,8 @@ object NameResolver {
   val ResultsPerDataSourceOT = ObjectType(
     "ResultsPerDataSourceItem", fields[Unit, nr.ResultScoredPerDataSource](
         Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
-      , Field("results", ListType(ResultItemScoredOT), resolve = _.value.results)
+      , Field("results", ListType(ResultItemScoredOT),
+              resolve = _.value.resultsScored)
     )
   )
 
@@ -187,7 +189,8 @@ object NameResolver {
     "ResultScoredNameString", fields[Unit, nr.ResultScoredNameString](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
-      , Field("resultsPerDataSource", ListType(ResultsPerDataSourceOT), resolve = _.value.results)
+      , Field("resultsPerDataSource", ListType(ResultsPerDataSourceOT),
+              resolve = _.value.resultsScoredPerDataSource)
     )
   )
 
@@ -196,15 +199,17 @@ object NameResolver {
         Field("total", IntType, None, resolve = _.value.total)
       , Field("suppliedInput", OptionType(StringType), None, resolve = _.value.suppliedInput)
       , Field("suppliedId", OptionType(StringType), None, resolve = _.value.suppliedId)
-      , Field("results", ListType(ResultScoredNameStringOT), None, resolve = _.value.results)
-      , Field("preferredResults", ListType(ResultItemScoredOT), resolve = _.value.preferredResults)
+      , Field("results", ListType(ResultScoredNameStringOT), None,
+              resolve = _.value.resultScoredNameStrings)
+      , Field("preferredResults", ListType(ResultItemScoredOT),
+              resolve = _.value.preferredResultsScored)
     )
   )
 
   val ResponsesOT = ObjectType(
     "Responses", fields[Unit, nr.Responses](
-        Field("responses", ListType(ResponseOT), resolve = _.value.items)
-      , Field("context", ListType(ContextOT), resolve = _.value.context)
+        Field("responses", ListType(ResponseOT), resolve = _.value.responses)
+      , Field("context", ListType(ContextOT), resolve = _.value.contexts)
     )
   )
 }

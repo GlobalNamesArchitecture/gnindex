@@ -12,7 +12,7 @@ struct Request {
     4: list<i32> dataSourceIds
 }
 
-struct ResultsPerDataSource {
+struct ResultPerDataSource {
     1: commondata.DataSource dataSource
     2: list<commondata.Result> results
 }
@@ -20,7 +20,7 @@ struct ResultsPerDataSource {
 struct ResultNameStrings {
     1: commondata.Name name
     2: optional commondata.CanonicalName canonicalName
-    3: list<ResultsPerDataSource> results
+    3: list<ResultPerDataSource> resultsPerDataSource
 }
 
 struct ResponseNameStrings {
@@ -28,10 +28,10 @@ struct ResponseNameStrings {
     2: i32 perPage
     3: i32 pagesCount
     4: i32 resultsCount
-    5: list<ResultNameStrings> names
+    5: list<ResultNameStrings> resultNameStrings
 }
 
 struct Response {
     1: commondata.Uuid uuid
-    2: list<commondata.Result> names
+    2: list<commondata.Result> results
 }

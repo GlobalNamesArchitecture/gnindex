@@ -38,14 +38,14 @@ object NameResolver {
               for ((ds, vs) <- results.groupBy { r => r.result.dataSource }) yield {
                 nr.ResultScoredPerDataSource(
                   dataSource = ds,
-                  results = vs
+                  resultsScored = vs
                 )
               }
             for (response <- results.headOption) yield {
               nr.ResultScoredNameString(
                 name = response.result.name,
                 canonicalName = response.result.canonicalName,
-                results = rpdss.toVector
+                resultsScoredPerDataSource = rpdss.toVector
                   .sortBy { rpds => rpds.dataSource }(util.DataSource.ordering.reverse)
               )
             }
@@ -56,8 +56,8 @@ object NameResolver {
       nr.Response(total = total,
         suppliedInput = request.nameInput.value,
         suppliedId = request.nameInput.suppliedId,
-        results = rsnss,
-        preferredResults = preferredResults
+        resultScoredNameStrings = rsnss,
+        preferredResultsScored = preferredResults
       )
     }
   }
@@ -96,7 +96,10 @@ class NameResolver(request: nr.Request)
   private val takeCount: Int = request.perPage.min(1000).max(0)
   private val dropCount: Int = (request.page * request.perPage).max(0)
   private val namesParsed: Vector[NameInputParsed] =
-    request.names.toVector.withFilter { ni => ni.value.nonEmpty }.map { ni => NameInputParsed(ni) }
+    request.nameInputs
+           .withFilter { ni => ni.value.nonEmpty }
+           .map { ni => NameInputParsed(ni) }
+           .toVector
   private val namesParsedMap: Map[UUID, NameInputParsed] =
     namesParsed.map { np => np.parsed.preprocessorResult.id -> np }.toMap
 
@@ -244,15 +247,15 @@ class NameResolver(request: nr.Request)
 
   private
   def computeContext(responses: Seq[RequestResponse]): nr.Responses = {
-    val context =
+    val contexts =
       responses.flatMap { response => response.results }
                .groupBy { _.result.dataSource }
                .mapValues { results =>
                  ContextFinder.find(results.flatMap { _.result.classification.path })
                }
                .toSeq.map { case (ds, path) => t.Context(ds, path) }
-    nr.Responses(items = responses.map { _.response },
-                 context = context)
+    nr.Responses(responses = responses.map { _.response },
+                 contexts = contexts)
   }
 
   private
@@ -304,7 +307,7 @@ class NameResolver(request: nr.Request)
     }
 
   def resolveExact(): TwitterFuture[nr.Responses] = {
-    logInfo(s"[Resolution] Resolution started for ${request.names.size} names")
+    logInfo(s"[Resolution] Resolution started for ${request.nameInputs.size} names")
     val resultFuture = queryExactMatchesByUuid().flatMap { names =>
       val (exactMatchesByUuid, exactUnmatchesByUuid) =
         names.partition { resp => resp.results.nonEmpty }
