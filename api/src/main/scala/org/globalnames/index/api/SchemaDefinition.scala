@@ -176,12 +176,27 @@ object NameResolver {
     )
   )
 
+  val ResultsPerDataSourceOT = ObjectType(
+    "ResultsPerDataSourceItem", fields[Unit, nr.ResultScoredPerDataSource](
+        Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
+      , Field("results", ListType(ResultItemScoredOT), resolve = _.value.results)
+    )
+  )
+
+  val ResultScoredNameStringOT = ObjectType(
+    "ResultScoredNameString", fields[Unit, nr.ResultScoredNameString](
+        Field("name", NameOT, resolve = _.value.name)
+      , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
+      , Field("resultsPerDataSource", ListType(ResultsPerDataSourceOT), resolve = _.value.results)
+    )
+  )
+
   val ResponseOT = ObjectType(
     "Response", fields[Unit, nr.Response](
         Field("total", IntType, None, resolve = _.value.total)
       , Field("suppliedInput", OptionType(StringType), None, resolve = _.value.suppliedInput)
       , Field("suppliedId", OptionType(StringType), None, resolve = _.value.suppliedId)
-      , Field("results", ListType(ResultItemScoredOT), None, resolve = _.value.results)
+      , Field("results", ListType(ResultScoredNameStringOT), None, resolve = _.value.results)
       , Field("preferredResults", ListType(ResultItemScoredOT), resolve = _.value.preferredResults)
     )
   )

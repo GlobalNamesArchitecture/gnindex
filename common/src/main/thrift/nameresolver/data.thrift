@@ -27,11 +27,22 @@ struct ResultScored {
     2: commondata.Score score
 }
 
+struct ResultScoredPerDataSource {
+    1: commondata.DataSource dataSource
+    2: list<ResultScored> results
+}
+
+struct ResultScoredNameString {
+    1: commondata.Name name
+    2: optional commondata.CanonicalName canonicalName
+    3: list<ResultScoredPerDataSource> results
+}
+
 struct Response {
     1: i32 total
     2: string suppliedInput
     3: optional string suppliedId
-    4: list<ResultScored> results
+    4: list<ResultScoredNameString> results
     5: list<ResultScored> preferredResults
 }
 

@@ -11,10 +11,8 @@ import com.twitter.util.{Future => TwitterFuture}
 import MatchTypeScores._
 import index.dao.{DBResultObj, Tables => T}
 import index.dao.Projections._
-import thrift.matcher.{Service => MatcherService}
-import thrift._
-import thrift.nameresolver._
-import thrift.{MatchKind => MK}
+import index.{thrift => t}
+import thrift.{nameresolver => nr, matcher => m, MatchKind => MK}
 import util.UuidEnhanced._
 import slick.jdbc.PostgresProfile.api._
 
@@ -26,16 +24,52 @@ import scalaz.Lens
 
 object NameResolver {
   type NameStringsQuery = Query[T.NameStrings, T.NameStringsRow, Seq]
-  final case class RequestResponse(request: NameInputParsed, response: Response)
 
-  private val resultScoredToMatchKindLens: (ResultScored) => ResultScored = {
-    val resultScoredToResult = Lens.lensu[ResultScored, Result](
+  final case class RequestResponse(total: Int,
+                                   request: NameInputParsed,
+                                   results: Seq[nr.ResultScored],
+                                   preferredResults: Seq[nr.ResultScored]) {
+    val response: nr.Response = {
+      val rsnss =
+        results
+          .groupBy { r => r.result.name.uuid }
+            .values.flatMap { results =>
+            val rpdss =
+              for ((ds, vs) <- results.groupBy { r => r.result.dataSource }) yield {
+                nr.ResultScoredPerDataSource(
+                  dataSource = ds,
+                  results = vs
+                )
+              }
+            for (response <- results.headOption) yield {
+              nr.ResultScoredNameString(
+                name = response.result.name,
+                canonicalName = response.result.canonicalName,
+                results = rpdss.toVector
+                  .sortBy { rpds => rpds.dataSource }(util.DataSource.ordering.reverse)
+              )
+            }
+          }
+          .toVector
+          .sortBy { r => r.name.value }
+
+      nr.Response(total = total,
+        suppliedInput = request.nameInput.value,
+        suppliedId = request.nameInput.suppliedId,
+        results = rsnss,
+        preferredResults = preferredResults
+      )
+    }
+  }
+
+  private val resultScoredToMatchKindLens: nr.ResultScored => nr.ResultScored = {
+    val resultScoredToResult = Lens.lensu[nr.ResultScored, thrift.Result](
       (a, value) => a.copy(result = value), _.result
     )
-    val resultToMatchType = Lens.lensu[Result, MatchType](
+    val resultToMatchType = Lens.lensu[t.Result, t.MatchType](
       (a, value) => a.copy(matchType = value), _.matchType
     )
-    val matchTypeToKind = Lens.lensu[MatchType, MatchKind](
+    val matchTypeToKind = Lens.lensu[t.MatchType, t.MatchKind](
       (a, value) => a.copy(kind = value), _.kind
     )
     (resultScoredToResult >=> resultToMatchType >=> matchTypeToKind) =>= {
@@ -46,9 +80,9 @@ object NameResolver {
   }
 }
 
-class NameResolver(request: Request)
+class NameResolver(request: nr.Request)
                   (implicit database: Database,
-                            matcherClient: MatcherService.FutureIface)
+                            matcherClient: m.Service.FutureIface)
   extends Logging {
 
   import NameResolver._
@@ -140,7 +174,7 @@ class NameResolver(request: Request)
             }
           val dbResult = DBResultObj.create(r, createMatchType(matchKind, editDistance = 0))
           val score = ResultScores(nameParsed, dbResult).compute
-          ResultScored(dbResult, score)
+          nr.ResultScored(dbResult, score)
         }
 
         val responseResults = databaseMatches.map { r => composeResult(r) }
@@ -148,14 +182,10 @@ class NameResolver(request: Request)
           .filter { r => request.preferredDataSourceIds.contains(r.ds.id) }
           .map { r => composeResult(r) }
 
-        val response = Response(
-          total = responseResults.size,
-          results = responseResults,
-          preferredResults = preferredResponseResults,
-          suppliedId = nameParsed.nameInput.suppliedId,
-          suppliedInput = nameParsed.nameInput.value
-        )
-        RequestResponse(nameParsed, response = response)
+        RequestResponse(total = responseResults.size,
+                        request = nameParsed,
+                        results = responseResults,
+                        preferredResults = preferredResponseResults)
       }
     }
     reqResp
@@ -188,7 +218,7 @@ class NameResolver(request: Request)
                 val dbResult =
                   DBResultObj.create(r, createMatchType(result.matchKind, result.distance))
                 val score = ResultScores(nameInputParsed, dbResult).compute
-                ResultScored(dbResult, score)
+                nr.ResultScored(dbResult, score)
               }
             }
             val preferredResults = fuzzyMatch.results.flatMap { result =>
@@ -199,17 +229,13 @@ class NameResolver(request: Request)
                   val dbResult =
                     DBResultObj.create(r, createMatchType(result.matchKind, result.distance))
                   val score = ResultScores(nameInputParsed, dbResult).compute
-                  ResultScored(dbResult, score)
+                  nr.ResultScored(dbResult, score)
                 }
               }
-            val response = Response(
-              total = fuzzyMatch.results.size,
-              results = results,
-              preferredResults = preferredResults,
-              suppliedId = nameInputParsed.nameInput.suppliedId,
-              suppliedInput = nameInputParsed.nameInput.value
-            )
-            RequestResponse(request = nameInputParsed, response = response)
+            RequestResponse(total = fuzzyMatch.results.size,
+                            request = nameInputParsed,
+                            results = results,
+                            preferredResults = preferredResults)
           }
         }
       }
@@ -217,19 +243,20 @@ class NameResolver(request: Request)
   }
 
   private
-  def computeContext(responses: Seq[Response]): Responses = {
+  def computeContext(responses: Seq[RequestResponse]): nr.Responses = {
     val context =
       responses.flatMap { response => response.results }
                .groupBy { _.result.dataSource }
                .mapValues { results =>
                  ContextFinder.find(results.flatMap { _.result.classification.path })
                }
-               .toSeq.map { case (ds, path) => Context(ds, path) }
-    Responses(items = responses, context = context)
+               .toSeq.map { case (ds, path) => t.Context(ds, path) }
+    nr.Responses(items = responses.map { _.response },
+                 context = context)
   }
 
   private
-  def transformMatchType(responses: Seq[Response]): Seq[Response] = {
+  def transformMatchType(responses: Seq[RequestResponse]): Seq[RequestResponse] = {
     if (request.advancedResolution) {
       responses
     } else {
@@ -239,22 +266,23 @@ class NameResolver(request: Request)
     }
   }
 
-  private implicit val resultScoredOrdering: Ordering[ResultScored] = new Ordering[ResultScored] {
-    override def compare(x: ResultScored, y: ResultScored): Int = {
-      if (x.result.dataSource.quality == y.result.dataSource.quality) {
-        if (x.score.value == y.score.value) {
-          Ordering.Int.compare(x.result.dataSource.recordCount, y.result.dataSource.recordCount)
+  private implicit val resultScoredOrdering: Ordering[nr.ResultScored] =
+    new Ordering[nr.ResultScored] {
+      override def compare(x: nr.ResultScored, y: nr.ResultScored): Int = {
+        if (x.result.dataSource.quality == y.result.dataSource.quality) {
+          if (x.score.value == y.score.value) {
+            Ordering.Int.compare(x.result.dataSource.recordCount, y.result.dataSource.recordCount)
+          } else {
+            Ordering.Option[Double].compare(y.score.value, x.score.value)
+          }
         } else {
-          Ordering.Option[Double].compare(y.score.value, x.score.value)
+          Ordering.Int.compare(x.result.dataSource.quality.value, y.result.dataSource.quality.value)
         }
-      } else {
-        Ordering.Int.compare(x.result.dataSource.quality.value, y.result.dataSource.quality.value)
       }
     }
-  }
 
   private
-  def rearrangeResults(responses: Seq[Response]): Seq[Response] =
+  def rearrangeResults(responses: Seq[RequestResponse]): Seq[RequestResponse] =
     responses.map { response =>
       val results =
         request.bestMatchOnly ?
@@ -275,11 +303,11 @@ class NameResolver(request: Request)
                     preferredResults = preferredResults)
     }
 
-  def resolveExact(): TwitterFuture[Responses] = {
+  def resolveExact(): TwitterFuture[nr.Responses] = {
     logInfo(s"[Resolution] Resolution started for ${request.names.size} names")
     val resultFuture = queryExactMatchesByUuid().flatMap { names =>
       val (exactMatchesByUuid, exactUnmatchesByUuid) =
-        names.partition { resp => resp.response.results.nonEmpty }
+        names.partition { resp => resp.results.nonEmpty }
       val (unmatched, unmatchedNotParsed) = exactUnmatchesByUuid.partition { reqResp =>
         reqResp.request.parsed.canonizedUuid().isDefined
       }
@@ -292,10 +320,9 @@ class NameResolver(request: Request)
       fuzzyMatchesFut.map { fuzzyMatches =>
         logInfo(s"[Resolution] Fuzzy matches count: ${fuzzyMatches.size}")
         val reqResps = exactMatchesByUuid ++ fuzzyMatches ++ unmatchedNotParsed
-        val responses = reqResps.map { _.response }
-        (transformMatchType _ andThen rearrangeResults andThen computeContext)(responses)
+        (transformMatchType _ andThen rearrangeResults andThen computeContext)(reqResps)
       }
     }
-    resultFuture.as[TwitterFuture[Responses]]
+    resultFuture.as[TwitterFuture[nr.Responses]]
   }
 }

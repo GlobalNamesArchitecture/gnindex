@@ -221,23 +221,6 @@ class NameFilter @Inject()(database: Database) extends Logging {
     database.run(queryJoined.result)
   }
 
-  private val dataSourceOrdering: Ordering[DataSource] = new Ordering[DataSource] {
-    private val colDsId = 1
-    private val gbifDsId = 11
-
-    override def compare(x: DataSource, y: DataSource): Int = {
-      (x.id, y.id) match {
-        case (`colDsId`, `colDsId`) => 0
-        case (`gbifDsId`, `gbifDsId`) => 0
-        case (`colDsId`, _) => 1
-        case (_, `colDsId`) => -1
-        case (`gbifDsId`, _) => 1
-        case (_, `gbifDsId`) => -1
-        case (_, _) => Ordering.String.compare(y.title.toLowerCase, x.title.toLowerCase)
-      }
-    }
-  }
-
   def resolveString(request: Request): TwitterFuture[ResponseNameStrings] = {
     val searches = QueryParser.parse(request.searchTerm) match {
       case Success(x) => x
@@ -334,7 +317,8 @@ class NameFilter @Inject()(database: Database) extends Logging {
           ResultNameStrings(
             name = response.name,
             canonicalName = response.canonicalName,
-            results = rpdss.toVector.sortBy { rpds => rpds.dataSource }(dataSourceOrdering.reverse)
+            results =
+              rpdss.toVector.sortBy { rpds => rpds.dataSource }(util.DataSource.ordering.reverse)
           )
         }
       }
