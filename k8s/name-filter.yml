@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: gnnamefilter
-          image: gnames/gnindex-debug:gnnamefilter-0.1.0-20171213_1311_CST-SNAPSHOT
+          image: gnames/gnindex-debug:gnnamefilter-0.1.0-20180425_1550_CDT-SNAPSHOT
           ports:
             - containerPort: 9999
               name: thrift-api
