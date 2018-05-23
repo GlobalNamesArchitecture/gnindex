@@ -142,16 +142,24 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
               .map { candidate =>
                 val matchKind =
                   if (fuzzyMatch.canonicalNameSplit.isOriginalCanonical) {
-                    if (candidate.distance == 0) MK.ExactCanonicalNameMatchByUUID
-                    else MK.FuzzyCanonicalMatch
+                    if (candidate.verbatimEditDistance.getOrElse(0) == 0 &&
+                        candidate.stemEditDistance.getOrElse(0) == 0) {
+                      MK.ExactCanonicalNameMatchByUUID
+                    } else {
+                      MK.FuzzyCanonicalMatch
+                    }
                   } else {
-                    if (candidate.distance == 0) MK.ExactPartialMatch
-                    else MK.FuzzyPartialMatch
+                    if (candidate.verbatimEditDistance.getOrElse(0) == 0 &&
+                        candidate.stemEditDistance.getOrElse(0) == 0) {
+                      MK.ExactPartialMatch
+                    } else {
+                      MK.FuzzyPartialMatch
+                    }
                   }
                 Result(
                   nameMatched = Name(uuid = UuidGenerator.generate(candidate.term),
                                      value = candidate.term),
-                  distance = candidate.distance,
+                  distance = candidate.verbatimEditDistance.getOrElse(0),
                   matchKind = matchKind
                 )
               }
