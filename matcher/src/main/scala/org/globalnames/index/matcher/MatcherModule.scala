@@ -38,16 +38,34 @@ object MatcherModule extends TwitterModule with Logging {
   @Provides
   def provideCanonicalNames: CanonicalNames = {
     def create(): CanonicalNames = {
-      val nameToDatasourceIdsMap =
-        Source.fromFile(namesWithDatasourcesFileKey()).getLines.zipWithIndex
-          .foldLeft(Map.empty[String, Set[Int]].withDefaultValue(Set.empty)) {
-            case (mp, (line, idx)) =>
-              if (idx % 100000 == 0) {
-                logger.info(s"Names with datasources loaded in total: $idx")
-              }
-              val Array(canonicalName, dataSourceId) = line.split('\t')
-              mp + (canonicalName -> (mp(canonicalName) + dataSourceId.toInt))
+      logger.info("`provideCanonicalNames` launched")
+      val namesWithDatasourcesLines =
+        Source.fromFile(namesWithDatasourcesFileKey()).getLines.toVector
+      logger.info("file loaded")
+      var counter = 0
+      var nameToDatasourceIdsMap: Map[String, Set[Int]] = Map.empty[String, Set[Int]]
+      var canonicalNameCurrent = ""
+      var canonicalNameCurrentDataSourceIds = Set.empty[Int]
+      for (line <- namesWithDatasourcesLines) {
+        if (counter > 0 && counter % 100000 == 0) {
+          logger.info(s"Names with datasources loaded: " +
+            s"$counter of ${namesWithDatasourcesLines.size}")
+        }
+        counter += 1
+        val Array(canonicalName, dataSourceId) = line.split("\t")
+        if (canonicalName != canonicalNameCurrent) {
+          if (canonicalNameCurrent != "") {
+            nameToDatasourceIdsMap += canonicalNameCurrent -> canonicalNameCurrentDataSourceIds
           }
+          canonicalNameCurrent = canonicalName
+          canonicalNameCurrentDataSourceIds = Set.empty[Int]
+        }
+
+        canonicalNameCurrentDataSourceIds += dataSourceId.toInt
+      }
+      logger.info(s"""FINISHED.
+                  |Total keys: ${nameToDatasourceIdsMap.size}
+                  |Total values: ${nameToDatasourceIdsMap.values.map { _.size }.sum}""".stripMargin)
       CanonicalNames(nameToDatasourceIdsMap)
     }
 
