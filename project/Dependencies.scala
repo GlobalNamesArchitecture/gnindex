@@ -20,8 +20,8 @@ object Dependencies {
     val parboiled2 = "2.1.4"
     val jodaMapper = "2.3.0"
     val postgres = "42.1.1.jre7"
-    val gnparser = "0.4.3"
-    val gnmatcher = "0.1.2-20170718_1900-SNAPSHOT"
+    val gnparser = "0.4.4"
+    val gnmatcher = "0.1.3-20180616_2132-SNAPSHOT"
     val gatling = "2.3.0"
     val twitterBijection = "0.9.5"
   }
@@ -61,7 +61,7 @@ object Dependencies {
 
   val finatraDeps = Seq(library.finatraThrift, library.logback)
   val finatraTestDeps = Seq(
-    library.junit,  library.mockito, library.guice,
+    library.junit, library.mockito, library.guice,
     library.twitterInjApp, library.twitterInjCor, library.twitterInjMod, library.twitterInjSer,
     library.finatraThrift % Test classifier "tests",
     library.twitterInjApp classifier "tests", library.twitterInjCor classifier "tests",
@@ -71,7 +71,7 @@ object Dependencies {
 
   val commonDependencies: Seq[ModuleID] = testDeps ++ Seq(
     library.scalaz,
-    library.gnparser, library.gnmatcher,
+    library.gnparser,
     library.finatraThrift,
     library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
   )
@@ -88,7 +88,9 @@ object Dependencies {
     library.twitterBijectionCore, library.twitterBijectionUtil
   )
 
-  val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps
+  val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
+    library.gnmatcher
+  )
 
   val apiDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
     library.finatraHttp, library.finatraJackson,
