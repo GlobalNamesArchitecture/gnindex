@@ -24,10 +24,10 @@ ARG ASSEMBLY_PATH="https://github.com/GlobalNamesArchitecture/gnindex/releases/d
 ADD ${ASSEMBLY_PATH} /app/
 
 ARG CANONICAL_NAMES_FILE_PATH="http://opendata.globalnames.org/staging/canonical_names.txt"
-ADD ${CANONICAL_NAMES_FILE_PATH} /app/
+ADD ${CANONICAL_NAMES_FILE_PATH} /app/canonical_names.txt
 
 ARG CANONICAL_NAMES_DATASOURCE_FILE_PATH="http://opendata.globalnames.org/staging/canonical_names_with_datasource.txt"
-ADD ${CANONICAL_NAMES_DATASOURCE_FILE_PATH} /app/
+ADD ${CANONICAL_NAMES_DATASOURCE_FILE_PATH} /app/canonical_names_with_datasource.txt
 
 CMD bash -c "java -cp '.' -server -Xms16g -Xmx32g -XX:PermSize=512m \
                   -XX:MaxPermSize=512m -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled \
