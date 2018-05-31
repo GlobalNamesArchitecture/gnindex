@@ -22,8 +22,10 @@ final case class CanonicalNames(private val namesRaw: Map[String, Set[Int]]) {
 }
 
 @Singleton
-class Matcher @Inject()(matcherLib: matcherlib.Matcher,
-                        canonicalNames: CanonicalNames) extends Logging {
+class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
+
+  private val matcherLib: matcherlib.Matcher = matcherlib.Matcher(canonicalNames.names)
+
   private val FuzzyMatchLimit = 5
 
   private[Matcher] case class CanonicalNameSplit(name: snp.Result,
@@ -106,7 +108,7 @@ class Matcher @Inject()(matcherLib: matcherlib.Matcher,
       logger.info(s"Matcher library call for ${possibleFuzzyCanonicalMatches.size} records")
       val possibleFuzzyCanonicalsResponses =
         for ((canNmSplit, _) <- possibleFuzzyCanonicalMatches) yield {
-          FuzzyMatch(canNmSplit, matcherLib.findMatches(canNmSplit.namePartialStr))
+          FuzzyMatch(canNmSplit, matcherLib.findMatches(canNmSplit.namePartialStr, dataSourceIds))
         }
       logger.info(s"matcher library call completed for " +
                   s"${possibleFuzzyCanonicalMatches.size} records")

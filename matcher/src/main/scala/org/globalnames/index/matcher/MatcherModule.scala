@@ -27,15 +27,6 @@ object MatcherModule extends TwitterModule with Logging {
 
   @Singleton
   @Provides
-  def prodiveMatcherLib: matcherlib.Matcher = {
-    val names = namesFileKey().exists ?
-      Source.fromFile(namesFileKey()).getLines.toVector |
-      { logger.error(s"${namesFileKey()} file doesn't exist"); Vector.empty[String] }
-    matcherlib.Matcher(names)
-  }
-
-  @Singleton
-  @Provides
   def provideCanonicalNames: CanonicalNames = {
     def create(): CanonicalNames = {
       logger.info("`provideCanonicalNames` launched")
