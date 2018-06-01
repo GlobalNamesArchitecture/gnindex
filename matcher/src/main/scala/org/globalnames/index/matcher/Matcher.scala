@@ -26,8 +26,6 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
 
   private val matcherLib: matcherlib.Matcher = matcherlib.Matcher(canonicalNames.names)
 
-  private val FuzzyMatchLimit = 5
-
   private[Matcher] case class CanonicalNameSplit(name: snp.Result,
                                                  namePartialStr: String,
                                                  isOriginalCanonical: Boolean) {
@@ -135,40 +133,36 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
 
       val responsesNonEmpty =
         for (fuzzyMatch <- oonucrNonEmpty) yield {
-          if (fuzzyMatch.candidates.size > FuzzyMatchLimit) {
-            Response(inputUuid = fuzzyMatch.canonicalNameSplit.nameProvidedUuid, results = Seq())
-          } else {
-            val results = fuzzyMatch.candidates
-              .filter { candidate =>
-                dataSourceIds.isEmpty ||
-                  canonicalNames.names(candidate.term).intersect(dataSourceIds).nonEmpty
-              }
-              .map { candidate =>
-                val matchKind =
-                  if (fuzzyMatch.canonicalNameSplit.isOriginalCanonical) {
-                    if (candidate.verbatimEditDistance.getOrElse(0) == 0 &&
-                        candidate.stemEditDistance.getOrElse(0) == 0) {
-                      MK.ExactCanonicalNameMatchByUUID
-                    } else {
-                      MK.FuzzyCanonicalMatch
-                    }
+          val results = fuzzyMatch.candidates
+            .filter { candidate =>
+              dataSourceIds.isEmpty ||
+                canonicalNames.names(candidate.term).intersect(dataSourceIds).nonEmpty
+            }
+            .map { candidate =>
+              val matchKind =
+                if (fuzzyMatch.canonicalNameSplit.isOriginalCanonical) {
+                  if (candidate.verbatimEditDistance.getOrElse(0) == 0 &&
+                      candidate.stemEditDistance.getOrElse(0) == 0) {
+                    MK.ExactCanonicalNameMatchByUUID
                   } else {
-                    if (candidate.verbatimEditDistance.getOrElse(0) == 0 &&
-                        candidate.stemEditDistance.getOrElse(0) == 0) {
-                      MK.ExactPartialMatch
-                    } else {
-                      MK.FuzzyPartialMatch
-                    }
+                    MK.FuzzyCanonicalMatch
                   }
-                Result(
-                  nameMatched = Name(uuid = UuidGenerator.generate(candidate.term),
-                                     value = candidate.term),
-                  distance = candidate.verbatimEditDistance.getOrElse(0),
-                  matchKind = matchKind
-                )
-              }
-            Response(inputUuid = fuzzyMatch.canonicalNameSplit.nameProvidedUuid, results = results)
-          }
+                } else {
+                  if (candidate.verbatimEditDistance.getOrElse(0) == 0 &&
+                      candidate.stemEditDistance.getOrElse(0) == 0) {
+                    MK.ExactPartialMatch
+                  } else {
+                    MK.FuzzyPartialMatch
+                  }
+                }
+              Result(
+                nameMatched = Name(uuid = UuidGenerator.generate(candidate.term),
+                                   value = candidate.term),
+                distance = candidate.verbatimEditDistance.getOrElse(0),
+                matchKind = matchKind
+              )
+            }
+          Response(inputUuid = fuzzyMatch.canonicalNameSplit.nameProvidedUuid, results = results)
         }
 
       logger.info(s"Matcher service completed for ${canonicalNameSplits.size} records")
