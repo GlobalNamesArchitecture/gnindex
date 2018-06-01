@@ -46,8 +46,8 @@ object Settings {
     ),
     javacOptions ++= Seq(
       "-encoding", "UTF-8",
-      "-source", "1.6",
-      "-target", "1.6",
+      "-source", "1.8",
+      "-target", "1.8",
       "-Xlint:unchecked",
       "-Xlint:deprecation"),
     scalacOptions ++= List(
@@ -57,7 +57,7 @@ object Settings {
       "-deprecation",
       "-Xlint",
       "-language:_",
-      "-target:jvm-1.6",
+      "-target:jvm-1.8",
       "-Xlog-reflective-calls"),
 
     scalacOptions in Test ++= Seq("-Yrangepos"),
