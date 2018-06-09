@@ -5,8 +5,7 @@ include "commondata.thrift"
 
 struct Result {
     1: commondata.Name nameMatched
-    2: i32 distance
-    3: commondata.MatchKind matchKind
+    2: commondata.MatchKind matchKind
 }
 
 struct Response {

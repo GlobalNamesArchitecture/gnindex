@@ -18,24 +18,23 @@ struct CanonicalName {
     3: string valueRanked
 }
 
-enum MatchKind {
-    UUIDLookup,
-    ExactNameMatchByUUID,
-    ExactNameMatchByString,
+struct UuidLookup {
+}
 
-    // NameResolver: advanced search
-    ExactCanonicalNameMatchByUUID,
-    ExactCanonicalNameMatchByString,
-    FuzzyCanonicalMatch,
-    FuzzyPartialMatch,
-    ExactMatchPartialByGenus,
-    ExactPartialMatch,
+struct ExactMatch {
+}
 
-    // NameResolver: simplified search
-    Match,
-    FuzzyMatch,
+struct CanonicalMatch {
+    1: bool partial = false
+    2: i32 verbatimEditDistance = 0
+    3: i32 stemEditDistance = 0
+    4: bool byAbbreviation = 0
+}
 
-    Unknown
+union MatchKind {
+    1: UuidLookup uuidLookup
+    2: ExactMatch exactMatch
+    3: CanonicalMatch canonicalMatch
 }
 
 enum DataSourceQuality {
@@ -46,8 +45,7 @@ enum DataSourceQuality {
 
 struct MatchType {
     1: MatchKind kind
-    2: i32 editDistance
-    3: i32 score
+    2: i32 score
 }
 
 struct AuthorScore {
