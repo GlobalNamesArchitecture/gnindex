@@ -24,6 +24,9 @@ struct UuidLookup {
 struct ExactMatch {
 }
 
+struct Unknown {
+}
+
 struct CanonicalMatch {
     1: bool partial = false
     2: i32 verbatimEditDistance = 0
@@ -35,6 +38,7 @@ union MatchKind {
     1: UuidLookup uuidLookup
     2: ExactMatch exactMatch
     3: CanonicalMatch canonicalMatch
+    4: Unknown unknown
 }
 
 enum DataSourceQuality {

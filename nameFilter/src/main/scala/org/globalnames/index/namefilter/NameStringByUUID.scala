@@ -39,11 +39,10 @@ class NameStringByUUID @Inject()(database: Database) {
         DBResultObj.project(ns, nsi, ds, nsAccepted, nsiAccepted)
       }
 
-    val resultFut = database.run(queryJoin1.result).map { (queryResult: Seq[ResultDB]) =>
+    val resultFut = database.run(queryJoin1.result).map { queryResult: Seq[ResultDB] =>
       queryResult.groupBy { dbR => dbR.ns.id }
                  .map { case (id, ress) =>
-                   val matchType =
-                     MatchType(MatchKind.ExactNameMatchByUUID, editDistance = 0, score = 0)
+                   val matchType = MatchType(MatchKind.ExactMatch(thrift.ExactMatch()), score = 0)
                    val results = ress.map { res => DBResultObj.create(res, matchType) }
                    Response(id, results)
                  }.toSeq

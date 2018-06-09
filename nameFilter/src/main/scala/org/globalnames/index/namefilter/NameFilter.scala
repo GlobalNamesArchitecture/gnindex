@@ -293,15 +293,11 @@ class NameFilter @Inject()(database: Database) extends Logging {
         }
       }
     val nameStrings = nameStringsBuilder.qry
-    val matchKind = MatchKind.Unknown
+    val matchKind = MatchKind.Unknown(thrift.Unknown())
 
     val resultFuture = queryComplete(nameStrings, request.dataSourceIds).map { dbResults =>
       val results = dbResults.map { dbResult =>
-        val matchType = MatchType(
-          kind = matchKind,
-          editDistance = 0,
-          score = 0
-        )
+        val matchType = MatchType(kind = matchKind, score = 0)
         DBResultObj.create(dbResult, matchType)
       }
       .groupBy { r => r.name.uuid }
