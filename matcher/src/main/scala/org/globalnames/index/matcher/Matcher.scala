@@ -69,7 +69,7 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
 
       val noFuzzyMatches =
         for (goms <- genusOnlyMatchesSplits) yield {
-          val matchKind = MK.CanonicalMatch(thrift.CanonicalMatch())
+          val matchKind = MK.CanonicalMatch(thrift.CanonicalMatch(partial = true))
           val dsIds = canonicalNames.names(goms.namePartialStr)
           val results =
             (dataSourceIds.isEmpty ? dsIds | dataSourceIds.intersect(dsIds)).nonEmpty.option {
@@ -88,11 +88,8 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
       val partialByGenusFuzzyResponses =
         for ((canonicalNameSplit, _) <- exactPartialCanonicalMatches) yield {
           val matchKind =
-            if (canonicalNameSplit.isOriginalCanonical) {
-              MK.CanonicalMatch(thrift.CanonicalMatch())
-            } else {
-              MK.CanonicalMatch(thrift.CanonicalMatch(partial = true))
-            }
+            MK.CanonicalMatch(thrift.CanonicalMatch(
+              partial = !canonicalNameSplit.isOriginalCanonical))
 
           val result = Result(nameMatched = canonicalNameSplit.namePartial,
                               matchKind = matchKind)
@@ -136,16 +133,10 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
             }
             .map { candidate =>
               val matchKind =
-                if (fuzzyMatch.canonicalNameSplit.isOriginalCanonical) {
-                  MK.CanonicalMatch(thrift.CanonicalMatch(
-                    stemEditDistance = candidate.stemEditDistance.getOrElse(0),
-                    verbatimEditDistance = candidate.verbatimEditDistance.getOrElse(0)))
-                } else {
-                  MK.CanonicalMatch(thrift.CanonicalMatch(
-                    partial = true,
-                    stemEditDistance = candidate.stemEditDistance.getOrElse(0),
-                    verbatimEditDistance = candidate.verbatimEditDistance.getOrElse(0)))
-                }
+                MK.CanonicalMatch(thrift.CanonicalMatch(
+                  partial = !fuzzyMatch.canonicalNameSplit.isOriginalCanonical,
+                  stemEditDistance = candidate.stemEditDistance.getOrElse(0),
+                  verbatimEditDistance = candidate.verbatimEditDistance.getOrElse(0)))
               Result(
                 nameMatched = Name(uuid = UuidGenerator.generate(candidate.term),
                                    value = candidate.term),
