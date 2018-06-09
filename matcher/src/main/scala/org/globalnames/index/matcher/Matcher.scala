@@ -6,14 +6,11 @@ import com.twitter.inject.Logging
 import org.globalnames.{matcher => matcherlib}
 import org.globalnames.matcher.Candidate
 import thrift.matcher.{Response, Result}
-import thrift.Name
+import thrift.{Name, Uuid, MatchKind => MK}
 import javax.inject.{Inject, Singleton}
-
 import parser.{ScientificNameParser => snp}
-import index.thrift.{Uuid, MatchKind => MK}
 import org.apache.commons.lang3.StringUtils
 import util.UuidEnhanced.javaUuid2thriftUuid
-
 import scalaz.syntax.std.boolean._
 
 @Singleton
@@ -72,14 +69,11 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
 
       val noFuzzyMatches =
         for (goms <- genusOnlyMatchesSplits) yield {
-          val matchKind =
-            if (goms.isOriginalCanonical) MK.ExactCanonicalNameMatchByUUID
-            else MK.ExactMatchPartialByGenus
-
+          val matchKind = MK.CanonicalMatch(thrift.CanonicalMatch())
           val dsIds = canonicalNames.names(goms.namePartialStr)
           val results =
             (dataSourceIds.isEmpty ? dsIds | dataSourceIds.intersect(dsIds)).nonEmpty.option {
-              Result(nameMatched = goms.namePartial, distance = 0, matchKind = matchKind)
+              Result(nameMatched = goms.namePartial, matchKind = matchKind)
             }.toSeq
           Response(inputUuid = goms.nameProvidedUuid, results = results)
         }
@@ -94,11 +88,13 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
       val partialByGenusFuzzyResponses =
         for ((canonicalNameSplit, _) <- exactPartialCanonicalMatches) yield {
           val matchKind =
-            if (canonicalNameSplit.isOriginalCanonical) MK.ExactCanonicalNameMatchByUUID
-            else MK.ExactPartialMatch
+            if (canonicalNameSplit.isOriginalCanonical) {
+              MK.CanonicalMatch(thrift.CanonicalMatch())
+            } else {
+              MK.CanonicalMatch(thrift.CanonicalMatch(partial = true))
+            }
 
           val result = Result(nameMatched = canonicalNameSplit.namePartial,
-                              distance = 0,
                               matchKind = matchKind)
           Response(inputUuid = canonicalNameSplit.nameProvidedUuid, results = Seq(result))
         }
@@ -141,24 +137,18 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
             .map { candidate =>
               val matchKind =
                 if (fuzzyMatch.canonicalNameSplit.isOriginalCanonical) {
-                  if (candidate.verbatimEditDistance.getOrElse(0) == 0 &&
-                      candidate.stemEditDistance.getOrElse(0) == 0) {
-                    MK.ExactCanonicalNameMatchByUUID
-                  } else {
-                    MK.FuzzyCanonicalMatch
-                  }
+                  MK.CanonicalMatch(thrift.CanonicalMatch(
+                    stemEditDistance = candidate.stemEditDistance.getOrElse(0),
+                    verbatimEditDistance = candidate.verbatimEditDistance.getOrElse(0)))
                 } else {
-                  if (candidate.verbatimEditDistance.getOrElse(0) == 0 &&
-                      candidate.stemEditDistance.getOrElse(0) == 0) {
-                    MK.ExactPartialMatch
-                  } else {
-                    MK.FuzzyPartialMatch
-                  }
+                  MK.CanonicalMatch(thrift.CanonicalMatch(
+                    partial = true,
+                    stemEditDistance = candidate.stemEditDistance.getOrElse(0),
+                    verbatimEditDistance = candidate.verbatimEditDistance.getOrElse(0)))
                 }
               Result(
                 nameMatched = Name(uuid = UuidGenerator.generate(candidate.term),
                                    value = candidate.term),
-                distance = candidate.verbatimEditDistance.getOrElse(0),
                 matchKind = matchKind
               )
             }
@@ -196,7 +186,7 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
       for (response <- responses) yield {
         response.copy(results = response.results.filter { res =>
           res.matchKind match {
-            case MK.FuzzyCanonicalMatch | MK.ExactCanonicalNameMatchByUUID => true
+            case MK.CanonicalMatch(cm) => cm.stemEditDistance > 0 || cm.verbatimEditDistance > 0
             case _ => false
           }
         })
