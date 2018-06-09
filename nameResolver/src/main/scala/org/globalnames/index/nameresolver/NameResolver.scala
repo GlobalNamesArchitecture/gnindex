@@ -61,23 +61,6 @@ object NameResolver {
       )
     }
   }
-
-  private val resultScoredToMatchKindLens: nr.ResultScored => nr.ResultScored = {
-    val resultScoredToResult = Lens.lensu[nr.ResultScored, thrift.Result](
-      (a, value) => a.copy(result = value), _.result
-    )
-    val resultToMatchType = Lens.lensu[t.Result, t.MatchType](
-      (a, value) => a.copy(matchType = value), _.matchType
-    )
-    val matchTypeToKind = Lens.lensu[t.MatchType, t.MatchKind](
-      (a, value) => a.copy(kind = value), _.kind
-    )
-    (resultScoredToResult >=> resultToMatchType >=> matchTypeToKind) =>= {
-      case MK.ExactNameMatchByUUID | MK.ExactCanonicalNameMatchByUUID => MK.Match
-      case MK.FuzzyCanonicalMatch => MK.FuzzyMatch
-      case _ => MK.Unknown
-    }
-  }
 }
 
 class NameResolver(request: nr.Request)
@@ -165,17 +148,17 @@ class NameResolver(request: nr.Request)
         }
 
         def composeResult(r: ResultDB) = {
-          val matchKind =
+          val matchKind: MK =
             if (r.ns.id == nameParsed.parsed.preprocessorResult.id) {
-              MK.ExactNameMatchByUUID
+              MK.ExactMatch(thrift.ExactMatch())
             } else if (
               (for (nsCan <- r.ns.canonicalUuid; npCan <- nameParsed.parsed.canonizedUuid())
                 yield nsCan == npCan.id).getOrElse(false)) {
-              MK.ExactCanonicalNameMatchByUUID
+              MK.CanonicalMatch(thrift.CanonicalMatch())
             } else {
-              MK.Unknown
+              MK.Unknown(thrift.Unknown())
             }
-          val dbResult = DBResultObj.create(r, createMatchType(matchKind, editDistance = 0))
+          val dbResult = DBResultObj.create(r, createMatchType(matchKind))
           val score = ResultScores(nameParsed, dbResult).compute
           nr.ResultScored(dbResult, score)
         }
@@ -219,7 +202,7 @@ class NameResolver(request: nr.Request)
               val canId: UUID = result.nameMatched.uuid
               nameStringsDBMap(canId.some).map { r =>
                 val dbResult =
-                  DBResultObj.create(r, createMatchType(result.matchKind, result.distance))
+                  DBResultObj.create(r, createMatchType(result.matchKind))
                 val score = ResultScores(nameInputParsed, dbResult).compute
                 nr.ResultScored(dbResult, score)
               }
@@ -230,7 +213,7 @@ class NameResolver(request: nr.Request)
                 .filter { r => request.preferredDataSourceIds.contains(r.ds.id) }
                 .map { r =>
                   val dbResult =
-                    DBResultObj.create(r, createMatchType(result.matchKind, result.distance))
+                    DBResultObj.create(r, createMatchType(result.matchKind))
                   val score = ResultScores(nameInputParsed, dbResult).compute
                   nr.ResultScored(dbResult, score)
                 }
@@ -256,17 +239,6 @@ class NameResolver(request: nr.Request)
                .toSeq.map { case (ds, path) => t.Context(ds, path) }
     nr.Responses(responses = responses.map { _.response },
                  contexts = contexts)
-  }
-
-  private
-  def transformMatchType(responses: Seq[RequestResponse]): Seq[RequestResponse] = {
-    if (request.advancedResolution) {
-      responses
-    } else {
-      for (response <- responses) yield {
-        response.copy(results = response.results.map(resultScoredToMatchKindLens))
-      }
-    }
   }
 
   private implicit val resultScoredOrdering: Ordering[nr.ResultScored] =
@@ -323,7 +295,7 @@ class NameResolver(request: nr.Request)
       fuzzyMatchesFut.map { fuzzyMatches =>
         logInfo(s"[Resolution] Fuzzy matches count: ${fuzzyMatches.size}")
         val reqResps = exactMatchesByUuid ++ fuzzyMatches ++ unmatchedNotParsed
-        (transformMatchType _ andThen rearrangeResults andThen computeContext)(reqResps)
+        (rearrangeResults _ andThen computeContext)(reqResps)
       }
     }
     resultFuture.as[TwitterFuture[nr.Responses]]

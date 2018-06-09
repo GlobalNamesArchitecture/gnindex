@@ -4,7 +4,7 @@ package nameresolver
 
 import org.apache.commons.lang3.StringUtils
 import thrift._
-import thrift.MatchKind._
+import thrift.{MatchKind => MK}
 import parser.{ScientificNameParser => snp}
 import org.globalnames.matcher.{Author, AuthorsMatcher}
 
@@ -24,6 +24,7 @@ final case class ResultScores(nameInputParsed: NameInputParsed, result: Result) 
 
     nameType match {
       case Some(nt) =>
+        /*
         val res = nt match {
           case 1 =>
             result.matchType.kind match {
@@ -52,13 +53,15 @@ final case class ResultScores(nameInputParsed: NameInputParsed, result: Result) 
               case _ => s"Unexpected type of match type ${result.matchType} for nameType $nt".left
             }
         }
-        val firstWordEditPenalty = nameInputParsed.firstWordCorrectlyCapitalised ? 0 | -1
+        */
+        val res = (1.0, 1.0).right
+        val firstWordEditPenalty = nameInputParsed.firstWordCorrectlyCapitalised ? .0 | -1.0
         res.rightMap { case (authorCoef, generalCoef) =>
           authorScore.value * authorCoef + generalCoef + firstWordEditPenalty
         }
       case None =>
         result.matchType.kind match {
-          case ExactNameMatchByUUID => 0.5.right
+          case _: MK.ExactMatch => 0.5.right
           case _ => s"No match".left
         }
     }
