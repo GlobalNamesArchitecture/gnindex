@@ -297,7 +297,8 @@ class NameFilter @Inject()(database: Database) extends Logging {
 
     val resultFuture = queryComplete(nameStrings, request.dataSourceIds).map { dbResults =>
       val results = dbResults.map { dbResult =>
-        val matchType = MatchType(kind = matchKind, score = 0)
+        val matchType = MatchType(kind = matchKind, score = 0,
+          kindString = MatchKindTransform.kindName(matchKind, advancedResolution = true))
         DBResultObj.create(dbResult, matchType)
       }
       .groupBy { r => r.name.uuid }

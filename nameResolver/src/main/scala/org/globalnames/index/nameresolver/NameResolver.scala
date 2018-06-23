@@ -158,7 +158,8 @@ class NameResolver(request: nr.Request)
             } else {
               MK.Unknown(thrift.Unknown())
             }
-          val dbResult = DBResultObj.create(r, createMatchType(matchKind))
+          val dbResult =
+            DBResultObj.create(r, createMatchType(matchKind, request.advancedResolution))
           val score = ResultScores(nameParsed, dbResult).compute
           nr.ResultScored(dbResult, score)
         }
@@ -201,8 +202,8 @@ class NameResolver(request: nr.Request)
             val results = fuzzyMatch.results.flatMap { result =>
               val canId: UUID = result.nameMatched.uuid
               nameStringsDBMap(canId.some).map { r =>
-                val dbResult =
-                  DBResultObj.create(r, createMatchType(result.matchKind))
+                val dbResult = DBResultObj.create(
+                  r, createMatchType(result.matchKind, request.advancedResolution))
                 val score = ResultScores(nameInputParsed, dbResult).compute
                 nr.ResultScored(dbResult, score)
               }
@@ -213,7 +214,8 @@ class NameResolver(request: nr.Request)
                 .filter { r => request.preferredDataSourceIds.contains(r.ds.id) }
                 .map { r =>
                   val dbResult =
-                    DBResultObj.create(r, createMatchType(result.matchKind))
+                    DBResultObj.create(r,
+                      createMatchType(result.matchKind, request.advancedResolution))
                   val score = ResultScores(nameInputParsed, dbResult).compute
                   nr.ResultScored(dbResult, score)
                 }

@@ -40,13 +40,18 @@ class NameStringByUUID @Inject()(database: Database) {
       }
 
     val resultFut = database.run(queryJoin1.result).map { queryResult: Seq[ResultDB] =>
-      queryResult.groupBy { dbR => dbR.ns.id }
-                 .map { case (id, ress) =>
-                   val matchType = MatchType(MatchKind.ExactMatch(thrift.ExactMatch()), score = 0)
-                   val results = ress.map { res => DBResultObj.create(res, matchType) }
-                   Response(id, results)
-                 }.toSeq
+      queryResult
+        .groupBy { dbR => dbR.ns.id }
+        .map { case (id, ress) =>
+          val matchKind = MatchKind.ExactMatch(thrift.ExactMatch())
+          val matchType =
+            MatchType(kind = matchKind, score = 0,
+              kindString = MatchKindTransform.kindName(matchKind, advancedResolution = true))
+          val results = ress.map { res => DBResultObj.create(res, matchType) }
+          Response(id, results)
+        }.toSeq
     }
+
     resultFut.as[TwitterFuture[Seq[Response]]]
   }
 }

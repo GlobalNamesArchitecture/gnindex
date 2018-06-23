@@ -49,7 +49,8 @@ enum DataSourceQuality {
 
 struct MatchType {
     1: MatchKind kind
-    2: i32 score
+    2: string kindString
+    3: i32 score
 }
 
 struct AuthorScore {

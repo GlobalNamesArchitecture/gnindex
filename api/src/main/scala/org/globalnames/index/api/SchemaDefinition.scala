@@ -18,56 +18,9 @@ object Common {
     case _ => None
   }
 
-  private object KindNames {
-    val UuidLookup = "UuidLookup"
-    val ExactMatch = "ExactMatch"
-    val ExactCanonicalMatch = "ExactCanonicalMatch"
-    val FuzzyCanonicalMatch = "FuzzyCanonicalMatch"
-    val ExactPartialMatch = "ExactPartialMatch"
-    val FuzzyPartialMatch = "FuzzyPartialMatch"
-    val ExactAbbreviatedMatch = "ExactAbbreviatedMatch"
-    val FuzzyAbbreviatedMatch = "FuzzyAbbreviatedMatch"
-    val ExactPartialAbbreviatedMatch = "ExactPartialAbbreviatedMatch"
-    val FuzzyPartialAbbreviatedMatch = "FuzzyPartialAbbreviatedMatch"
-    val Unknown = "Unknown"
-  }
-
-  private def kindName(matchKind: MK): String = matchKind match {
-    case _: MK.UuidLookup => KindNames.UuidLookup
-    case _: MK.ExactMatch => KindNames.ExactMatch
-    case MK.CanonicalMatch(cm) =>
-      (cm.partial, cm.byAbbreviation) match {
-        case (false, false) =>
-          if (cm.stemEditDistance == 0 && cm.verbatimEditDistance == 0) {
-            KindNames.ExactCanonicalMatch
-          } else {
-            KindNames.FuzzyCanonicalMatch
-          }
-        case (true, false) =>
-          if (cm.stemEditDistance == 0 && cm.verbatimEditDistance == 0) {
-            KindNames.ExactPartialMatch
-          } else {
-            KindNames.FuzzyPartialMatch
-          }
-        case (false, true) =>
-          if (cm.stemEditDistance == 0 && cm.verbatimEditDistance == 0) {
-            KindNames.ExactAbbreviatedMatch
-          } else {
-            KindNames.FuzzyAbbreviatedMatch
-          }
-        case (true, true) =>
-          if (cm.stemEditDistance == 0 && cm.verbatimEditDistance == 0) {
-            KindNames.ExactPartialAbbreviatedMatch
-          } else {
-            KindNames.FuzzyPartialAbbreviatedMatch
-          }
-      }
-    case _: MK.Unknown => KindNames.Unknown
-  }
-
   val MatchTypeOT = ObjectType(
     "MatchType", fields[Unit, thrift.MatchType](
-        Field("kind", StringType, resolve = x => kindName(x.value.kind))
+        Field("kind", StringType, resolve = _.value.kindString)
       , Field("score", IntType, resolve = _.value.score)
       , Field("verbatimEditDistance", OptionType(IntType),
               resolve = ctx => verbatimEditDistance(ctx.value.kind))
