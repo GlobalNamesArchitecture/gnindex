@@ -60,7 +60,7 @@ lazy val benchmark = (project in file("benchmark"))
     .settings(libraryDependencies ++= benchmarkDependencies)
 
 lazy val `gnindex-root` = project.in(file("."))
-    .aggregate(common, nameResolver, nameFilter, matcher, api)
+    .aggregate(common, nameResolver, nameFilter, nameBrowser, matcher, api)
     .settings(noPublishingSettings: _*)
     .settings(
       crossScalaVersions := Seq("2.11.8"),
