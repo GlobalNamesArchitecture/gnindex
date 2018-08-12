@@ -23,7 +23,7 @@ ENV ASSEMBLY_JAR="gnnamefilter-${VERSION}.jar"
 ARG ASSEMBLY_PATH="https://github.com/GlobalNamesArchitecture/gnindex/releases/download/snapshot/${ASSEMBLY_JAR}"
 ADD ${ASSEMBLY_PATH} /app/
 
-CMD bash -c "java -cp '.' -server -Xms16g -Xmx32g -XX:PermSize=512m \
+CMD bash -c "java -cp '.' -server -Xms8g -Xmx16g -XX:PermSize=512m \
                   -XX:MaxPermSize=512m -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled \
                   -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 \
                   -XX:+ScavengeBeforeFullGC -XX:+CMSScavengeBeforeRemark \
