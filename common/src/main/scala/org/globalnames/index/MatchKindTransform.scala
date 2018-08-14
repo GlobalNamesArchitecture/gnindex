@@ -10,25 +10,25 @@ object MatchKindTransform {
   private case class MatchKindInfo(score: Int, messageAdvanced: String, messageSimple: String)
 
   private val UuidLookup =
-    MatchKindInfo(1, "Uuid Lookup", "Uuid Lookup")
+    MatchKindInfo(1, "UuidLookup", "UuidLookup")
   private val ExactMatch =
-    MatchKindInfo(2, "Exact Match", "Match")
+    MatchKindInfo(2, "ExactMatch", "Match")
   private val ExactCanonicalMatch =
-    MatchKindInfo(3, "Exact Canonical Match", "Match")
+    MatchKindInfo(3, "ExactCanonicalMatch", "Match")
   private val FuzzyCanonicalMatch =
-    MatchKindInfo(4, "Fuzzy Canonical Match", "Fuzzy")
+    MatchKindInfo(4, "FuzzyCanonicalMatch", "Fuzzy")
   private val ExactPartialMatch =
-    MatchKindInfo(5, "Exact Partial Match", "Match")
+    MatchKindInfo(5, "ExactPartialMatch", "Match")
   private val FuzzyPartialMatch =
-    MatchKindInfo(6, "Fuzzy Partial Match", "Fuzzy")
+    MatchKindInfo(6, "FuzzyPartialMatch", "Fuzzy")
   private val ExactAbbreviatedMatch =
-    MatchKindInfo(7, "Exact Abbreviated Match", "Match")
+    MatchKindInfo(7, "ExactAbbreviatedMatch", "Match")
   private val FuzzyAbbreviatedMatch =
-    MatchKindInfo(8, "Fuzzy Abbreviated Match", "Fuzzy")
+    MatchKindInfo(8, "FuzzyAbbreviatedMatch", "Fuzzy")
   private val ExactPartialAbbreviatedMatch =
-    MatchKindInfo(9, "Exact Partial Abbreviated Match", "Match")
+    MatchKindInfo(9, "ExactPartialAbbreviatedMatch", "Match")
   private val FuzzyPartialAbbreviatedMatch =
-    MatchKindInfo(10, "Fuzzy Partial Abbreviated Match", "Fuzzy")
+    MatchKindInfo(10, "FuzzyPartialAbbreviatedMatch", "Fuzzy")
   private val Unknown =
     MatchKindInfo(11, "Unknown", "Unknown")
 
