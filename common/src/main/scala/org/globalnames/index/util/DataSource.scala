@@ -17,7 +17,12 @@ object DataSource {
         case (_, `colDsId`) => -1
         case (`gbifDsId`, _) => 1
         case (_, `gbifDsId`) => -1
-        case (_, _) => Ordering.String.compare(y.title.toLowerCase, x.title.toLowerCase)
+        case (_, _) =>
+          if (x.quality == y.quality) {
+            Ordering.String.compare(y.title.toLowerCase, x.title.toLowerCase)
+          } else {
+            y.quality.getValue - x.quality.getValue
+          }
       }
     }
   }
