@@ -176,8 +176,10 @@ class NameResolver(request: nr.Request)
         }
 
         val responseResults =
-          for (result <- databaseMatches if request.dataSourceIds.contains(result.ds.id))
-          yield composeResult(result)
+          for {
+            result <- databaseMatches
+            if request.dataSourceIds.isEmpty || request.dataSourceIds.contains(result.ds.id)
+          } yield composeResult(result)
         val preferredResponseResults =
           for (result <- databaseMatches if request.preferredDataSourceIds.contains(result.ds.id))
           yield composeResult(result)
@@ -217,7 +219,7 @@ class NameResolver(request: nr.Request)
                 fuzzyResult <- fuzzyMatch.results
                 canId = UuidEnhanced.thriftUuid2javaUuid(fuzzyResult.nameMatched.uuid)
                 result <- nameStringsDBMap(canId.some)
-                if request.dataSourceIds.contains(result.ds.id)
+                if request.dataSourceIds.isEmpty || request.dataSourceIds.contains(result.ds.id)
                 dbResult = DBResultObj.create(
                   result, createMatchType(fuzzyResult.matchKind, request.advancedResolution))
                 score = ResultScores(nameInputParsed, dbResult).compute
