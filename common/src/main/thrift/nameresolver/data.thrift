@@ -36,6 +36,7 @@ struct ResultScoredNameString {
     1: commondata.Name name
     2: optional commondata.CanonicalName canonicalName
     3: list<ResultScoredPerDataSource> resultsScoredPerDataSource
+    4: commondata.DataSourceQuality datasourceBestQuality
 }
 
 struct Response {

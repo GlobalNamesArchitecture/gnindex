@@ -37,7 +37,7 @@ object Common {
   )
 
   val CanonicalNameOT = ObjectType(
-    "Name", fields[Unit, thrift.CanonicalName](
+    "CanonicalName", fields[Unit, thrift.CanonicalName](
         Field("id", IDType, resolve = _.value.uuid.string)
       , Field("value", StringType, resolve = _.value.value)
       , Field("valueRanked", StringType, resolve = _.value.valueRanked)
@@ -202,6 +202,15 @@ object NameResolver {
     "ResultScoredNameString", fields[Unit, nr.ResultScoredNameString](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
+      , Field("qualitySummary", OptionType(StringType),
+              resolve = { ctx =>
+                ctx.value.datasourceBestQuality match {
+                  case thrift.DataSourceQuality.Curated => "HasCuratedSources"
+                  case thrift.DataSourceQuality.AutoCurated => "HasAutoCuratedSources"
+                  case thrift.DataSourceQuality.Unknown |
+                       thrift.DataSourceQuality.EnumUnknownDataSourceQuality(_) => "Unknown"
+                }
+              })
       , Field("resultsPerDataSource", ListType(ResultsPerDataSourceOT),
               resolve = _.value.resultsScoredPerDataSource)
     )

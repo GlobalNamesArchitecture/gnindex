@@ -20,7 +20,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future => ScalaFuture}
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
-import scalaz.Lens
 
 object NameResolver {
   type NameStringsQuery = Query[T.NameStrings, T.NameStringsRow, Seq]
@@ -33,7 +32,7 @@ object NameResolver {
       val rsnss =
         results
           .groupBy { r => r.result.name.uuid }
-            .values.flatMap { results =>
+          .values.flatMap { results =>
             val rpdss =
               for ((ds, vs) <- results.groupBy { r => r.result.dataSource }) yield {
                 nr.ResultScoredPerDataSource(
@@ -41,10 +40,20 @@ object NameResolver {
                   resultsScored = vs
                 )
               }
+            val rpdssVec = rpdss.toVector
+
+            val datasourceBestQuality =
+              if (rpdssVec.isEmpty) {
+                thrift.DataSourceQuality.Unknown
+              } else {
+                rpdssVec.map { rpds => rpds.dataSource }.max(util.DataSource.ordering).quality
+              }
+
             for (response <- results.headOption) yield {
               nr.ResultScoredNameString(
                 name = response.result.name,
                 canonicalName = response.result.canonicalName,
+                datasourceBestQuality = datasourceBestQuality,
                 resultsScoredPerDataSource = rpdss.toVector
                   .sortBy { rpds => rpds.dataSource }(util.DataSource.ordering.reverse)
               )
