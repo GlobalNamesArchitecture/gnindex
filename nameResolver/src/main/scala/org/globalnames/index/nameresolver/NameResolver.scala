@@ -12,8 +12,9 @@ import MatchTypeScores._
 import index.dao.{DBResultObj, Tables => T}
 import index.dao.Projections._
 import index.{thrift => t}
-import thrift.{nameresolver => nr, matcher => m, MatchKind => MK}
-import util.DataSource
+import org.globalnames.index.thrift.nameresolver.ResultScored
+import thrift.{MatchKind => MK, matcher => m, nameresolver => nr}
+import util.{DataSource, UuidEnhanced}
 import util.UuidEnhanced._
 import slick.jdbc.PostgresProfile.api._
 
@@ -157,7 +158,7 @@ class NameResolver(request: nr.Request)
           (nums ++ cums).distinct
         }
 
-        def composeResult(r: ResultDB) = {
+        def composeResult(r: ResultDB): ResultScored = {
           val matchKind: MK =
             if (r.ns.id == nameParsed.parsed.preprocessorResult.id) {
               MK.ExactMatch(thrift.ExactMatch())
@@ -174,10 +175,12 @@ class NameResolver(request: nr.Request)
           nr.ResultScored(dbResult, score)
         }
 
-        val responseResults = databaseMatches.map { r => composeResult(r) }
-        val preferredResponseResults = databaseMatches
-          .filter { r => request.preferredDataSourceIds.contains(r.ds.id) }
-          .map { r => composeResult(r) }
+        val responseResults =
+          for (result <- databaseMatches if request.dataSourceIds.contains(result.ds.id))
+          yield composeResult(result)
+        val preferredResponseResults =
+          for (result <- databaseMatches if request.preferredDataSourceIds.contains(result.ds.id))
+          yield composeResult(result)
 
         RequestResponse(total = responseResults.size,
                         request = nameParsed,
@@ -209,26 +212,29 @@ class NameResolver(request: nr.Request)
 
           fuzzyMatches.map { fuzzyMatch =>
             val nameInputParsed = namesParsedMap(fuzzyMatch.inputUuid)
-            val results = fuzzyMatch.results.flatMap { result =>
-              val canId: UUID = result.nameMatched.uuid
-              nameStringsDBMap(canId.some).map { r =>
-                val dbResult = DBResultObj.create(
-                  r, createMatchType(result.matchKind, request.advancedResolution))
-                val score = ResultScores(nameInputParsed, dbResult).compute
+            val results =
+              for {
+                fuzzyResult <- fuzzyMatch.results
+                canId = UuidEnhanced.thriftUuid2javaUuid(fuzzyResult.nameMatched.uuid)
+                result <- nameStringsDBMap(canId.some)
+                if request.dataSourceIds.contains(result.ds.id)
+                dbResult = DBResultObj.create(
+                  result, createMatchType(fuzzyResult.matchKind, request.advancedResolution))
+                score = ResultScores(nameInputParsed, dbResult).compute
+              } yield {
                 nr.ResultScored(dbResult, score)
               }
-            }
-            val preferredResults = fuzzyMatch.results.flatMap { result =>
-              val canId: UUID = result.nameMatched.uuid
-              nameStringsDBMap(canId.some)
-                .filter { r => request.preferredDataSourceIds.contains(r.ds.id) }
-                .map { r =>
-                  val dbResult =
-                    DBResultObj.create(r,
-                      createMatchType(result.matchKind, request.advancedResolution))
-                  val score = ResultScores(nameInputParsed, dbResult).compute
-                  nr.ResultScored(dbResult, score)
-                }
+            val preferredResults =
+              for {
+                fuzzyResult <- fuzzyMatch.results
+                canId = UuidEnhanced.thriftUuid2javaUuid(fuzzyResult.nameMatched.uuid)
+                result <- nameStringsDBMap(canId.some)
+                if request.preferredDataSourceIds.contains(result.ds.id)
+                dbResult = DBResultObj.create(
+                  result, createMatchType(fuzzyResult.matchKind, request.advancedResolution))
+                score = ResultScores(nameInputParsed, dbResult).compute
+              } yield {
+                nr.ResultScored(dbResult, score)
               }
             RequestResponse(total = fuzzyMatch.results.size,
                             request = nameInputParsed,
@@ -291,9 +297,11 @@ class NameResolver(request: nr.Request)
   def rearrangeResults(responses: Seq[RequestResponse]): Seq[RequestResponse] =
     responses.map { response =>
       val results =
-        request.bestMatchOnly ?
-          { response.results.nonEmpty ? Seq(response.results.max(resultScoredOrdering)) | Seq() } |
+        if (request.bestMatchOnly) {
+          response.results.nonEmpty ? Seq(response.results.max(resultScoredOrdering)) | Seq()
+        } else {
           response.results.sorted(resultScoredOrdering.reverse)
+        }
       val preferredResultsSorted = response.preferredResults.sorted(resultScoredOrdering.reverse)
       val preferredResults =
         if (request.bestMatchOnly) {
