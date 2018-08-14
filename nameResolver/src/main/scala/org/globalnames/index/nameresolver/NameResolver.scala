@@ -13,6 +13,7 @@ import index.dao.{DBResultObj, Tables => T}
 import index.dao.Projections._
 import index.{thrift => t}
 import thrift.{nameresolver => nr, matcher => m, MatchKind => MK}
+import util.DataSource
 import util.UuidEnhanced._
 import slick.jdbc.PostgresProfile.api._
 
@@ -252,17 +253,36 @@ class NameResolver(request: nr.Request)
                  contexts = contexts)
   }
 
-  private implicit val resultScoredOrdering: Ordering[nr.ResultScored] =
+  private val scoreOrdering: Ordering[t.Score] = new Ordering[t.Score] {
+    private val epsilon = 1e-6
+    private val doubleOrdering: Ordering[Double] = new Ordering[Double] {
+      override def compare(x: Double, y: Double): Int = {
+        if (Math.abs(x - y) < epsilon) 0
+        else Ordering.Double.compare(x, y)
+      }
+    }
+
+    override def compare(s1: t.Score, s2: t.Score): Int = {
+      Ordering.Option[Double](doubleOrdering).compare(s1.value, s2.value)
+    }
+  }
+
+  private val resultScoredOrdering: Ordering[nr.ResultScored] =
     new Ordering[nr.ResultScored] {
       override def compare(x: nr.ResultScored, y: nr.ResultScored): Int = {
-        if (x.result.dataSource.quality == y.result.dataSource.quality) {
-          if (x.score.value == y.score.value) {
-            Ordering.Int.compare(x.result.dataSource.recordCount, y.result.dataSource.recordCount)
+        val dataSourceCompare =
+          DataSource.ordering.compare(x.result.dataSource, y.result.dataSource)
+
+        if (dataSourceCompare == 0) {
+          val scoreOrderingCompare = scoreOrdering.compare(x.score, y.score)
+          if (scoreOrderingCompare == 0) {
+            Ordering.Int.reverse.compare(x.result.dataSource.recordCount,
+                                         y.result.dataSource.recordCount)
           } else {
-            Ordering.Option[Double].compare(y.score.value, x.score.value)
+            Ordering.Option[Double].compare(x.score.value, y.score.value)
           }
         } else {
-          Ordering.Int.compare(x.result.dataSource.quality.value, y.result.dataSource.quality.value)
+          dataSourceCompare
         }
       }
     }
@@ -272,9 +292,9 @@ class NameResolver(request: nr.Request)
     responses.map { response =>
       val results =
         request.bestMatchOnly ?
-          { response.results.nonEmpty ? Seq(response.results.min) | Seq() } |
-          response.results.sorted
-      val preferredResultsSorted = response.preferredResults.sorted
+          { response.results.nonEmpty ? Seq(response.results.max(resultScoredOrdering)) | Seq() } |
+          response.results.sorted(resultScoredOrdering.reverse)
+      val preferredResultsSorted = response.preferredResults.sorted(resultScoredOrdering.reverse)
       val preferredResults =
         if (request.bestMatchOnly) {
           for {
