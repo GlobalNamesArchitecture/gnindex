@@ -13,15 +13,31 @@ import org.apache.commons.lang3.StringUtils
 import util.UuidEnhanced.javaUuid2thriftUuid
 import scalaz.syntax.std.boolean._
 
+import scala.collection.parallel.ParSeq
+import scala.concurrent.Future
+import scala.util.Success
+import scala.concurrent.ExecutionContext.Implicits.global
+
 @Singleton
 final case class CanonicalNames(private val namesRaw: Map[String, Set[Int]]) {
   val names: Map[String, Set[Int]] = namesRaw.withDefaultValue(Set())
 }
 
 @Singleton
-class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
+class Matcher @Inject()(canonicalNamesFut: Future[CanonicalNames]) extends Logging {
 
-  private val matcherLib: matcherlib.Matcher = matcherlib.Matcher(canonicalNames.names)
+  val matcherLibFut: Future[matcherlib.Matcher] =
+    canonicalNamesFut.map { canonicalNames => matcherlib.Matcher(canonicalNames.names) }
+
+  private def matcherLib: matcherlib.Matcher = matcherLibFut.value match {
+    case Some(Success(m)) => m
+    case _ => matcherlib.Matcher(Map.empty)
+  }
+
+  private def canonicalNames: CanonicalNames = canonicalNamesFut.value match {
+    case Some(Success(cn)) => cn
+    case _ => CanonicalNames(Map.empty)
+  }
 
   private[Matcher] case class CanonicalNameSplit(name: snp.Result,
                                                  namePartialStr: String,
@@ -55,12 +71,12 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
                                 candidates: Vector[Candidate])
 
   private
-  def resolveFromPartials(canonicalNameSplits: Seq[CanonicalNameSplit],
+  def resolveFromPartials(canonicalNameSplits: ParSeq[CanonicalNameSplit],
                           dataSourceIds: Set[Int],
-                          advancedResolution: Boolean): Seq[Response] = {
+                          advancedResolution: Boolean): ParSeq[Response] = {
     logger.info(s"Matcher service start for ${canonicalNameSplits.size} records")
     if (canonicalNameSplits.isEmpty) {
-      Seq()
+      ParSeq()
     } else {
       val (nonGenusOrUninomialSplits, genusOnlyMatchesSplits) =
         canonicalNameSplits.partition { cnp =>
@@ -98,8 +114,9 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
 
       logger.info(s"Matcher library call for ${possibleFuzzyCanonicalMatches.size} records")
       val possibleFuzzyCanonicalsResponses =
-        for ((canNmSplit, _) <- possibleFuzzyCanonicalMatches) yield {
-          FuzzyMatch(canNmSplit, matcherLib.findMatches(canNmSplit.namePartialStr, dataSourceIds))
+        for ((canNmSplit, _) <- possibleFuzzyCanonicalMatches.par) yield {
+          val matches = matcherLib.findMatches(canNmSplit.namePartialStr, dataSourceIds)
+          FuzzyMatch(canNmSplit, matches)
         }
       logger.info(s"matcher library call completed for " +
                   s"${possibleFuzzyCanonicalMatches.size} records")
@@ -158,7 +175,7 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
               dataSourceIds: Seq[Int],
               advancedResolution: Boolean): Seq[Response] = {
     logger.info("Started. Splitting names")
-    val namesParsed = names.map { name => snp.instance.fromString(name) }
+    val namesParsed = names.par.map { name => snp.instance.fromString(name) }
     val (namesParsedSuccessfully, namesParsedRest) = namesParsed.partition { np =>
       np.canonized().exists { _.nonEmpty }
     }
@@ -172,9 +189,9 @@ class Matcher @Inject()(canonicalNames: CanonicalNames) extends Logging {
         namesParsedSuccessfullySplits, dataSourceIds.toSet, advancedResolution) ++ responsesRest
 
     if (advancedResolution) {
-      responses
+      responses.seq
     } else {
-      for (response <- responses) yield {
+      for (response <- responses.seq) yield {
         response.copy(results = response.results.filter { res =>
           res.matchKind match {
             case MK.CanonicalMatch(cm) => cm.stemEditDistance > 0 || cm.verbatimEditDistance > 0

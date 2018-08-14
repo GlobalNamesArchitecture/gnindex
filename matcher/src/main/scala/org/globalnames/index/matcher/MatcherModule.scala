@@ -3,15 +3,17 @@ package index
 package matcher
 
 import java.io.File
+
 import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
 import com.twitter.inject.{Logging, TwitterModule}
-import org.globalnames.{matcher => matcherlib}
 
 import scala.io.Source
-
 import scalaz._
 import Scalaz._
+
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object MatcherModule extends TwitterModule with Logging {
 
@@ -27,7 +29,7 @@ object MatcherModule extends TwitterModule with Logging {
 
   @Singleton
   @Provides
-  def provideCanonicalNames: CanonicalNames = {
+  def provideCanonicalNames: Future[CanonicalNames] = Future {
     def create(): CanonicalNames = {
       logger.info("`provideCanonicalNames` launched")
       val namesWithDatasourcesLines =
