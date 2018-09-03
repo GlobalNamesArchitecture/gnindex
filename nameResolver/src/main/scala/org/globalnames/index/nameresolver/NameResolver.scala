@@ -256,6 +256,7 @@ class NameResolver(request: nr.Request)
                .mapValues { results =>
                  ContextFinder.find(results.flatMap { _.result.classification.path })
                }
+               .filter { case (_, path) => !(path == null || path.isEmpty) }
                .toSeq.map { case (ds, path) => t.Context(ds, path) }
     nr.Responses(responses = responses.map { _.response },
                  contexts = contexts)
