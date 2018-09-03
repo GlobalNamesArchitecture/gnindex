@@ -297,8 +297,16 @@ class NameResolver(request: nr.Request)
     }
 
   private
-  def rearrangeResults(responses: Seq[RequestResponse]): Seq[RequestResponse] =
-    responses.map { response =>
+  def rearrangeResults(responses: Seq[RequestResponse]): Seq[RequestResponse] = {
+    val responsesGrouped = responses.groupBy { rr => rr.request }.mapValues { rrs =>
+      RequestResponse(total = rrs.map { _.total }.sum,
+                      request = rrs.head.request,
+                      results = rrs.flatMap { _.results },
+                      preferredResults = rrs.flatMap { _.preferredResults})
+    }
+
+    responses.map { r =>
+      val response = responsesGrouped(r.request)
       val results =
         if (request.bestMatchOnly) {
           response.results.nonEmpty ? Seq(response.results.max(resultScoredOrdering)) | Seq()
@@ -319,24 +327,59 @@ class NameResolver(request: nr.Request)
                                             request.perPage * (request.page + 1)),
                     preferredResults = preferredResults)
     }
+  }
 
   def resolveExact(): TwitterFuture[nr.Responses] = {
     logInfo(s"[Resolution] Resolution started for ${request.nameInputs.size} names")
     val resultFuture = queryExactMatchesByUuid().flatMap { names =>
       val (exactMatchesByUuid, exactUnmatchesByUuid) =
         names.partition { resp => resp.results.nonEmpty }
-      val (unmatched, unmatchedNotParsed) = exactUnmatchesByUuid.partition { reqResp =>
-        reqResp.request.parsed.canonizedUuid().isDefined
-      }
+
+      val dirtyExactMatchesByUuid =
+        exactMatchesByUuid.filter { reqResp =>
+          val resultScoredNameStrings = reqResp.response.resultScoredNameStrings
+          if (resultScoredNameStrings.isEmpty) {
+            false
+          } else {
+            val dsq = resultScoredNameStrings.map { _.datasourceBestQuality }.minBy { _.value }
+            dsq.value == t.DataSourceQuality.Unknown.value &&
+              reqResp.request.parsed.canonizedUuid().isDefined
+          }
+        }
+      val dirtyExactMatchesPromotedToCuratedFuzzyFut =
+        fuzzyMatch(dirtyExactMatchesByUuid.map { _.request.valueCapitalised },
+                   request.advancedResolution)
+          .map { reqResps =>
+            reqResps.filter { reqResp =>
+              val resultScoredNameStrings = reqResp.response.resultScoredNameStrings
+              if (resultScoredNameStrings.isEmpty) {
+                false
+              } else {
+                val r =
+                  resultScoredNameStrings.map { _.datasourceBestQuality }.minBy { _.value }
+                r.value == t.DataSourceQuality.Curated.value ||
+                  r.value == t.DataSourceQuality.AutoCurated.value
+              }
+            }
+        }
+
+      val (unmatched, unmatchedNotParsed) =
+        exactUnmatchesByUuid.partition { reqResp =>
+          reqResp.request.parsed.canonizedUuid().isDefined
+        }
       logInfo(s"[Resolution] Exact match done. Matches count: ${exactMatchesByUuid.size}. " +
               s"Unparsed count: ${unmatchedNotParsed.size}")
 
       val namesForFuzzyMatch = unmatched.map { reqResp => reqResp.request.valueCapitalised }
       val fuzzyMatchesFut = fuzzyMatch(namesForFuzzyMatch, request.advancedResolution)
 
-      fuzzyMatchesFut.map { fuzzyMatches =>
+      for {
+        fuzzyMatches <- fuzzyMatchesFut
+        dirtyExactMatchesPromotedToCuratedFuzzy <- dirtyExactMatchesPromotedToCuratedFuzzyFut
+      } yield {
         logInfo(s"[Resolution] Fuzzy matches count: ${fuzzyMatches.size}")
-        val reqResps = exactMatchesByUuid ++ fuzzyMatches ++ unmatchedNotParsed
+        val reqResps = exactMatchesByUuid ++ fuzzyMatches ++ unmatchedNotParsed ++
+          dirtyExactMatchesPromotedToCuratedFuzzy
         (rearrangeResults _ andThen computeContext)(reqResps)
       }
     }
