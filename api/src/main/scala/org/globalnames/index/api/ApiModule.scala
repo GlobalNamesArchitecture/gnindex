@@ -31,16 +31,16 @@ object ApiModule extends TwitterModule {
 
   @Singleton
   @Provides
-  def provideNameResolverClient: nr.Service.FutureIface =
-    ThriftMux.client.newIface[nr.Service.FutureIface](nameResolverServiceAddress())
+  def provideNameResolverClient: nr.Service.MethodPerEndpoint =
+    ThriftMux.client.build[nr.Service.MethodPerEndpoint](nameResolverServiceAddress())
 
   @Singleton
   @Provides
-  def provideNameFilterClient: nf.Service.FutureIface =
-    ThriftMux.client.newIface[nf.Service.FutureIface](namefilterServiceAddress())
+  def provideNameFilterClient: nf.Service.MethodPerEndpoint =
+    ThriftMux.client.build[nf.Service.MethodPerEndpoint](namefilterServiceAddress())
 
   @Singleton
   @Provides
-  def provideBrowserClient: nb.Service.FutureIface =
-    ThriftMux.client.newIface[nb.Service.FutureIface](namebrowserServiceAddress())
+  def provideBrowserClient: nb.Service.MethodPerEndpoint =
+    ThriftMux.client.build[nb.Service.MethodPerEndpoint](namebrowserServiceAddress())
 }

@@ -5,7 +5,7 @@ object Dependencies {
   lazy val version = new {
     val sangria = "1.2.2"
     val sangriaJackson = "1.0.0"
-    val finatra = "18.3.0"
+    val finatra = "18.8.0"
     val guice = "4.1.0"
     val junit = "4.12"
     val pegdown = "1.6.0"

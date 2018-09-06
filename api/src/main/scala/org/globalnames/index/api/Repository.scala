@@ -13,9 +13,9 @@ import com.twitter.bijection.twitter_util.UtilBijections._
 import util.UuidEnhanced._
 import java.util.UUID
 
-class Repository @Inject() (nameResolverClient: ns.Service.FutureIface,
-                            nameFilterClient: nf.Service.FutureIface,
-                            nameBrowserClient: nb.Service.FutureIface) {
+class Repository @Inject() (nameResolverClient: ns.Service.MethodPerEndpoint,
+                            nameFilterClient: nf.Service.MethodPerEndpoint,
+                            nameBrowserClient: nb.Service.MethodPerEndpoint) {
 
   def nameResolver(nameInputs: Seq[ns.NameInput],
                    dataSourceIds: Option[Seq[Int]],

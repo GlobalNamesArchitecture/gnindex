@@ -6,7 +6,7 @@ import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
 import com.twitter.finagle.ThriftMux
 import com.twitter.inject.TwitterModule
-import thrift.matcher.{Service => MatcherService}
+import thrift.{matcher => m}
 import slick.jdbc.PostgresProfile.api._
 import scala.util.Properties
 
@@ -34,6 +34,7 @@ object NameResolverModule extends TwitterModule {
 
   @Singleton
   @Provides
-  def provideMatcherClient: MatcherService.FutureIface =
-    ThriftMux.client.newIface[MatcherService.FutureIface](matcherServiceAddress())
+  def provideMatcherClient: m.Service.MethodPerEndpoint = {
+    ThriftMux.client.build[m.Service.MethodPerEndpoint](matcherServiceAddress())
+  }
 }

@@ -76,7 +76,7 @@ object NameResolver {
 
 class NameResolver(request: nr.Request)
                   (implicit database: Database,
-                            matcherClient: m.Service.FutureIface)
+                            matcherClient: m.Service.MethodPerEndpoint)
   extends Logging {
 
   import NameResolver._

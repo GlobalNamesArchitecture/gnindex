@@ -12,7 +12,7 @@ import thrift.{namebrowser => nb}
 @Singleton
 class BrowserController @Inject()(browser: Browser)
   extends Controller
-     with nb.Service.BaseServiceIface {
+     with nb.Service.ServicePerEndpoint {
 
   override val tripletsStartingWith: ThriftMethodService[nb.Service.TripletsStartingWith.Args,
                                                          Seq[nb.Triplet]] =

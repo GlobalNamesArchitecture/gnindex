@@ -11,8 +11,8 @@ import slick.jdbc.PostgresProfile.api._
 
 @Singleton
 class NameResolverController @Inject()(implicit database: Database,
-                                                matcherClient: mtch.Service.FutureIface)
-  extends Controller with nr.Service.BaseServiceIface {
+                                                matcherClient: mtch.Service.MethodPerEndpoint)
+  extends Controller with nr.Service.ServicePerEndpoint {
 
   override val nameResolve: ThriftMethodService[nr.Service.NameResolve.Args, nr.Responses] =
     handle(nr.Service.NameResolve) { args: nr.Service.NameResolve.Args =>

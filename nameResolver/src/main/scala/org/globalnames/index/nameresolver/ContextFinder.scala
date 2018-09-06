@@ -5,8 +5,10 @@ package nameresolver
 import scala.collection.mutable.ArrayBuffer
 import akka.http.impl.util._
 
+@SuppressWarnings(Array("org.wartremover.warts.Var",
+                        "org.wartremover.warts.NonUnitStatements"))
 object ContextFinder {
-  private case class Tree(value: String, nodes: ArrayBuffer[Tree], var hits: Int)
+  private final case class Tree(value: String, nodes: ArrayBuffer[Tree], var hits: Int)
   private val separator: Char = '|'
 
   private[ContextFinder] def updateTree(path: String, tree: Tree): Unit = {

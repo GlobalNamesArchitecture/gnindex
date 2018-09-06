@@ -13,7 +13,7 @@ import thrift.{namefilter => nf}
 class NameFilterController @Inject()(nameFilter: NameFilter,
                                      nameStrindByUUID: NameStringByUUID,
                                      dataSourceByIdResolver: DataSourceByIdResolver)
-  extends Controller with nf.Service.BaseServiceIface {
+  extends Controller with nf.Service.ServicePerEndpoint {
 
   override val nameString: ThriftMethodService[nf.Service.NameString.Args,
                                                nf.ResponseNameStrings] =
