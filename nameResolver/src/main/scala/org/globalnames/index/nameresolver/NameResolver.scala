@@ -298,15 +298,16 @@ class NameResolver(request: nr.Request)
 
   private
   def rearrangeResults(responses: Seq[RequestResponse]): Seq[RequestResponse] = {
-    val responsesGrouped = responses.groupBy { rr => rr.request }.mapValues { rrs =>
-      RequestResponse(total = rrs.map { _.total }.sum,
-                      request = rrs.head.request,
-                      results = rrs.flatMap { _.results },
-                      preferredResults = rrs.flatMap { _.preferredResults})
+    val responsesGrouped = responses.groupBy { rr => rr.request }.map { case (nip, rrs) =>
+      val rrsNew = RequestResponse(total = rrs.map { _.total }.sum,
+                                   request = rrs.head.request,
+                                   results = rrs.flatMap { _.results },
+                                   preferredResults = rrs.flatMap { _.preferredResults})
+      nip.nameInput -> rrsNew
     }
 
-    responses.map { r =>
-      val response = responsesGrouped(r.request)
+    val res = request.nameInputs.map { nameInput =>
+      val response = responsesGrouped(nameInput)
       val results =
         if (request.bestMatchOnly) {
           response.results.nonEmpty ? Seq(response.results.max(resultScoredOrdering)) | Seq()
@@ -327,6 +328,7 @@ class NameResolver(request: nr.Request)
                                             request.perPage * (request.page + 1)),
                     preferredResults = preferredResults)
     }
+    res
   }
 
   def resolveExact(): TwitterFuture[nr.Responses] = {
