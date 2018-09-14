@@ -154,7 +154,7 @@
     </check>
 
     <check level="error" class="org.scalastyle.scalariform.CyclomaticComplexityChecker" enabled="true">
-        <parameters><parameter name="maximum">25</parameter></parameters>
+        <parameters><parameter name="maximum">30</parameter></parameters>
     </check>
 
     <check level="error" class="org.scalastyle.scalariform.MethodLengthChecker" enabled="false">
