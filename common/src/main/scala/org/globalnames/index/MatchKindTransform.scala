@@ -7,32 +7,79 @@ import scalaz.syntax.std.boolean._
 
 object MatchKindTransform {
 
-  private case class MatchKindInfo(score: Int, messageAdvanced: String, messageSimple: String)
+  sealed trait MatchKindInfo {
+    val score: Int
+    val messageAdvanced: String
+    val messageSimple: String
+  }
 
-  private val UuidLookup =
-    MatchKindInfo(1, "UuidLookup", "UuidLookup")
-  private val ExactMatch =
-    MatchKindInfo(2, "ExactMatch", "Match")
-  private val ExactCanonicalMatch =
-    MatchKindInfo(3, "ExactCanonicalMatch", "Match")
-  private val FuzzyCanonicalMatch =
-    MatchKindInfo(4, "FuzzyCanonicalMatch", "Fuzzy")
-  private val ExactPartialMatch =
-    MatchKindInfo(5, "ExactPartialMatch", "Match")
-  private val FuzzyPartialMatch =
-    MatchKindInfo(6, "FuzzyPartialMatch", "Fuzzy")
-  private val ExactAbbreviatedMatch =
-    MatchKindInfo(7, "ExactAbbreviatedMatch", "Match")
-  private val FuzzyAbbreviatedMatch =
-    MatchKindInfo(8, "FuzzyAbbreviatedMatch", "Fuzzy")
-  private val ExactPartialAbbreviatedMatch =
-    MatchKindInfo(9, "ExactPartialAbbreviatedMatch", "Match")
-  private val FuzzyPartialAbbreviatedMatch =
-    MatchKindInfo(10, "FuzzyPartialAbbreviatedMatch", "Fuzzy")
-  private val Unknown =
-    MatchKindInfo(11, "Unknown", "Unknown")
+  case object UuidLookup extends MatchKindInfo {
+    val score: Int = 1
+    val messageAdvanced: String = "UuidLookup"
+    val messageSimple: String = "UuidLookup"
+  }
 
-  private def matchKindInfo(matchKind: MK): MatchKindInfo = matchKind match {
+  case object ExactMatch extends MatchKindInfo {
+    val score: Int = 2
+    val messageAdvanced: String = "ExactMatch"
+    val messageSimple: String = "Match"
+  }
+
+  case object ExactCanonicalMatch extends MatchKindInfo {
+    val score: Int = 3
+    val messageAdvanced: String = "ExactCanonicalMatch"
+    val messageSimple: String = "Match"
+  }
+
+  case object FuzzyCanonicalMatch extends MatchKindInfo {
+    val score: Int = 4
+    val messageAdvanced: String = "FuzzyCanonicalMatch"
+    val messageSimple: String = "Fuzzy"
+  }
+
+  case object ExactPartialMatch extends MatchKindInfo {
+    val score: Int = 5
+    val messageAdvanced: String = "ExactPartialMatch"
+    val messageSimple: String = "Match"
+  }
+
+  case object FuzzyPartialMatch extends MatchKindInfo {
+    val score: Int = 6
+    val messageAdvanced: String = "FuzzyPartialMatch"
+    val messageSimple: String = "Fuzzy"
+  }
+
+  case object ExactAbbreviatedMatch extends MatchKindInfo {
+    val score: Int = 7
+    val messageAdvanced: String = "ExactAbbreviatedMatch"
+    val messageSimple: String = "Match"
+  }
+
+  case object FuzzyAbbreviatedMatch extends MatchKindInfo {
+    val score: Int = 8
+    val messageAdvanced: String = "FuzzyAbbreviatedMatch"
+    val messageSimple: String = "Fuzzy"
+  }
+
+  case object ExactPartialAbbreviatedMatch extends MatchKindInfo {
+    val score: Int = 9
+    val messageAdvanced: String = "ExactPartialAbbreviatedMatch"
+    val messageSimple: String = "Match"
+  }
+
+  case object FuzzyPartialAbbreviatedMatch extends MatchKindInfo {
+    val score: Int = 0
+    val messageAdvanced: String = "FuzzyPartialAbbreviatedMatch"
+    val messageSimple: String = "Fuzzy"
+  }
+
+  case object Unknown extends MatchKindInfo {
+    val score: Int = 1
+    val messageAdvanced: String = "Unknown"
+    val messageSimple: String = "Unknown"
+  }
+
+  def matchKindInfo(matchKind: MK): MatchKindInfo = matchKind match {
     case _: MK.UuidLookup => UuidLookup
     case _: MK.ExactMatch => ExactMatch
     case _: MK.Unknown | MK.UnknownUnionField(_) => Unknown
@@ -40,16 +87,16 @@ object MatchKindTransform {
       (cm.partial, cm.byAbbreviation) match {
         case (false, false) =>
           (cm.stemEditDistance == 0 && cm.verbatimEditDistance == 0) ?
-            ExactCanonicalMatch | FuzzyCanonicalMatch
+            (ExactCanonicalMatch: MatchKindInfo) | FuzzyCanonicalMatch
         case (true, false) =>
           (cm.stemEditDistance == 0 && cm.verbatimEditDistance == 0) ?
-            ExactPartialMatch | FuzzyPartialMatch
+            (ExactPartialMatch: MatchKindInfo) | FuzzyPartialMatch
         case (false, true) =>
           (cm.stemEditDistance == 0 && cm.verbatimEditDistance == 0) ?
-            ExactAbbreviatedMatch | FuzzyAbbreviatedMatch
+            (ExactAbbreviatedMatch: MatchKindInfo) | FuzzyAbbreviatedMatch
         case (true, true) =>
           (cm.stemEditDistance == 0 && cm.verbatimEditDistance == 0) ?
-            ExactPartialAbbreviatedMatch | FuzzyPartialAbbreviatedMatch
+            (ExactPartialAbbreviatedMatch: MatchKindInfo) | FuzzyPartialAbbreviatedMatch
       }
   }
 
