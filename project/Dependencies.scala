@@ -88,6 +88,10 @@ object Dependencies {
     library.twitterBijectionCore, library.twitterBijectionUtil
   )
 
+  val crossMapperDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
+    library.twitterBijectionCore, library.twitterBijectionUtil
+  )
+
   val matcherDependencies: Seq[ModuleID] = finatraDeps ++ finatraTestDeps ++ testDeps ++ Seq(
     library.finatraHttp, library.finatraJackson,
     library.gnmatcher

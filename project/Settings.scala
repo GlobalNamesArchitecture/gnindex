@@ -232,6 +232,14 @@ object Settings {
     Revolver.enableDebugging(port = 5010, suspend = false)
   )
 
+  //////////////////////////
+  // crossMapper settings //
+  //////////////////////////
+  lazy val crossMapperSettings = testReporter ++ Seq(
+    assemblyJarName in assembly := "crossMapper-" + version.value + ".jar",
+    Revolver.enableDebugging(port = 5011, suspend = false)
+  )
+
   //////////////////////
   // Matcher settings //
   //////////////////////

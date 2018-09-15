@@ -5,7 +5,7 @@ package api
 import javax.inject.Inject
 
 import thrift.{Uuid, DataSource}
-import thrift.{namefilter => nf, nameresolver => ns, namebrowser => nb}
+import thrift.{namefilter => nf, nameresolver => ns, namebrowser => nb, crossmapper => cm}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future => ScalaFuture}
 import com.twitter.bijection.Conversion.asMethod
@@ -15,7 +15,8 @@ import java.util.UUID
 
 class Repository @Inject() (nameResolverClient: ns.Service.MethodPerEndpoint,
                             nameFilterClient: nf.Service.MethodPerEndpoint,
-                            nameBrowserClient: nb.Service.MethodPerEndpoint) {
+                            nameBrowserClient: nb.Service.MethodPerEndpoint,
+                            crossMapperClient: cm.Service.MethodPerEndpoint) {
 
   def nameResolver(nameInputs: Seq[ns.NameInput],
                    dataSourceIds: Option[Seq[Int]],
@@ -60,6 +61,11 @@ class Repository @Inject() (nameResolverClient: ns.Service.MethodPerEndpoint,
       nameBrowserClient.tripletsStartingWith(letter.charAt(0).toByte)
                        .as[ScalaFuture[Seq[nb.Triplet]]]
     }
+  }
+
+  def crossMap(dbSourceId: Int, dbTargetId: Option[Int],
+               crossMapReq: cm.Request): ScalaFuture[Seq[cm.Result]] = {
+    ScalaFuture.successful(Seq())
   }
 
 }

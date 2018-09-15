@@ -6,7 +6,7 @@ import com.google.inject.{Provides, Singleton}
 import com.twitter.app.Flag
 import com.twitter.finagle.ThriftMux
 import com.twitter.inject.TwitterModule
-import thrift.{nameresolver => nr, namefilter => nf, namebrowser => nb}
+import thrift.{nameresolver => nr, namefilter => nf, namebrowser => nb, crossmapper => cm}
 
 import scala.util.Properties
 
@@ -29,6 +29,12 @@ object ApiModule extends TwitterModule {
     default = Properties.envOrElse("NAMEBROWSER_ADDRESS", "")
   )
 
+  val crossmapperServiceAddress: Flag[String] = flag(
+    name = "crossmapperServiceAddress",
+    help = "Host and port of crossmapper service",
+    default = Properties.envOrElse("CROSSMAPPER_ADDRESS", "")
+  )
+
   @Singleton
   @Provides
   def provideNameResolverClient: nr.Service.MethodPerEndpoint =
@@ -43,4 +49,9 @@ object ApiModule extends TwitterModule {
   @Provides
   def provideBrowserClient: nb.Service.MethodPerEndpoint =
     ThriftMux.client.build[nb.Service.MethodPerEndpoint](namebrowserServiceAddress())
+
+  @Singleton
+  @Provides
+  def provideCrossmapperClient: cm.Service.MethodPerEndpoint =
+    ThriftMux.client.build[cm.Service.MethodPerEndpoint](crossmapperServiceAddress())
 }

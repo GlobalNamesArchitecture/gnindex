@@ -42,6 +42,14 @@ lazy val nameBrowser = (project in file("nameBrowser"))
   .settings(Settings.nameBrowserSettings: _*)
   .settings(libraryDependencies ++= nameBrowserDependencies)
 
+lazy val crossMapper = (project in file("crossMapper"))
+  .dependsOn(common % "compile->compile;test->test")
+  .settings(publishingSettings: _*)
+  .settings(Settings.settings: _*)
+  .settings(Settings.wartremoverSettings: _*)
+  .settings(Settings.crossMapperSettings: _*)
+  .settings(libraryDependencies ++= crossMapperDependencies)
+
 lazy val api = (project in file("api"))
     .enablePlugins(BuildInfoPlugin)
     .dependsOn(common % "compile->compile;test->test", nameResolver, matcher)
@@ -60,7 +68,7 @@ lazy val benchmark = (project in file("benchmark"))
     .settings(libraryDependencies ++= benchmarkDependencies)
 
 lazy val `gnindex-root` = project.in(file("."))
-    .aggregate(common, nameResolver, nameFilter, nameBrowser, matcher, api)
+    .aggregate(common, nameResolver, nameFilter, nameBrowser, crossMapper, matcher, api)
     .settings(noPublishingSettings: _*)
     .settings(
       crossScalaVersions := Seq("2.11.8"),
