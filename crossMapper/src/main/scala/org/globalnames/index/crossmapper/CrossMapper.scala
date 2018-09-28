@@ -2,56 +2,56 @@ package org.globalnames
 package index
 package crossmapper
 
-import com.twitter.inject.Logging
 import javax.inject.{Inject, Singleton}
 
 import thrift.{crossmapper => cm}
+import com.twitter.bijection.Conversion.asMethod
+import com.twitter.bijection.twitter_util.UtilBijections._
+import com.twitter.inject.Logging
+import com.twitter.util.{Future => TwitterFuture}
+import index.dao.{Tables => T}
+import slick.jdbc.PostgresProfile.api._
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class CrossMapper @Inject()() extends Logging {
-  def resolve(databaseSourceId: Int, databaseSinkIds: Seq[Int], databaseTargetId: Option[Int],
+class CrossMapper @Inject()(database: Database) extends Logging {
+  def resolve(databaseSourceId: Int,
+              databaseTargetId: Int,
               suppliedIds: Seq[String]): TwitterFuture[Seq[cm.Result]] = {
-    logger.info(s"started src:$databaseSourceId sinks:${databaseSinkIds.mkString("|")} " +
-      s"trg:$databaseTargetId supps:${suppliedIds.mkString("|")}")
-    if (databaseSourceId < 0 || databaseSinkIds.exists { _ < 0 } ||
-        databaseTargetId.exists { _ < 0 }) {
-      val emptyResult =
-        for (lid <- suppliedIds) yield {
-          cm.Result(
-            source = cm.Source(databaseSourceId, lid),
-            target = Seq()
-          )
-        }
-      TwitterFuture.value(emptyResult)
-    } else {
-      val localIdsSet = Set(suppliedIds: _*)
-      val query = for {
-        mapping <- T.CrossMaps.filter { cm =>
-          cm.cmDataSourceId === databaseSourceId && cm.cmLocalId.inSetBind(localIdsSet)
-        }
-        target <- T.CrossMaps.filter { cm =>
-          cm.dataSourceId === mapping.dataSourceId &&
-            cm.taxonId === mapping.taxonId &&
-            cm.nameStringId === mapping.nameStringId &&
-            (databaseSinkIds.isEmpty.bind || cm.dataSourceId.inSetBind(databaseSinkIds)) &&
-            (databaseTargetId.isEmpty.bind || cm.cmDataSourceId === databaseTargetId) &&
-            cm.cmDataSourceId =!= databaseSourceId
-        }
-      } yield (mapping.cmLocalId, target)
 
-      val res = for (mapped <- database.run(query.result)) yield {
-        val m = mapped.foldLeft(Map.empty[String, Seq[T.CrossMapsRow]]) { case (acc, (k, v)) =>
-          acc.updated(k, v +: acc.getOrElse(k, Seq()))
-        }
-        for (lid <- suppliedIds) yield {
-          cm.Result(
-            source = cm.Source(databaseSourceId, lid),
-            target = m.getOrElse(lid, Seq()).map { t =>
-              cm.Target(t.dataSourceId, t.cmDataSourceId, t.cmLocalId)
-            })
-        }
+    val query = for {
+      nsSrc <- T.NameStrings
+      nsiSrc <- T.NameStringIndices.filter { nsi =>
+        nsi.nameStringId === nsSrc.id &&
+          nsi.localId.inSetBind(suppliedIds) &&
+          nsi.dataSourceId === databaseSourceId
       }
-      res.as[TwitterFuture[Seq[cm.Result]]]
-    }
+      nsTrg <- T.NameStrings.filter { ns =>
+        ns.canonicalUuid === nsSrc.canonicalUuid
+      }
+      nsiTrg <- T.NameStringIndices.filter { nsi =>
+        nsi.nameStringId === nsTrg.id &&
+          nsi.dataSourceId === databaseTargetId
+      }
+    } yield (nsiSrc.dataSourceId, nsiSrc.localId, nsiTrg.dataSourceId, nsiTrg.localId)
+
+    val result =
+      database.run(query.distinct.result).map { xs =>
+        xs.groupBy { case (srcDbId, srcLocId, _, _) => (srcDbId, srcLocId) }
+          .map { case ((srcDbId, srcLocId), trgsData) =>
+            val src = cm.Source(srcDbId, srcLocId.getOrElse(""))
+            val trgs = trgsData.map { case (_, _, trgDbId, trgLocId) =>
+              cm.Target(trgDbId, trgLocId.getOrElse(""))
+            }
+            cm.Result(
+              source = src,
+              target = trgs
+            )
+          }
+          .toSeq
+      }
+
+    result.as[TwitterFuture[Seq[cm.Result]]]
   }
 }

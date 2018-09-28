@@ -7,7 +7,7 @@ import com.twitter.finatra.thrift.filters._
 import com.twitter.finatra.thrift.routing.ThriftRouter
 
 class Server extends ThriftServer {
-  override val name = "browser-server"
+  override val name = "crossmapper-server"
 
   override val modules = Seq(CrossMapperModule)
 

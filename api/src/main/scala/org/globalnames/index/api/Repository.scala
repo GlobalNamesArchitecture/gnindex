@@ -63,9 +63,15 @@ class Repository @Inject() (nameResolverClient: ns.Service.MethodPerEndpoint,
     }
   }
 
-  def crossMap(dbSourceId: Int, dbTargetId: Option[Int],
-               crossMapReq: cm.Request): ScalaFuture[Seq[cm.Result]] = {
-    ScalaFuture.successful(Seq())
+  def crossMap(dbSourceId: Int,
+               dbTargetId: Int,
+               localIds: Seq[String]): ScalaFuture[Seq[cm.Result]] = {
+    val result = crossMapperClient.resolve(
+      dbSourceId = dbSourceId,
+      dbTargetId = dbTargetId,
+      localIds = localIds
+    )
+    result.as[ScalaFuture[Seq[cm.Result]]]
   }
 
 }

@@ -2,7 +2,6 @@ package org.globalnames
 package index
 package api
 
-import org.globalnames.index.thrift.crossmapper.Request
 import sangria.schema._
 import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
 import thrift.{namefilter => nf, nameresolver => nr, namebrowser => nb, crossmapper => cm}
@@ -248,18 +247,6 @@ object NameBrowser {
 }
 
 object CrossMap {
-  implicit val crossMapRequesFromInput: FromInput[Request] = new FromInput[cm.Request] {
-    val marshaller: CoercedScalaResultMarshaller = CoercedScalaResultMarshaller.default
-
-    def fromResult(node: marshaller.Node): Request = {
-      val ad = node.asInstanceOf[Map[String, Any]]
-
-      cm.Request(
-        dbSinkIds = ad("dbSinkIds").asInstanceOf[Seq[Int]],
-        localIds = ad("localIds").asInstanceOf[Seq[String]]
-      )
-    }
-  }
 
   val SourceOT = ObjectType(
     "Source", fields[Unit, cm.Source](
@@ -270,8 +257,7 @@ object CrossMap {
 
   val TargetOT = ObjectType(
     "Target", fields[Unit, cm.Target](
-        Field("dbSinkId", IntType, resolve = _.value.dbSinkId)
-      , Field("dbTargetId", IntType, resolve = _.value.dbTargetId)
+        Field("dbTargetId", IntType, resolve = _.value.dbTargetId)
       , Field("localId", StringType, resolve = _.value.localId)
     )
   )
@@ -283,17 +269,11 @@ object CrossMap {
     )
   )
 
-  val SinksArg = Argument("sinks", InputObjectType[cm.Request](
-    "CrossMapSink", List(
-        InputField("dbSinkIds", ListInputType(IntType),
-                   description = "Datasources to apply cross-map through")
-      , InputField("localIds", ListInputType(StringType),
-                   description = "Local IDs in `DBSourceId` to apply cross-map against")
-    )
-  ))
   val DBSourceIdArg = Argument("dataSourceId", IntType,
     description = "The database to cross-map data from")
-  val DBTargetIdArg = Argument("dataTargetId", OptionInputType(IntType),
+  val LocalIdsArg = Argument("localIds", ListInputType(StringType),
+    description = "Supplied IDs to cross-map")
+  val DBTargetIdArg = Argument("dataTargetId", IntType,
     description = "The database to cross-map data to")
 }
 
@@ -362,9 +342,12 @@ object SchemaDefinition {
         resolve = ctx => ctx.withArgs(LetterArg)(ctx.ctx.tripletsStartingWith)
       ),
       Field("crossMap", ListType(CrossMap.ResultOT),
-        arguments = List(CrossMap.DBSourceIdArg, CrossMap.DBTargetIdArg, CrossMap.SinksArg),
-        resolve = ctx => ctx.withArgs(CrossMap.DBSourceIdArg, CrossMap.DBTargetIdArg,
-          CrossMap.SinksArg) { ctx.ctx.crossMap })
+        arguments = List(CrossMap.DBSourceIdArg, CrossMap.DBTargetIdArg, CrossMap.LocalIdsArg),
+        resolve = ctx =>
+          ctx.withArgs(CrossMap.DBSourceIdArg, CrossMap.DBTargetIdArg, CrossMap.LocalIdsArg) {
+            ctx.ctx.crossMap
+          }
+      )
     )
   )
 
