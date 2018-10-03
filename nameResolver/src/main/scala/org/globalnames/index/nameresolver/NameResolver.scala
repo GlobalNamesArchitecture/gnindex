@@ -111,7 +111,7 @@ class NameResolver(request: nr.Request)
   }
 
   private
-  def vernacularsGet(portion: Seq[ResultDB]): ScalaFuture[Seq[Seq[Vernacular]]] = {
+  def vernacularsFetch(portion: Seq[ResultDB]): ScalaFuture[Seq[Seq[Vernacular]]] = {
     val vernaculars =
       if (request.withVernaculars) {
         val qrys = portion.map { resDb =>
@@ -160,11 +160,13 @@ class NameResolver(request: nr.Request)
         DBResultObj.project(ns, nsi, ds, nsAccepted, nsiAccepted)
       }
 
+    val portionFut = database.run(queryJoin.result)
+    val countFut = database.run(query.length.result)
     val result =
       for {
-        portion <- database.run(queryJoin.result)
-        count <- database.run(query.length.result)
-        vernaculars <- vernacularsGet(portion)
+        portion <- portionFut
+        count <- countFut
+        vernaculars <- vernacularsFetch(portion)
       } yield {
         for ((p, vs) <- portion.zip(vernaculars)) yield {
           ResultVernacular(
