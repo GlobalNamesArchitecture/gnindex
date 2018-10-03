@@ -71,6 +71,14 @@ object Common {
     )
   )
 
+  val VernacularOT = ObjectType(
+    "Vernacular", fields[Unit, thrift.Vernacular](
+        Field("id", IDType, resolve = _.value.id.string)
+      , Field("name", StringType, resolve = _.value.name)
+      , Field("dataSourceId", IntType, resolve = _.value.dataSourceId)
+    )
+  )
+
   val DataSourceOT = ObjectType(
     "DataSource", fields[Unit, thrift.DataSource](
         Field("id", IntType, resolve = _.value.id)
@@ -188,6 +196,7 @@ object NameResolver {
       , Field("dataSource", DataSourceOT, resolve = _.value.result.dataSource)
       , Field("acceptedName", OptionType(AcceptedNameOT), resolve = _.value.result.acceptedName)
       , Field("updatedAt", OptionType(StringType), resolve = _.value.result.updatedAt)
+      , Field("vernaculars", ListType(VernacularOT), resolve = _.value.result.vernaculars)
     )
   )
 
@@ -309,6 +318,7 @@ object SchemaDefinition {
   val SearchTermArg = Argument("searchTerm", StringType)
   val PageArg = Argument("page", OptionInputType(IntType), 0)
   val PerPageArg = Argument("perPage", OptionInputType(IntType), nameStringsMaxCount)
+  val WithVernacularsArg = Argument("withVernaculars", OptionInputType(BooleanType), false)
   val LetterArg = Argument("letter", StringType)
 
   val nameUuidsArg = Argument("uuids", ListInputType(IDType))
@@ -317,11 +327,12 @@ object SchemaDefinition {
     "Query", fields[Repository, Unit](
       Field("nameResolver", NameResolver.ResponsesOT,
         arguments = List(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg,
-                         AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg),
+                         AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg,
+                         WithVernacularsArg),
         resolve = ctx =>
           ctx.withArgs(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg,
-                       AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg)
-                      (ctx.ctx.nameResolver)
+                       AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg,
+                       WithVernacularsArg) { ctx.ctx.nameResolver }
       ),
       Field("nameStrings", NameFilter.ResponseNameStringsOT,
         arguments = List(SearchTermArg, PageArg, PerPageArg, DataSourceIdsArg),

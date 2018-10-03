@@ -17,6 +17,7 @@ import thrift.{MatchKind => MK, matcher => m, nameresolver => nr}
 import util.{DataSource, UuidEnhanced}
 import util.UuidEnhanced._
 import slick.jdbc.PostgresProfile.api._
+import java.util.UUID
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future => ScalaFuture}
@@ -25,6 +26,10 @@ import scalaz.syntax.std.option._
 
 object NameResolver {
   type NameStringsQuery = Query[T.NameStrings, T.NameStringsRow, Seq]
+
+  final case class ResultVernacular(resultDB: ResultDB,
+                                    total: Int,
+                                    vernaculars: Seq[Vernacular])
 
   final case class RequestResponse(total: Int,
                                    request: NameInputParsed,
@@ -106,7 +111,28 @@ class NameResolver(request: nr.Request)
   }
 
   private
-  def queryWithSurrogates(nameStringsQuery: NameStringsQuery): ScalaFuture[Seq[ResultDB]] = {
+  def vernacularsGet(portion: Seq[ResultDB]): ScalaFuture[Seq[Seq[Vernacular]]] = {
+    val vernaculars =
+      if (request.withVernaculars) {
+        val qrys = portion.map { resDb =>
+          val qry = for {
+            vsi <- T.VernacularStringIndices.filter { vsi =>
+              vsi.dataSourceId === resDb.ds.id && vsi.taxonId === resDb.nsi.taxonId
+            }
+            vs <- T.VernacularStrings.filter { vs => vs.id === vsi.vernacularStringId }
+          } yield DBResultObj.projectVernacular(vs, vsi)
+          qry.result
+        }
+        database.run(DBIO.sequence(qrys))
+      } else {
+        ScalaFuture.successful(Seq.fill(portion.size)(Seq()))
+      }
+    vernaculars
+  }
+
+  private
+  def queryWithSurrogates(nameStringsQuery: NameStringsQuery):
+      ScalaFuture[Seq[ResultVernacular]] = {
     val nameStringsQuerySurrogates =
       if (request.withSurrogates) nameStringsQuery
       else nameStringsQuery.filter { ns => ns.surrogate.isEmpty || !ns.surrogate }
@@ -120,7 +146,9 @@ class NameResolver(request: nr.Request)
       }
     } yield (ns, nsi, ds)
 
-    val queryJoin = query
+    val queryCut = query.drop(dropCount).take(takeCount)
+
+    val queryJoin = queryCut
       .joinLeft(T.NameStringIndices).on { case ((_, nsi_l, _), nsi_r) =>
         nsi_l.acceptedTaxonId =!= "" &&
           nsi_l.dataSourceId === nsi_r.dataSourceId && nsi_l.acceptedTaxonId === nsi_r.taxonId
@@ -132,7 +160,21 @@ class NameResolver(request: nr.Request)
         DBResultObj.project(ns, nsi, ds, nsAccepted, nsiAccepted)
       }
 
-    database.run(queryJoin.result)
+    val result =
+      for {
+        portion <- database.run(queryJoin.result)
+        count <- database.run(query.length.result)
+        vernaculars <- vernacularsGet(portion)
+      } yield {
+        for ((p, vs) <- portion.zip(vernaculars)) yield {
+          ResultVernacular(
+            resultDB = p,
+            total = count,
+            vernaculars = vs
+          )
+        }
+      }
+    result
   }
 
   private
@@ -145,9 +187,10 @@ class NameResolver(request: nr.Request)
     }
     val reqResp = queryWithSurrogates(qry).map { databaseResults =>
       logInfo(s"[Exact match] Database fetched")
-      val nameUuidMatches = databaseResults.groupBy { r => r.ns.id }.withDefaultValue(Seq())
+      val nameUuidMatches =
+        databaseResults.groupBy { r => r.resultDB.ns.id }.withDefaultValue(Seq())
       val canonicalUuidMatches =
-        databaseResults.groupBy { r => r.ns.canonicalUuid }
+        databaseResults.groupBy { r => r.resultDB.ns.canonicalUuid }
                        .filterKeys { key => key.isDefined && key != UuidGenerator.EmptyUuid.some }
                        .withDefaultValue(Seq())
 
@@ -158,7 +201,8 @@ class NameResolver(request: nr.Request)
           (nums ++ cums).distinct
         }
 
-        def composeResult(r: ResultDB): ResultScored = {
+        def composeResult(rv: ResultVernacular): ResultScored = {
+          val r = rv.resultDB
           val matchKind: MK =
             if (r.ns.id == nameParsed.parsed.preprocessorResult.id) {
               MK.ExactMatch(thrift.ExactMatch())
@@ -170,18 +214,25 @@ class NameResolver(request: nr.Request)
               MK.Unknown(thrift.Unknown())
             }
           val dbResult =
-            DBResultObj.create(r, createMatchType(matchKind, request.advancedResolution))
+            DBResultObj.create(
+              dbRes = r,
+              vernaculars = rv.vernaculars,
+              matchType = createMatchType(matchKind, request.advancedResolution)
+            )
           val score = ResultScores(nameParsed, dbResult).compute
           nr.ResultScored(dbResult, score)
         }
 
         val responseResults =
           for {
-            result <- databaseMatches
-            if request.dataSourceIds.isEmpty || request.dataSourceIds.contains(result.ds.id)
-          } yield composeResult(result)
+            res <- databaseMatches
+            if request.dataSourceIds.isEmpty || request.dataSourceIds.contains(res.resultDB.ds.id)
+          } yield composeResult(res)
         val preferredResponseResults =
-          for (result <- databaseMatches if request.preferredDataSourceIds.contains(result.ds.id))
+          for {
+            result <- databaseMatches
+            if request.preferredDataSourceIds.contains(result.resultDB.ds.id)
+          }
           yield composeResult(result)
 
         RequestResponse(total = responseResults.size,
@@ -209,7 +260,7 @@ class NameResolver(request: nr.Request)
         val qry = T.NameStrings.filter { ns => ns.canonicalUuid.inSetBind(uuids) }
         queryWithSurrogates(qry).map { nameStringsDB =>
           logInfo(s"[Fuzzy match] Database response: ${nameStringsDB.size} records")
-          val nameStringsDBMap = nameStringsDB.groupBy { r => r.ns.canonicalUuid }
+          val nameStringsDBMap = nameStringsDB.groupBy { r => r.resultDB.ns.canonicalUuid }
                                               .withDefaultValue(Seq())
 
           fuzzyMatches.map { fuzzyMatch =>
@@ -219,9 +270,13 @@ class NameResolver(request: nr.Request)
                 fuzzyResult <- fuzzyMatch.results
                 canId = UuidEnhanced.thriftUuid2javaUuid(fuzzyResult.nameMatched.uuid)
                 result <- nameStringsDBMap(canId.some)
-                if request.dataSourceIds.isEmpty || request.dataSourceIds.contains(result.ds.id)
+                if request.dataSourceIds.isEmpty ||
+                    request.dataSourceIds.contains(result.resultDB.ds.id)
                 dbResult = DBResultObj.create(
-                  result, createMatchType(fuzzyResult.matchKind, request.advancedResolution))
+                  dbRes = result.resultDB,
+                  vernaculars = result.vernaculars,
+                  matchType = createMatchType(fuzzyResult.matchKind, request.advancedResolution)
+                )
                 score = ResultScores(nameInputParsed, dbResult).compute
               } yield {
                 nr.ResultScored(dbResult, score)
@@ -231,9 +286,12 @@ class NameResolver(request: nr.Request)
                 fuzzyResult <- fuzzyMatch.results
                 canId = UuidEnhanced.thriftUuid2javaUuid(fuzzyResult.nameMatched.uuid)
                 result <- nameStringsDBMap(canId.some)
-                if request.preferredDataSourceIds.contains(result.ds.id)
+                if request.preferredDataSourceIds.contains(result.resultDB.ds.id)
                 dbResult = DBResultObj.create(
-                  result, createMatchType(fuzzyResult.matchKind, request.advancedResolution))
+                  dbRes = result.resultDB,
+                  vernaculars = result.vernaculars,
+                  matchType = createMatchType(fuzzyResult.matchKind, request.advancedResolution)
+                )
                 score = ResultScores(nameInputParsed, dbResult).compute
               } yield {
                 nr.ResultScored(dbResult, score)

@@ -101,6 +101,12 @@ struct Context {
     2: string clade
 }
 
+struct Vernacular {
+    1: Uuid id
+    2: string name
+    3: i32 dataSourceId
+}
+
 struct Result {
     1: Name name
     2: optional CanonicalName canonicalName
@@ -114,4 +120,5 @@ struct Result {
     10: optional string acceptedTaxonId
     11: AcceptedName acceptedName
     12: optional Timestamp updatedAt
+    13: list<Vernacular> vernaculars
 }

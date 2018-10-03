@@ -75,6 +75,15 @@ object Projections {
                             nsi: P.NameStringIndicesLifted,
                             ds: P.DataSourcesLifted,
                             acceptedName: Rep[Option[P.NameStringsLifted]])
+
+  implicit object VernacularShape
+    extends CaseClassShape(VernacularLifted.tupled, Vernacular.tupled)
+  case class Vernacular(id: UUID,
+                        name: String,
+                        dataSourceId: Int)
+  case class VernacularLifted(id: Rep[UUID],
+                              name: Rep[String],
+                              dataSourceId: Rep[Int])
 }
 
 object DBResultObj {
@@ -97,7 +106,9 @@ object DBResultObj {
     dataSourceRes
   }
 
-  def create(dbRes: P.ResultDB, matchType: MatchType): Result = {
+  def create(dbRes: P.ResultDB,
+             matchType: MatchType,
+             vernaculars: Seq[P.Vernacular] = Seq()): Result = {
     val canonicalNameOpt =
       for (canId <- dbRes.ns.canonicalUuid; canNameValue <- dbRes.ns.canonical) yield {
         val canonicalRanked = dbRes.ns.canonicalRanked.getOrElse(canNameValue)
@@ -140,6 +151,10 @@ object DBResultObj {
       }
     }
 
+    val vs = for (v <- vernaculars) yield {
+      thrift.Vernacular(id = v.id, name = v.name, dataSourceId = v.dataSourceId)
+    }
+
     val result = Result(
       name = Name(uuid = dbRes.ns.id, value = dbRes.ns.name),
       canonicalName = canonicalNameOpt,
@@ -152,7 +167,8 @@ object DBResultObj {
       dataSource = dataSourceRes,
       acceptedTaxonId = dbRes.nsi.acceptedTaxonId,
       acceptedName = acceptedNameResult,
-      updatedAt = dbRes.ds.updatedAt.map { _.toString }
+      updatedAt = dbRes.ds.updatedAt.map { _.toString },
+      vernaculars = vs
     )
     result
   }
@@ -190,5 +206,11 @@ object DBResultObj {
       }
     P.ResultDBLifted(nsRep, nsiRep, dsRep, acpNsRep)
   }
+
+  def projectVernacular(vs: T.VernacularStrings,
+                        vsi: T.VernacularStringIndices): Projections.VernacularLifted = {
+    P.VernacularLifted(vs.id, vs.name, vsi.dataSourceId)
+  }
+
 }
 
