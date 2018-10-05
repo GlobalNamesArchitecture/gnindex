@@ -104,7 +104,9 @@ struct Context {
 struct Vernacular {
     1: Uuid id
     2: string name
-    3: i32 dataSourceId
+    3: optional string language
+    4: optional string locality
+    5: optional string countryCode
 }
 
 struct Result {

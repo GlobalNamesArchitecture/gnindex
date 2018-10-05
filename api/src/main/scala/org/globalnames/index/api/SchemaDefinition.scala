@@ -75,7 +75,9 @@ object Common {
     "Vernacular", fields[Unit, thrift.Vernacular](
         Field("id", IDType, resolve = _.value.id.string)
       , Field("name", StringType, resolve = _.value.name)
-      , Field("dataSourceId", IntType, resolve = _.value.dataSourceId)
+      , Field("language", OptionType(StringType), resolve = _.value.language)
+      , Field("locality", OptionType(StringType), resolve = _.value.locality)
+      , Field("countryCode", OptionType(StringType), resolve = _.value.countryCode)
     )
   )
 

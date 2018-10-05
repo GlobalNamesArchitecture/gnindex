@@ -80,10 +80,14 @@ object Projections {
     extends CaseClassShape(VernacularLifted.tupled, Vernacular.tupled)
   case class Vernacular(id: UUID,
                         name: String,
-                        dataSourceId: Int)
+                        language: Option[String],
+                        locality: Option[String],
+                        countryCode: Option[String])
   case class VernacularLifted(id: Rep[UUID],
                               name: Rep[String],
-                              dataSourceId: Rep[Int])
+                              language: Rep[Option[String]],
+                              locality: Rep[Option[String]],
+                              countryCode: Rep[Option[String]])
 }
 
 object DBResultObj {
@@ -152,7 +156,13 @@ object DBResultObj {
     }
 
     val vs = for (v <- vernaculars) yield {
-      thrift.Vernacular(id = v.id, name = v.name, dataSourceId = v.dataSourceId)
+      thrift.Vernacular(
+        id = v.id,
+        name = v.name,
+        language = v.language,
+        locality = v.locality,
+        countryCode = v.countryCode
+      )
     }
 
     val result = Result(
@@ -209,7 +219,7 @@ object DBResultObj {
 
   def projectVernacular(vs: T.VernacularStrings,
                         vsi: T.VernacularStringIndices): Projections.VernacularLifted = {
-    P.VernacularLifted(vs.id, vs.name, vsi.dataSourceId)
+    P.VernacularLifted(vs.id, vs.name, vsi.language, vsi.locality, vsi.countryCode)
   }
 
 }
