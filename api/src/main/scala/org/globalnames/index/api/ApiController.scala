@@ -60,7 +60,10 @@ class ApiController @Inject()(repository: Repository) extends Controller {
           graphqlExecution.as[TwitterFuture[JValue]]
                           .map { v => response.ok.json(compact(render(v))) }
         } else {
-          val errorsJValue = errorsResponse(violations.map { _.errorMessage })
+          val errorsJValue = errorsResponse(violations.map { v =>
+            logger.error(v.errorMessage)
+            v.errorMessage
+          })
           response.ok.json(compact(render(errorsJValue)))
         }
 
