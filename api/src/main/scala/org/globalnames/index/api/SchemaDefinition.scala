@@ -147,8 +147,8 @@ object Common {
 object NameFilter {
   import Common._
 
-  val ResultsPerDataSourceOT = ObjectType(
-    "ResultsPerDataSourceItem", fields[Unit, nf.ResultPerDataSource](
+  val NameFilterResultsPerDataSourceOT = ObjectType(
+    "NameFilterResultsPerDataSourceOT", fields[Unit, nf.ResultPerDataSource](
         Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
       , Field("results", ListType(ResultItemOT), resolve = _.value.results)
     )
@@ -158,7 +158,7 @@ object NameFilter {
     "ResultNameStrings", fields[Unit, nf.ResultNameStrings](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
-      , Field("resultsPerDataSource", ListType(ResultsPerDataSourceOT),
+      , Field("resultsPerDataSource", ListType(NameFilterResultsPerDataSourceOT),
               resolve = _.value.resultsPerDataSource)
     )
   )
@@ -185,7 +185,7 @@ object NameResolver {
   import Common._
 
   val ResultItemScoredOT = ObjectType(
-    "ResultItem", fields[Unit, nr.ResultScored](
+    "ResultItemScored", fields[Unit, nr.ResultScored](
         Field("name", NameOT, resolve = _.value.result.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.result.canonicalName)
       , Field("synonym", BooleanType, resolve = _.value.result.synonym)
@@ -202,8 +202,8 @@ object NameResolver {
     )
   )
 
-  val ResultsPerDataSourceOT = ObjectType(
-    "ResultsPerDataSourceItem", fields[Unit, nr.ResultScoredPerDataSource](
+  val NameResolverResultsPerDataSourceOT = ObjectType(
+    "NameResolverResultsPerDataSourceOT", fields[Unit, nr.ResultScoredPerDataSource](
         Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
       , Field("results", ListType(ResultItemScoredOT),
               resolve = _.value.resultsScored)
@@ -223,7 +223,7 @@ object NameResolver {
                        thrift.DataSourceQuality.EnumUnknownDataSourceQuality(_) => "Unknown"
                 }
               })
-      , Field("resultsPerDataSource", ListType(ResultsPerDataSourceOT),
+      , Field("resultsPerDataSource", ListType(NameResolverResultsPerDataSourceOT),
               resolve = _.value.resultsScoredPerDataSource)
     )
   )
