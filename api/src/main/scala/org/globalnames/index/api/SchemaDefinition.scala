@@ -2,9 +2,11 @@ package org.globalnames
 package index
 package api
 
+import sangria.ast.AstVisitor
 import sangria.schema._
 import sangria.marshalling.{CoercedScalaResultMarshaller, FromInput}
-import thrift.{namefilter => nf, nameresolver => nr, namebrowser => nb, crossmapper => cm}
+import sangria.visitor.VisitorCommand
+import thrift.{crossmapper => cm, namebrowser => nb, namefilter => nf, nameresolver => nr}
 import thrift.{MatchKind => MK}
 import util.UuidEnhanced.ThriftUuidEnhanced
 
@@ -320,7 +322,6 @@ object SchemaDefinition {
   val SearchTermArg = Argument("searchTerm", StringType)
   val PageArg = Argument("page", OptionInputType(IntType), 0)
   val PerPageArg = Argument("perPage", OptionInputType(IntType), nameStringsMaxCount)
-  val WithVernacularsArg = Argument("withVernaculars", OptionInputType(BooleanType), false)
   val LetterArg = Argument("letter", StringType)
 
   val nameUuidsArg = Argument("uuids", ListInputType(IDType))
@@ -329,12 +330,22 @@ object SchemaDefinition {
     "Query", fields[Repository, Unit](
       Field("nameResolver", NameResolver.ResponsesOT,
         arguments = List(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg,
-                         AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg,
-                         WithVernacularsArg),
-        resolve = ctx =>
+                         AdvancedResolutionArg, BestMatchOnlyArg,
+                         PageArg, PerPageArg),
+        resolve = ctx => {
+          var withVernaculars = false
+          val _ = AstVisitor.visit(ctx.query, AstVisitor {
+            case x: sangria.ast.Field if x.name == "vernaculars" =>
+              withVernaculars = true
+              VisitorCommand.Continue
+          })
+
           ctx.withArgs(NamesRequestArg, DataSourceIdsArg, PreferredDataSourceIdsArg,
-                       AdvancedResolutionArg, BestMatchOnlyArg, PageArg, PerPageArg,
-                       WithVernacularsArg) { ctx.ctx.nameResolver }
+                       AdvancedResolutionArg, BestMatchOnlyArg,
+                       PageArg, PerPageArg) {
+            ctx.ctx.nameResolver(withVernaculars = withVernaculars)
+          }
+        }
       ),
       Field("nameStrings", NameFilter.ResponseNameStringsOT,
         arguments = List(SearchTermArg, PageArg, PerPageArg, DataSourceIdsArg),
