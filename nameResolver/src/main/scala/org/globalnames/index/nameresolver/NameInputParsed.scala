@@ -6,7 +6,7 @@ import org.apache.commons.lang.WordUtils
 import thrift.nameresolver.NameInput
 import parser.{ScientificNameParser => snp}
 
-class NameInputParsed private (ni: NameInput) {
+final case class NameInputParsed(ni: NameInput) {
   val (firstWordCorrectlyCapitalised: Boolean, valueCapitalised: String) = {
     if (ni.value.isEmpty) {
       (true, ni.value)
@@ -27,9 +27,4 @@ class NameInputParsed private (ni: NameInput) {
     snp.instance.fromString(valueCapitalised)
 
   val nameInput: NameInput = ni.copy(suppliedId = ni.suppliedId.map { _.trim })
-}
-
-object NameInputParsed {
-  def apply(nameInput: NameInput): NameInputParsed =
-    new NameInputParsed(nameInput)
 }

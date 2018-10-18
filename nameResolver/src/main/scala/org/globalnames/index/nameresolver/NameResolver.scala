@@ -2,8 +2,6 @@ package org.globalnames
 package index
 package nameresolver
 
-import java.util.UUID
-
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
 import com.twitter.inject.Logging
@@ -38,31 +36,24 @@ object NameResolver {
     val response: nr.Response = {
       val rsnss =
         results
-          .groupBy { r => r.result.name.uuid }
-          .values.flatMap { results =>
-            val rpdss =
-              for ((ds, vs) <- results.groupBy { r => r.result.dataSource }) yield {
-                nr.ResultScoredPerDataSource(
-                  dataSource = ds,
-                  resultsScored = vs
-                )
-              }
-            val rpdssVec = rpdss.toVector
+          .groupBy { r => r.result.name.uuid }.values
+          .flatMap { results =>
+            val resultsVec = results.toVector
 
             val datasourceBestQuality =
-              if (rpdssVec.isEmpty) {
+              if (resultsVec.isEmpty) {
                 thrift.DataSourceQuality.Unknown
               } else {
-                rpdssVec.map { rpds => rpds.dataSource }.max(util.DataSource.ordering).quality
+                resultsVec.map { r => r.result.dataSource }.max(util.DataSource.ordering).quality
               }
 
             for (response <- results.headOption) yield {
-              nr.ResultScoredNameString(
+              nr.ResultScoredByNameString(
                 name = response.result.name,
                 canonicalName = response.result.canonicalName,
                 datasourceBestQuality = datasourceBestQuality,
-                resultsScoredPerDataSource = rpdss.toVector
-                  .sortBy { rpds => rpds.dataSource }(util.DataSource.ordering.reverse)
+                resultsScored =
+                  resultsVec.sortBy { r => r.result.dataSource }(util.DataSource.ordering.reverse)
               )
             }
           }
@@ -72,7 +63,7 @@ object NameResolver {
       nr.Response(total = total,
         suppliedInput = request.nameInput.value,
         suppliedId = request.nameInput.suppliedId,
-        resultScoredNameStrings = rsnss,
+        resultScoredByNameStrings = rsnss,
         preferredResultsScored = preferredResults
       )
     }
@@ -146,7 +137,7 @@ class NameResolver(request: nr.Request)
       }
     } yield (ns, nsi, ds)
 
-    val queryCut = query.drop(dropCount).take(takeCount)
+    val queryCut = query.take(30000)
 
     val queryJoin = queryCut
       .joinLeft(T.NameStringIndices).on { case ((_, nsi_l, _), nsi_r) =>
@@ -373,6 +364,7 @@ class NameResolver(request: nr.Request)
           response.results.nonEmpty ? Seq(response.results.max(resultScoredOrdering)) | Seq()
         } else {
           response.results.sorted(resultScoredOrdering.reverse)
+                  .slice(dropCount, dropCount + takeCount)
         }
       val preferredResultsSorted = response.preferredResults.sorted(resultScoredOrdering.reverse)
       val preferredResults =
@@ -399,7 +391,7 @@ class NameResolver(request: nr.Request)
 
       val dirtyExactMatchesByUuid =
         exactMatchesByUuid.filter { reqResp =>
-          val resultScoredNameStrings = reqResp.response.resultScoredNameStrings
+          val resultScoredNameStrings = reqResp.response.resultScoredByNameStrings
           if (resultScoredNameStrings.isEmpty) {
             false
           } else {
@@ -413,7 +405,7 @@ class NameResolver(request: nr.Request)
                    request.advancedResolution)
           .map { reqResps =>
             reqResps.filter { reqResp =>
-              val resultScoredNameStrings = reqResp.response.resultScoredNameStrings
+              val resultScoredNameStrings = reqResp.response.resultScoredByNameStrings
               if (resultScoredNameStrings.isEmpty) {
                 false
               } else {

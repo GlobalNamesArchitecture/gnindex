@@ -204,16 +204,8 @@ object NameResolver {
     )
   )
 
-  val NameResolverResultsPerDataSourceOT = ObjectType(
-    "NameResolverResultsPerDataSourceOT", fields[Unit, nr.ResultScoredPerDataSource](
-        Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
-      , Field("results", ListType(ResultItemScoredOT),
-              resolve = _.value.resultsScored)
-    )
-  )
-
-  val ResultScoredNameStringOT = ObjectType(
-    "ResultScoredNameString", fields[Unit, nr.ResultScoredNameString](
+  val ResultScoredByNameStringOT = ObjectType(
+    "ResultScoredNameString", fields[Unit, nr.ResultScoredByNameString](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
       , Field("qualitySummary", OptionType(StringType),
@@ -225,8 +217,7 @@ object NameResolver {
                        thrift.DataSourceQuality.EnumUnknownDataSourceQuality(_) => "Unknown"
                 }
               })
-      , Field("resultsPerDataSource", ListType(NameResolverResultsPerDataSourceOT),
-              resolve = _.value.resultsScoredPerDataSource)
+      , Field("matchedNames", ListType(ResultItemScoredOT), resolve = _.value.resultsScored)
     )
   )
 
@@ -235,8 +226,8 @@ object NameResolver {
         Field("total", IntType, None, resolve = _.value.total)
       , Field("suppliedInput", OptionType(StringType), None, resolve = _.value.suppliedInput)
       , Field("suppliedId", OptionType(StringType), None, resolve = _.value.suppliedId)
-      , Field("results", ListType(ResultScoredNameStringOT), None,
-              resolve = _.value.resultScoredNameStrings)
+      , Field("results", ListType(ResultScoredByNameStringOT), None,
+              resolve = _.value.resultScoredByNameStrings)
       , Field("preferredResults", ListType(ResultItemScoredOT),
               resolve = _.value.preferredResultsScored)
     )
