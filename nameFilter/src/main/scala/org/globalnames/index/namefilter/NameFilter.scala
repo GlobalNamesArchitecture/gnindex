@@ -303,19 +303,12 @@ class NameFilter @Inject()(database: Database) extends Logging {
       }
       .groupBy { r => r.name.uuid }
       .values.flatMap { results =>
-        val rpdss =
-         for ((ds, vs) <- results.groupBy { r => r.dataSource }) yield {
-           ResultPerDataSource(
-             dataSource = ds,
-             results = vs
-           )
-         }
+        val resultsVec = results.toVector
         for (response <- results.headOption) yield {
           ResultNameStrings(
             name = response.name,
             canonicalName = response.canonicalName,
-            resultsPerDataSource =
-              rpdss.toVector.sortBy { rpds => rpds.dataSource }(util.DataSource.ordering.reverse)
+            results = resultsVec.sortBy { r => r.dataSource }(util.DataSource.ordering.reverse)
           )
         }
       }

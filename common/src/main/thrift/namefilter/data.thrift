@@ -12,15 +12,10 @@ struct Request {
     4: list<i32> dataSourceIds
 }
 
-struct ResultPerDataSource {
-    1: commondata.DataSource dataSource
-    2: list<commondata.Result> results
-}
-
 struct ResultNameStrings {
     1: commondata.Name name
     2: optional commondata.CanonicalName canonicalName
-    3: list<ResultPerDataSource> resultsPerDataSource
+    3: list<commondata.Result> results
 }
 
 struct ResponseNameStrings {

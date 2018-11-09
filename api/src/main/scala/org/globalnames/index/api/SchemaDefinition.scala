@@ -149,19 +149,11 @@ object Common {
 object NameFilter {
   import Common._
 
-  val NameFilterResultsPerDataSourceOT = ObjectType(
-    "NameFilterResultsPerDataSourceOT", fields[Unit, nf.ResultPerDataSource](
-        Field("dataSource", DataSourceOT, resolve = _.value.dataSource)
-      , Field("results", ListType(ResultItemOT), resolve = _.value.results)
-    )
-  )
-
   val ResultNameStringsOT = ObjectType(
     "ResultNameStrings", fields[Unit, nf.ResultNameStrings](
         Field("name", NameOT, resolve = _.value.name)
       , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
-      , Field("resultsPerDataSource", ListType(NameFilterResultsPerDataSourceOT),
-              resolve = _.value.resultsPerDataSource)
+      , Field("matchedNames", ListType(ResultItemOT), resolve = _.value.results)
     )
   )
 
