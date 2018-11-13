@@ -196,30 +196,19 @@ object NameResolver {
     )
   )
 
-  val ResultScoredByNameStringOT = ObjectType(
-    "ResultScoredNameString", fields[Unit, nr.ResultScoredByNameString](
-        Field("name", NameOT, resolve = _.value.name)
-      , Field("canonicalName", OptionType(CanonicalNameOT), resolve = _.value.canonicalName)
-      , Field("qualitySummary", OptionType(StringType),
-              resolve = { ctx =>
-                ctx.value.datasourceBestQuality match {
-                  case thrift.DataSourceQuality.Curated => "HasCuratedSources"
-                  case thrift.DataSourceQuality.AutoCurated => "HasAutoCuratedSources"
-                  case thrift.DataSourceQuality.Unknown |
-                       thrift.DataSourceQuality.EnumUnknownDataSourceQuality(_) => "Unknown"
-                }
-              })
-      , Field("matchedNames", ListType(ResultItemScoredOT), resolve = _.value.resultsScored)
-    )
-  )
-
   val ResponseOT = ObjectType(
     "Response", fields[Unit, nr.Response](
         Field("total", IntType, None, resolve = _.value.total)
       , Field("suppliedInput", OptionType(StringType), None, resolve = _.value.suppliedInput)
       , Field("suppliedId", OptionType(StringType), None, resolve = _.value.suppliedId)
-      , Field("results", ListType(ResultScoredByNameStringOT), None,
-              resolve = _.value.resultScoredByNameStrings)
+      , Field("results", ListType(ResultItemScoredOT), None, resolve = _.value.resultsScored)
+      , Field("qualitySummary", OptionType(StringType), resolve = { ctx =>
+        ctx.value.datasourceBestQuality match {
+          case thrift.DataSourceQuality.Curated => "HasCuratedSources"
+          case thrift.DataSourceQuality.AutoCurated => "HasAutoCuratedSources"
+          case thrift.DataSourceQuality.Unknown |
+               thrift.DataSourceQuality.EnumUnknownDataSourceQuality(_) => "Unknown"
+        }})
       , Field("preferredResults", ListType(ResultItemScoredOT),
               resolve = _.value.preferredResultsScored)
     )

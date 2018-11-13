@@ -29,12 +29,18 @@ object NameResolver {
                                     total: Int,
                                     vernaculars: Seq[Vernacular])
 
+  final case class ResultScoredByNameString(
+    name: t.Name,
+    canonicalName: Option[t.CanonicalName],
+    datasourceBestQuality: t.DataSourceQuality,
+    resultsScored: Vector[ResultScored])
+
   final case class RequestResponse(total: Int,
                                    request: NameInputParsed,
                                    results: Seq[nr.ResultScored],
                                    preferredResults: Seq[nr.ResultScored]) {
-    val response: nr.Response = {
-      val rsnss =
+    val resultsByNameString: Vector[ResultScoredByNameString] = {
+      val rsnss: Vector[ResultScoredByNameString] =
         results
           .groupBy { r => r.result.name.uuid }.values
           .flatMap { results =>
@@ -42,28 +48,38 @@ object NameResolver {
 
             val datasourceBestQuality =
               if (resultsVec.isEmpty) {
-                thrift.DataSourceQuality.Unknown
+                t.DataSourceQuality.Unknown
               } else {
                 resultsVec.map { r => r.result.dataSource }.max(util.DataSource.ordering).quality
               }
 
             for (response <- results.headOption) yield {
-              nr.ResultScoredByNameString(
+              ResultScoredByNameString(
                 name = response.result.name,
                 canonicalName = response.result.canonicalName,
                 datasourceBestQuality = datasourceBestQuality,
-                resultsScored =
-                  resultsVec.sortBy { r => r.result.dataSource }(util.DataSource.ordering.reverse)
+                resultsScored = resultsVec
               )
             }
           }
           .toVector
-          .sortBy { r => r.name.value }
+      rsnss
+    }
 
-      nr.Response(total = total,
+    val response: nr.Response = {
+      val results = resultsByNameString.flatMap { r => r.resultsScored }
+      val datasourceBestQuality =
+        if (results.isEmpty) {
+          t.DataSourceQuality.Unknown
+        } else {
+          results.map { r => r.result.dataSource }.max(util.DataSource.ordering).quality
+        }
+      nr.Response(
+        total = total,
         suppliedInput = request.nameInput.value,
         suppliedId = request.nameInput.suppliedId,
-        resultScoredByNameStrings = rsnss,
+        resultsScored = results,
+        datasourceBestQuality = datasourceBestQuality,
         preferredResultsScored = preferredResults
       )
     }
@@ -308,7 +324,7 @@ class NameResolver(request: nr.Request)
                  ContextFinder.find(results.flatMap { _.result.classification.path })
                }
                .filter { case (_, path) => !(path == null || path.isEmpty) }
-               .toSeq.map { case (ds, path) => t.Context(ds, path) }
+               .toVector.map { case (ds, path) => t.Context(ds, path) }
     nr.Responses(responses = responses.map { _.response },
                  contexts = contexts)
   }
@@ -391,7 +407,7 @@ class NameResolver(request: nr.Request)
 
       val dirtyExactMatchesByUuid =
         exactMatchesByUuid.filter { reqResp =>
-          val resultScoredNameStrings = reqResp.response.resultScoredByNameStrings
+          val resultScoredNameStrings = reqResp.resultsByNameString
           if (resultScoredNameStrings.isEmpty) {
             false
           } else {
@@ -405,17 +421,17 @@ class NameResolver(request: nr.Request)
                    request.advancedResolution)
           .map { reqResps =>
             reqResps.filter { reqResp =>
-              val resultScoredNameStrings = reqResp.response.resultScoredByNameStrings
+              val resultScoredNameStrings = reqResp.resultsByNameString
               if (resultScoredNameStrings.isEmpty) {
                 false
               } else {
-                val r =
-                  resultScoredNameStrings.map { _.datasourceBestQuality }.minBy { _.value }
+                val r = resultScoredNameStrings.minBy { _.datasourceBestQuality.value }
+                                               .datasourceBestQuality
                 r.value == t.DataSourceQuality.Curated.value ||
                   r.value == t.DataSourceQuality.AutoCurated.value
               }
             }
-        }
+          }
 
       val (unmatched, unmatchedNotParsed) =
         exactUnmatchesByUuid.partition { reqResp =>
