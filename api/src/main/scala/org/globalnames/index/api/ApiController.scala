@@ -3,7 +3,6 @@ package index
 package api
 
 import javax.inject.{Inject, Singleton}
-
 import com.fasterxml.jackson.databind.JsonNode
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
@@ -33,12 +32,11 @@ final case class GraphqlRequest(query: String,
 @Singleton
 class ApiController @Inject()(repository: Repository) extends Controller {
   private def errorsResponse(errorMessages: Vector[String]): JValue = {
-    val resultsFieldName = NameResolver.ResponseOT.fieldsByName("results")
-                                       .headOption.map { _.name }.getOrElse("results")
-    JObject(
-      resultsFieldName -> JArray(List()),
-      "meta" -> JObject("errors" -> JArray(errorMessages.map { JString(_) }.toList))
-    )
+    val errorsJs =
+      for (em <- errorMessages.toList) yield {
+        JObject("message" -> JString(em))
+      }
+    JObject("errors" -> JArray(errorsJs))
   }
 
   get("/api/version") { _: Request =>
@@ -60,16 +58,13 @@ class ApiController @Inject()(repository: Repository) extends Controller {
           graphqlExecution.as[TwitterFuture[JValue]]
                           .map { v => response.ok.json(compact(render(v))) }
         } else {
-          val errorsJValue = errorsResponse(violations.map { v =>
-            logger.error(v.errorMessage)
-            v.errorMessage
-          })
-          response.ok.json(compact(render(errorsJValue)))
+          val errorsJValue = errorsResponse(violations.map { _.errorMessage })
+          response.badRequest.json(compact(render(errorsJValue)))
         }
 
       case Failure(error) =>
         val errorsJValue = errorsResponse(Vector(error.getMessage))
-        response.ok.json(compact(render(errorsJValue)))
+        response.badRequest.json(compact(render(errorsJValue)))
     }
   }
 }
