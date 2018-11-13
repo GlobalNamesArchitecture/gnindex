@@ -34,6 +34,7 @@ struct Response {
     4: list<ResultScored> resultsScored
     5: commondata.DataSourceQuality datasourceBestQuality
     6: list<ResultScored> preferredResultsScored
+    7: i32 matchedDataSources
 }
 
 struct Responses {

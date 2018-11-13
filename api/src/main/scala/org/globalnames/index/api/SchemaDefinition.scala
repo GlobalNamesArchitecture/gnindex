@@ -211,6 +211,7 @@ object NameResolver {
         }})
       , Field("preferredResults", ListType(ResultItemScoredOT),
               resolve = _.value.preferredResultsScored)
+      , Field("matchedDataSources", IntType, resolve = _.value.matchedDataSources)
     )
   )
 

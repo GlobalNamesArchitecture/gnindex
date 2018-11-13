@@ -74,13 +74,17 @@ object NameResolver {
         } else {
           results.map { r => r.result.dataSource }.max(util.DataSource.ordering).quality
         }
+
+      val matchedDataSources = results.map { _.result.dataSource.id }.distinct.size
+
       nr.Response(
         total = total,
         suppliedInput = request.nameInput.value,
         suppliedId = request.nameInput.suppliedId,
         resultsScored = results,
         datasourceBestQuality = datasourceBestQuality,
-        preferredResultsScored = preferredResults
+        preferredResultsScored = preferredResults,
+        matchedDataSources = matchedDataSources
       )
     }
   }
