@@ -11,7 +11,7 @@ import index.dao.{DBResultObj, Tables => T}
 import index.dao.Projections._
 import index.{thrift => t}
 import org.globalnames.index.thrift.nameresolver.ResultScored
-import thrift.{MatchKind => MK, matcher => m, nameresolver => nr}
+import thrift.{Context, MatchKind => MK, matcher => m, nameresolver => nr}
 import util.{DataSource, UuidEnhanced}
 import util.UuidEnhanced._
 import slick.jdbc.PostgresProfile.api._
@@ -65,29 +65,41 @@ object NameResolver {
           .toVector
       rsnss
     }
+  }
 
-    val response: nr.Response = {
-      val results = resultsByNameString.flatMap { r => r.resultsScored }
-      val datasourceBestQuality =
-        if (results.isEmpty) {
-          t.DataSourceQuality.Unknown
-        } else {
-          results.map { r => r.result.dataSource }.max(util.DataSource.ordering).quality
-        }
+  private[nameresolver] val scoreOrdering: Ordering[t.Score] = new Ordering[t.Score] {
+    private val epsilon = 1e-6
+    private val doubleOrdering: Ordering[Double] = new Ordering[Double] {
+      override def compare(x: Double, y: Double): Int = {
+        if (Math.abs(x - y) < epsilon) 0
+        else Ordering.Double.compare(x, y)
+      }
+    }
 
-      val matchedDataSources = results.map { _.result.dataSource.id }.distinct.size
-
-      nr.Response(
-        total = total,
-        suppliedInput = request.nameInput.value,
-        suppliedId = request.nameInput.suppliedId,
-        resultsScored = results,
-        datasourceBestQuality = datasourceBestQuality,
-        preferredResultsScored = preferredResults,
-        matchedDataSources = matchedDataSources
-      )
+    override def compare(s1: t.Score, s2: t.Score): Int = {
+      Ordering.Option[Double](doubleOrdering).compare(s1.value, s2.value)
     }
   }
+
+  private[nameresolver] val resultScoredOrdering: Ordering[nr.ResultScored] =
+    new Ordering[nr.ResultScored] {
+      override def compare(x: nr.ResultScored, y: nr.ResultScored): Int = {
+        val dataSourceCompare =
+          DataSource.ordering.compare(x.result.dataSource, y.result.dataSource)
+
+        if (dataSourceCompare == 0) {
+          val scoreOrderingCompare = scoreOrdering.compare(x.score, y.score)
+          if (scoreOrderingCompare == 0) {
+            Ordering.Int.reverse.compare(x.result.dataSource.recordCount,
+                                         y.result.dataSource.recordCount)
+          } else {
+            Ordering.Option[Double].compare(x.score.value, y.score.value)
+          }
+        } else {
+          dataSourceCompare
+        }
+      }
+    }
 }
 
 class NameResolver(request: nr.Request)
@@ -121,8 +133,7 @@ class NameResolver(request: nr.Request)
     T.NameStrings.filter { ns => ns.name.like(query) || ns.canonical.like(query) }
   }
 
-  private
-  def vernacularsFetch(portion: Seq[ResultDB]): ScalaFuture[Seq[Seq[Vernacular]]] = {
+  private def vernacularsFetch(portion: Seq[ResultDB]): ScalaFuture[Seq[Seq[Vernacular]]] = {
     val vernaculars =
       if (request.withVernaculars) {
         val qrys = portion.map { resDb =>
@@ -141,8 +152,7 @@ class NameResolver(request: nr.Request)
     vernaculars
   }
 
-  private
-  def queryWithSurrogates(nameStringsQuery: NameStringsQuery):
+  private def queryWithSurrogates(nameStringsQuery: NameStringsQuery):
       ScalaFuture[Seq[ResultVernacular]] = {
     val nameStringsQuerySurrogates =
       if (request.withSurrogates) nameStringsQuery
@@ -190,8 +200,7 @@ class NameResolver(request: nr.Request)
     result
   }
 
-  private
-  def queryExactMatchesByUuid(): ScalaFuture[Seq[RequestResponse]] = {
+  private def queryExactMatchesByUuid(): ScalaFuture[Seq[RequestResponse]] = {
     val canonicalUuids = namesParsed.flatMap { _.parsed.canonizedUuid().map { _.id } }.distinct
     val nameUuids = namesParsed.map { _.parsed.preprocessorResult.id }.distinct
     logInfo(s"[Exact match] Name UUIDs: ${nameUuids.size}. Canonical UUIDs: ${canonicalUuids.size}")
@@ -257,9 +266,8 @@ class NameResolver(request: nr.Request)
     reqResp
   }
 
-  private
-  def fuzzyMatch(scientificNames: Seq[String],
-                 advancedResolution: Boolean): ScalaFuture[Seq[RequestResponse]] = {
+  private def fuzzyMatch(scientificNames: Seq[String],
+                         advancedResolution: Boolean): ScalaFuture[Seq[RequestResponse]] = {
     logInfo(s"[Fuzzy match] Names: ${scientificNames.size}")
     if (scientificNames.isEmpty) {
       ScalaFuture.successful(Seq())
@@ -319,8 +327,7 @@ class NameResolver(request: nr.Request)
     }
   }
 
-  private
-  def computeContext(responses: Seq[RequestResponse]): nr.Responses = {
+  private def computeContext(responses: Seq[RequestResponse]): Vector[Context] = {
     val contexts =
       responses.flatMap { response => response.results }
                .groupBy { _.result.dataSource }
@@ -329,46 +336,10 @@ class NameResolver(request: nr.Request)
                }
                .filter { case (_, path) => !(path == null || path.isEmpty) }
                .toVector.map { case (ds, path) => t.Context(ds, path) }
-    nr.Responses(responses = responses.map { _.response },
-                 contexts = contexts)
+    contexts
   }
 
-  private val scoreOrdering: Ordering[t.Score] = new Ordering[t.Score] {
-    private val epsilon = 1e-6
-    private val doubleOrdering: Ordering[Double] = new Ordering[Double] {
-      override def compare(x: Double, y: Double): Int = {
-        if (Math.abs(x - y) < epsilon) 0
-        else Ordering.Double.compare(x, y)
-      }
-    }
-
-    override def compare(s1: t.Score, s2: t.Score): Int = {
-      Ordering.Option[Double](doubleOrdering).compare(s1.value, s2.value)
-    }
-  }
-
-  private val resultScoredOrdering: Ordering[nr.ResultScored] =
-    new Ordering[nr.ResultScored] {
-      override def compare(x: nr.ResultScored, y: nr.ResultScored): Int = {
-        val dataSourceCompare =
-          DataSource.ordering.compare(x.result.dataSource, y.result.dataSource)
-
-        if (dataSourceCompare == 0) {
-          val scoreOrderingCompare = scoreOrdering.compare(x.score, y.score)
-          if (scoreOrderingCompare == 0) {
-            Ordering.Int.reverse.compare(x.result.dataSource.recordCount,
-                                         y.result.dataSource.recordCount)
-          } else {
-            Ordering.Option[Double].compare(x.score.value, y.score.value)
-          }
-        } else {
-          dataSourceCompare
-        }
-      }
-    }
-
-  private
-  def rearrangeResults(responses: Seq[RequestResponse]): Seq[RequestResponse] = {
+  private def computeResponses(responses: Seq[RequestResponse]): Seq[nr.Response] = {
     val responsesGrouped = responses.groupBy { rr => rr.request }.map { case (nip, rrs) =>
       val rrsNew = RequestResponse(total = rrs.map { _.total }.sum,
                                    request = rrs.head.request,
@@ -377,30 +348,50 @@ class NameResolver(request: nr.Request)
       nip.nameInput -> rrsNew
     }
 
-    val res = request.nameInputs.map { nameInput =>
-      val response = responsesGrouped(nameInput)
-      val results =
-        if (request.bestMatchOnly) {
-          response.results.nonEmpty ? Seq(response.results.max(resultScoredOrdering)) | Seq()
-        } else {
-          response.results.sorted(resultScoredOrdering.reverse)
-                  .slice(dropCount, dropCount + takeCount)
-        }
-      val preferredResultsSorted = response.preferredResults.sorted(resultScoredOrdering.reverse)
-      val preferredResults =
-        if (request.bestMatchOnly) {
-          for {
-            pdsId <- request.preferredDataSourceIds
-            rs <- preferredResultsSorted.find { _.result.dataSource.id == pdsId }
-          } yield rs
-        } else {
-          preferredResultsSorted
-        }
-      response.copy(results = results.slice(request.perPage * request.page,
-                                            request.perPage * (request.page + 1)),
-                    preferredResults = preferredResults)
-    }
-    res
+    val resps =
+      for (nameInput <- request.nameInputs) yield {
+        val reqResp = responsesGrouped(nameInput)
+
+        val results =
+          if (request.bestMatchOnly) {
+            reqResp.results.nonEmpty ? Seq(reqResp.results.max(resultScoredOrdering)) | Seq()
+          } else {
+            reqResp.results.sorted(resultScoredOrdering.reverse)
+                   .slice(dropCount, dropCount + takeCount)
+          }
+
+        val preferredResultsSorted = reqResp.preferredResults.sorted(resultScoredOrdering.reverse)
+        val preferredResults =
+          if (request.bestMatchOnly) {
+            for {
+              pdsId <- request.preferredDataSourceIds
+              rs <- preferredResultsSorted.find { _.result.dataSource.id == pdsId }
+            } yield rs
+          } else {
+            preferredResultsSorted.slice(dropCount, dropCount + takeCount)
+          }
+
+        val datasourceBestQuality =
+          if (results.isEmpty) {
+            t.DataSourceQuality.Unknown
+          } else {
+            results.maxBy { _.result.dataSource }(util.DataSource.ordering)
+                   .result.dataSource.quality
+          }
+
+        val matchedDataSources = results.map { _.result.dataSource.id }.distinct.size
+
+        nr.Response(
+          total = results.size,
+          suppliedInput = reqResp.request.nameInput.value,
+          suppliedId = reqResp.request.nameInput.suppliedId,
+          resultsScored = results,
+          datasourceBestQuality = datasourceBestQuality,
+          preferredResultsScored = preferredResults,
+          matchedDataSources = matchedDataSources
+        )
+      }
+    resps
   }
 
   def resolveExact(): TwitterFuture[nr.Responses] = {
@@ -454,7 +445,9 @@ class NameResolver(request: nr.Request)
         logInfo(s"[Resolution] Fuzzy matches count: ${fuzzyMatches.size}")
         val reqResps = exactMatchesByUuid ++ fuzzyMatches ++ unmatchedNotParsed ++
           dirtyExactMatchesPromotedToCuratedFuzzy
-        (rearrangeResults _ andThen computeContext)(reqResps)
+        val contexts = computeContext(reqResps)
+        val responses = computeResponses(reqResps)
+        nr.Responses(responses = responses, contexts = contexts)
       }
     }
     resultFuture.as[TwitterFuture[nr.Responses]]
