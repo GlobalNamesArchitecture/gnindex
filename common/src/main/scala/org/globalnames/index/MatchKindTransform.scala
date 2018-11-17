@@ -22,13 +22,13 @@ object MatchKindTransform {
   case object ExactMatch extends MatchKindInfo {
     val score: Int = 2
     val messageAdvanced: String = "ExactMatch"
-    val messageSimple: String = "Match"
+    val messageSimple: String = "Exact"
   }
 
   case object ExactCanonicalMatch extends MatchKindInfo {
     val score: Int = 3
     val messageAdvanced: String = "ExactCanonicalMatch"
-    val messageSimple: String = "Match"
+    val messageSimple: String = "Exact"
   }
 
   case object FuzzyCanonicalMatch extends MatchKindInfo {
@@ -40,7 +40,7 @@ object MatchKindTransform {
   case object ExactPartialMatch extends MatchKindInfo {
     val score: Int = 5
     val messageAdvanced: String = "ExactPartialMatch"
-    val messageSimple: String = "Match"
+    val messageSimple: String = "Exact"
   }
 
   case object FuzzyPartialMatch extends MatchKindInfo {
@@ -52,7 +52,7 @@ object MatchKindTransform {
   case object ExactAbbreviatedMatch extends MatchKindInfo {
     val score: Int = 7
     val messageAdvanced: String = "ExactAbbreviatedMatch"
-    val messageSimple: String = "Match"
+    val messageSimple: String = "Exact"
   }
 
   case object FuzzyAbbreviatedMatch extends MatchKindInfo {
@@ -64,7 +64,7 @@ object MatchKindTransform {
   case object ExactPartialAbbreviatedMatch extends MatchKindInfo {
     val score: Int = 9
     val messageAdvanced: String = "ExactPartialAbbreviatedMatch"
-    val messageSimple: String = "Match"
+    val messageSimple: String = "Exact"
   }
 
   case object FuzzyPartialAbbreviatedMatch extends MatchKindInfo {
