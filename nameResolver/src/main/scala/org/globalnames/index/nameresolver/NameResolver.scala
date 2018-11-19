@@ -353,15 +353,10 @@ class NameResolver(request: nr.Request)
       for (nameInput <- request.nameInputs) yield {
         val reqResp = responsesGrouped(nameInput)
 
-        val resultsSorted = {
+        val results = {
           val dataSourceIdsSet = request.dataSourceIds.toSet
-          val results = reqResp.results.filter { rs =>
+          reqResp.results.filter { rs =>
             dataSourceIdsSet.isEmpty || dataSourceIdsSet.contains(rs.result.dataSource.id)
-          }
-          if (request.bestMatchOnly) {
-            results.nonEmpty ? Seq(results.max(resultScoredOrdering)) | Seq()
-          } else {
-            results.sorted(resultScoredOrdering.reverse).slice(dropCount, dropCount + takeCount)
           }
         }
 
@@ -383,21 +378,28 @@ class NameResolver(request: nr.Request)
         }
 
         val datasourceBestQuality =
-          if (resultsSorted.isEmpty) {
+          if (results.isEmpty) {
             t.DataSourceQuality.Unknown
           } else {
-            resultsSorted
+            results
               .maxBy { _.result.dataSource }(util.DataSource.ordering)
               .result.dataSource.quality
           }
 
-        val matchedDataSources = resultsSorted.map { _.result.dataSource.id }.distinct.size
+        val matchedDataSources = results.map { _.result.dataSource.id }.distinct.size
+
+        val resultsBestMatchApplied =
+          if (request.bestMatchOnly) {
+             results.nonEmpty ? Seq(results.max(resultScoredOrdering)) | Seq()
+          } else {
+            results.sorted(resultScoredOrdering.reverse).slice(dropCount, dropCount + takeCount)
+          }
 
         nr.Response(
-          total = resultsSorted.size,
+          total = resultsBestMatchApplied.size,
           suppliedInput = reqResp.request.nameInput.value,
           suppliedId = reqResp.request.nameInput.suppliedId,
-          resultsScored = resultsSorted,
+          resultsScored = resultsBestMatchApplied,
           datasourceBestQuality = datasourceBestQuality,
           preferredResultsScored = preferredResults,
           matchedDataSources = matchedDataSources
