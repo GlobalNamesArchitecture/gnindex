@@ -114,7 +114,8 @@ class NameResolver(request: nr.Request)
   }
 
   private val dataSourceIds: Seq[Int] =
-    (request.preferredDataSourceIds ++ request.dataSourceIds).distinct
+    request.dataSourceIds.nonEmpty ?
+      (request.preferredDataSourceIds ++ request.dataSourceIds).distinct | Seq()
   private val takeCount: Int = request.perPage.min(1000).max(0)
   private val dropCount: Int = (request.page * request.perPage).max(0)
   private val namesParsed: Vector[NameInputParsed] =
@@ -352,16 +353,25 @@ class NameResolver(request: nr.Request)
       for (nameInput <- request.nameInputs) yield {
         val reqResp = responsesGrouped(nameInput)
 
-        val results =
-          if (request.bestMatchOnly) {
-            reqResp.results.nonEmpty ? Seq(reqResp.results.max(resultScoredOrdering)) | Seq()
-          } else {
-            reqResp.results.sorted(resultScoredOrdering.reverse)
-                   .slice(dropCount, dropCount + takeCount)
+        val resultsSorted = {
+          val dataSourceIdsSet = request.dataSourceIds.toSet
+          val results = reqResp.results.filter { rs =>
+            dataSourceIdsSet.isEmpty || dataSourceIdsSet.contains(rs.result.dataSource.id)
           }
+          if (request.bestMatchOnly) {
+            results.nonEmpty ? Seq(results.max(resultScoredOrdering)) | Seq()
+          } else {
+            results.sorted(resultScoredOrdering.reverse).slice(dropCount, dropCount + takeCount)
+          }
+        }
 
-        val preferredResultsSorted = reqResp.preferredResults.sorted(resultScoredOrdering.reverse)
-        val preferredResults =
+        val preferredResults = {
+          val preferredDataSourceIdsSet = request.preferredDataSourceIds.toSet
+          val preferredResultsSorted =
+            reqResp.results.filter { rs =>
+              preferredDataSourceIdsSet.contains(rs.result.dataSource.id)
+            }.sorted(resultScoredOrdering.reverse)
+
           if (request.bestMatchOnly) {
             for {
               pdsId <- request.preferredDataSourceIds
@@ -370,22 +380,24 @@ class NameResolver(request: nr.Request)
           } else {
             preferredResultsSorted.slice(dropCount, dropCount + takeCount)
           }
+        }
 
         val datasourceBestQuality =
-          if (results.isEmpty) {
+          if (resultsSorted.isEmpty) {
             t.DataSourceQuality.Unknown
           } else {
-            results.maxBy { _.result.dataSource }(util.DataSource.ordering)
-                   .result.dataSource.quality
+            resultsSorted
+              .maxBy { _.result.dataSource }(util.DataSource.ordering)
+              .result.dataSource.quality
           }
 
-        val matchedDataSources = results.map { _.result.dataSource.id }.distinct.size
+        val matchedDataSources = resultsSorted.map { _.result.dataSource.id }.distinct.size
 
         nr.Response(
-          total = results.size,
+          total = resultsSorted.size,
           suppliedInput = reqResp.request.nameInput.value,
           suppliedId = reqResp.request.nameInput.suppliedId,
-          resultsScored = results,
+          resultsScored = resultsSorted,
           datasourceBestQuality = datasourceBestQuality,
           preferredResultsScored = preferredResults,
           matchedDataSources = matchedDataSources
