@@ -214,8 +214,19 @@ class Matcher @Inject()(canonicalNamesFut: Future[CanonicalNames]) extends Loggi
               advancedResolution: Boolean): Seq[Response] = {
     logger.info("Started. Splitting names")
     val namesParsed = names.par.map { name => snp.instance.fromString(name) }
-    val (namesParsedSuccessfully, namesParsedRest) = namesParsed.partition { np =>
-      np.canonized().exists { _.nonEmpty }
+    val (namesParsedSuccessfully, namesParsedRest) = namesParsed.partition { nameParsed =>
+      val isAbbreviated = {
+        val verbatim = nameParsed.preprocessorResult.verbatim
+        if (verbatim.isEmpty) {
+          true
+        } else {
+          val firstSpaceIndex = verbatim.indexOf(' ')
+          val firstWordLastIndex: Int = (firstSpaceIndex == -1) ? verbatim.length | firstSpaceIndex
+          verbatim(firstWordLastIndex - 1) == '.'
+        }
+      }
+
+      !isAbbreviated && nameParsed.canonized().exists { _.nonEmpty }
     }
     val responsesRest = namesParsedRest.map { np =>
       Response(inputUuid = np.preprocessorResult.id, results = Seq())
