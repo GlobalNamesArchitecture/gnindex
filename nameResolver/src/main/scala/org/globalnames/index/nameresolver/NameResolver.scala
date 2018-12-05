@@ -249,7 +249,7 @@ class NameResolver(request: nr.Request)
         val responseResults =
           for {
             res <- databaseMatches
-            if request.dataSourceIds.isEmpty || request.dataSourceIds.contains(res.resultDB.ds.id)
+            if dataSourceIds.isEmpty || dataSourceIds.contains(res.resultDB.ds.id)
           } yield composeResult(res)
         val preferredResponseResults =
           for {
@@ -292,8 +292,7 @@ class NameResolver(request: nr.Request)
                 fuzzyResult <- fuzzyMatch.results
                 canId = UuidEnhanced.thriftUuid2javaUuid(fuzzyResult.nameMatched.uuid)
                 result <- nameStringsDBMap(canId.some)
-                if request.dataSourceIds.isEmpty ||
-                    request.dataSourceIds.contains(result.resultDB.ds.id)
+                if dataSourceIds.isEmpty || dataSourceIds.contains(result.resultDB.ds.id)
                 dbResult = DBResultObj.create(
                   dbRes = result.resultDB,
                   vernaculars = result.vernaculars,
