@@ -43,6 +43,10 @@ class ApiController @Inject()(repository: Repository) extends Controller {
     response.ok.json(org.globalnames.index.BuildInfo.version)
   }
 
+  get("/api/graphql/schema") { _: Request =>
+    response.ok.json(SchemaDefinition.schema.renderPretty)
+  }
+
   post("/api/graphql") { graphqlRequest: GraphqlRequest =>
     QueryParserSangria.parse(graphqlRequest.query) match {
       case Success(queryAst) =>
