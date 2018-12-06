@@ -20,14 +20,15 @@ object Dependencies {
     val parboiled2 = "2.1.4"
     val jodaMapper = "2.3.0"
     val postgres = "42.1.1.jre7"
-    val gnparser = "0.4.4"
     val gnmatcher = "0.1.3-20180616_2132-SNAPSHOT"
+    val gnparser = "1.0.3-SNAPSHOT"
     val gatling = "2.3.0"
     val twitterBijection = "0.9.5"
   }
 
   lazy val library = new {
     val gnparser             = "org.globalnames"               %% "gnparser"                     % version.gnparser
+    val `gnparser-render`    = "org.globalnames"               %% "gnparser-render"              % version.gnparser
     val gnmatcher            = "org.globalnames"               %% "gnmatcher"                    % version.gnmatcher
     val twitterBijectionCore = "com.twitter"                   %% "bijection-core"               % version.twitterBijection
     val twitterBijectionUtil = "com.twitter"                   %% "bijection-util"               % version.twitterBijection
@@ -71,7 +72,7 @@ object Dependencies {
 
   val commonDependencies: Seq[ModuleID] = testDeps ++ Seq(
     library.scalaz,
-    library.gnparser,
+    library.gnparser, library.`gnparser-render`,
     library.finatraThrift,
     library.slick, library.slickJodaMapper, library.postgresql, library.hikariSlick
   )

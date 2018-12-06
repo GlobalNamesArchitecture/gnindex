@@ -23,7 +23,7 @@ final case class NameInputParsed(ni: NameInput) {
     }
   }
 
-  val parsed: snp.Result =
+  val parsed: parser.RenderableResult =
     snp.instance.fromString(valueCapitalised)
 
   val nameInput: NameInput = ni.copy(suppliedId = ni.suppliedId.map { _.trim })

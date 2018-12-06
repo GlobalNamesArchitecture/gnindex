@@ -124,7 +124,7 @@ class NameResolver(request: nr.Request)
            .map { ni => NameInputParsed(ni) }
            .toVector
   private val namesParsedMap: Map[UUID, NameInputParsed] =
-    namesParsed.map { np => np.parsed.preprocessorResult.id -> np }.toMap
+    namesParsed.map { np => np.parsed.result.preprocessorResult.id -> np }.toMap
 
   private def exactNamesQuery(nameUuid: Rep[UUID], canonicalNameUuid: Rep[UUID]) = {
     T.NameStrings.filter { ns => ns.id === nameUuid || ns.canonicalUuid === canonicalNameUuid }
@@ -202,8 +202,8 @@ class NameResolver(request: nr.Request)
   }
 
   private def queryExactMatchesByUuid(): ScalaFuture[Seq[RequestResponse]] = {
-    val canonicalUuids = namesParsed.flatMap { _.parsed.canonizedUuid().map { _.id } }.distinct
-    val nameUuids = namesParsed.map { _.parsed.preprocessorResult.id }.distinct
+    val canonicalUuids = namesParsed.flatMap { _.parsed.result.canonical.map { _.id } }.distinct
+    val nameUuids = namesParsed.map { _.parsed.result.preprocessorResult.id }.distinct
     logInfo(s"[Exact match] Name UUIDs: ${nameUuids.size}. Canonical UUIDs: ${canonicalUuids.size}")
     val qry = T.NameStrings.filter { ns =>
       ns.id.inSetBind(nameUuids) || ns.canonicalUuid.inSetBind(canonicalUuids)
@@ -219,18 +219,18 @@ class NameResolver(request: nr.Request)
 
       namesParsed.map { nameParsed =>
         val databaseMatches = {
-          val nums = nameUuidMatches(nameParsed.parsed.preprocessorResult.id)
-          val cums = canonicalUuidMatches(nameParsed.parsed.canonizedUuid().map { _.id })
+          val nums = nameUuidMatches(nameParsed.parsed.result.preprocessorResult.id)
+          val cums = canonicalUuidMatches(nameParsed.parsed.result.canonical.map { _.id })
           (nums ++ cums).distinct
         }
 
         def composeResult(rv: ResultVernacular): ResultScored = {
           val r = rv.resultDB
           val matchKind: MK =
-            if (r.ns.id == nameParsed.parsed.preprocessorResult.id) {
+            if (r.ns.id == nameParsed.parsed.result.preprocessorResult.id) {
               MK.ExactMatch(thrift.ExactMatch())
             } else if (
-              (for (nsCan <- r.ns.canonicalUuid; npCan <- nameParsed.parsed.canonizedUuid())
+              (for (nsCan <- r.ns.canonicalUuid; npCan <- nameParsed.parsed.result.canonical)
                 yield nsCan == npCan.id).getOrElse(false)) {
               MK.CanonicalMatch(thrift.CanonicalMatch())
             } else {
@@ -421,7 +421,7 @@ class NameResolver(request: nr.Request)
           } else {
             val dsq = resultScoredNameStrings.map { _.datasourceBestQuality }.minBy { _.value }
             dsq.value == t.DataSourceQuality.Unknown.value &&
-              reqResp.request.parsed.canonizedUuid().isDefined
+              reqResp.request.parsed.result.canonical.isDefined
           }
         }
       val dirtyExactMatchesPromotedToCuratedFuzzyFut =
@@ -443,7 +443,7 @@ class NameResolver(request: nr.Request)
 
       val (unmatched, unmatchedNotParsed) =
         exactUnmatchesByUuid.partition { reqResp =>
-          reqResp.request.parsed.canonizedUuid().isDefined
+          reqResp.request.parsed.result.canonical.isDefined
         }
       logInfo(s"[Resolution] Exact match done. Matches count: ${exactMatchesByUuid.size}. " +
               s"Unparsed count: ${unmatchedNotParsed.size}")

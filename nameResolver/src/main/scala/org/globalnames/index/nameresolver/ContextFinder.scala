@@ -3,7 +3,7 @@ package index
 package nameresolver
 
 import scala.collection.mutable.ArrayBuffer
-import akka.http.impl.util._
+import util.Strings._
 
 @SuppressWarnings(Array("org.wartremover.warts.Var",
                         "org.wartremover.warts.NonUnitStatements"))

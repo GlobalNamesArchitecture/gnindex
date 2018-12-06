@@ -4,14 +4,14 @@
   * Copyright (C) 2009-2017 Lightbend Inc. <http://www.lightbend.com>
   */
 
-package akka.http.impl
+package org.globalnames.index.util
 
 import java.util.Locale
 
 import scala.annotation.tailrec
 import scala.collection.immutable
 
-object util {
+object Strings {
 
   implicit class EnhancedString(val underlying: String) extends AnyVal {
 

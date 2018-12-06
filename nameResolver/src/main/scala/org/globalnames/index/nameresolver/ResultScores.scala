@@ -97,15 +97,16 @@ final case class ResultScores(nameInputParsed: NameInputParsed, result: Result) 
   }
 
   def compute: Score = {
-    val scientificName = nameInputParsed.parsed
+    val scientificName = nameInputParsed.parsed.delimitedStringRenderer
     val authorshipInput = scientificName.authorshipNames
-      .map { asn => Author(asn.mkString(" ")) }
+                                        .map { asn => Author(asn.mkString(" ")) }
     val yearInput = for (yr <- scientificName.yearDelimited; y <- Try(yr.toInt).toOption) yield y
 
     val resultParsedString = snp.instance.fromString(result.name.value)
-    val authorshipMatch = resultParsedString.authorshipNames.map { as => Author(as.mkString(" ")) }
+    val authorshipMatch = resultParsedString.delimitedStringRenderer.authorshipNames
+                                            .map { as => Author(as.mkString(" ")) }
     val yearMatch = for {
-      yr <- resultParsedString.yearDelimited
+      yr <- resultParsedString.delimitedStringRenderer.yearDelimited
       y <- Try(yr.toInt).toOption
     } yield y
     val authorScore =
@@ -120,7 +121,7 @@ final case class ResultScores(nameInputParsed: NameInputParsed, result: Result) 
     val score =
       Score(nameType = nameType,
         authorScore = authorScore,
-        parsingQuality = resultParsedString.scientificName.quality,
+        parsingQuality = resultParsedString.result.scientificName.quality,
         value = scoreMsg.rightMap { x => sigmoid(x) }.toOption,
         message = scoreMsg.swap.toOption)
     score

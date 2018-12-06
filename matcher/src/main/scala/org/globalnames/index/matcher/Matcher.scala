@@ -11,6 +11,7 @@ import javax.inject.{Inject, Singleton}
 import parser.{ScientificNameParser => snp}
 import org.apache.commons.lang3.StringUtils
 import util.UuidEnhanced.javaUuid2thriftUuid
+import util.Strings._
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.std.option._
 
@@ -18,7 +19,6 @@ import scala.collection.parallel.ParSeq
 import scala.concurrent.Future
 import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
-import akka.http.impl.util._
 
 @Singleton
 final case class CanonicalNames(private val namesRaw: Map[String, Set[Int]]) {
@@ -64,20 +64,20 @@ class Matcher @Inject()(canonicalNamesFut: Future[CanonicalNames]) extends Loggi
   }
 
   private object CanonicalNameSplit {
-    def create(name: snp.Result): Option[CanonicalNameSplit] = {
-      for (can <- name.canonized()) yield {
+    def create(name: parser.Result): Option[CanonicalNameSplit] = {
+      for (can <- name.canonical) yield {
         CanonicalNameSplit(
           nameProvidedUuid = name.preprocessorResult.id,
-          namePartialStr = can,
+          namePartialStr = can.value,
           isOriginalCanonical = true,
           advancedResolutionAllowed = true
         )
       }
     }
 
-    def genusAndInfraspeciesOnly(name: snp.Result): Option[CanonicalNameSplit] = {
-      name.canonized().flatMap { can =>
-        val canSplit = can.fastSplit(' ')
+    def genusAndInfraspeciesOnly(name: parser.Result): Option[CanonicalNameSplit] = {
+      name.canonical.flatMap { can =>
+        val canSplit = can.value.fastSplit(' ')
         (canSplit.headOption, canSplit.lastOption) match {
           case (Some(hd), Some(tl)) =>
             val can1 = s"$hd $tl"
@@ -216,7 +216,7 @@ class Matcher @Inject()(canonicalNamesFut: Future[CanonicalNames]) extends Loggi
     val namesParsed = names.par.map { name => snp.instance.fromString(name) }
     val (namesParsedSuccessfully, namesParsedRest) = namesParsed.partition { nameParsed =>
       val isAbbreviated = {
-        val verbatim = nameParsed.preprocessorResult.verbatim
+        val verbatim = nameParsed.result.preprocessorResult.verbatim
         if (verbatim.isEmpty) {
           true
         } else {
@@ -226,14 +226,14 @@ class Matcher @Inject()(canonicalNamesFut: Future[CanonicalNames]) extends Loggi
         }
       }
 
-      !isAbbreviated && nameParsed.canonized().exists { _.nonEmpty }
+      !isAbbreviated && nameParsed.result.canonical.exists { _.value.nonEmpty }
     }
     val responsesRest = namesParsedRest.map { np =>
-      Response(inputUuid = np.preprocessorResult.id, results = Seq())
+      Response(inputUuid = np.result.preprocessorResult.id, results = Seq())
     }
     val namesParsedSuccessfullySplits = namesParsedSuccessfully.flatMap { np =>
-      val cns = CanonicalNameSplit.create(name = np)
-      val cnsNoMiddle = CanonicalNameSplit.genusAndInfraspeciesOnly(name = np)
+      val cns = CanonicalNameSplit.create(name = np.result)
+      val cnsNoMiddle = CanonicalNameSplit.genusAndInfraspeciesOnly(name = np.result)
       List(cns, cnsNoMiddle).flatten
     }
     logger.info("Recursive fuzzy match started")
