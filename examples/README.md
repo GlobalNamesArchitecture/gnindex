@@ -9,8 +9,7 @@
 ## Download full schema
 
 ```bash
-sudo npm install -g get-graphql-schema
-get-graphql-schema https://index.globalnames.org/api/graphql > schema.txt
+curl http://index.globalnames.org/api/graphql/schema > schema.txt
 ```
 
 ## Examples
@@ -20,4 +19,3 @@ bash       bash example
 
 ruby       ruby example
 ---------- ------------
-
