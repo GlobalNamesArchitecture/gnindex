@@ -222,7 +222,8 @@ class NameFilter @Inject()(database: Database) extends Logging {
   }
 
   def resolveString(request: Request): TwitterFuture[ResponseNameStrings] = {
-    val searches = QueryParser.parse(request.searchTerm) match {
+    val searchTerm = request.searchTerm.replaceAll("\u00D7", "x")
+    val searches = QueryParser.parse(searchTerm) match {
       case Success(x) => x
       case Failure(_) => SearchQuery(Seq())
     }

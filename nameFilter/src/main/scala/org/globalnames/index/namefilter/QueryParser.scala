@@ -93,8 +93,8 @@ class QueryParser(val input: ParserInput) extends Parser {
     wildcardCh ~ push(AST.Wildcard)
   }
 
-  private def word = rule {
-    !modifier ~ capture(oneOrMore(visibleChar)) ~ wildcardChar.? ~> {
+  def word = rule {
+    !modifier ~ capture(oneOrMore(anyVisibleChar)) ~ wildcardChar.? ~> {
       (w: String, wildcard: Option[AST.Wildcard.type]) => AST.Word(w, wildcard.isDefined)
     }
   }
@@ -103,11 +103,19 @@ class QueryParser(val input: ParserInput) extends Parser {
     capture(oneOrMore(CharPredicate.LowerAlpha)) ~ modifierDelimiter ~> AST.Modifier
   }
 
-  private def spacing: Rule0 = rule { oneOrMore(space) }
+  def spacing: Rule0 = rule { oneOrMore(space) }
 
   private val space = " "
   private val modifierDelimiter = ":"
   private val wildcardCh = '*'
-  private val visibleChar = CharPredicate.Visible -- wildcardCh
+
+  private final val sciCharsExtended = "æœſàâåãäáçčéèíìïňññóòôøõöúùüŕřŗššşž"
+  private final val sciUpperCharExtended = "ÆŒÖ"
+  private final val charMiscoded = '�'
+  private final val upperChar =
+    CharPredicate.UpperAlpha ++ "Ë" ++ sciUpperCharExtended ++ charMiscoded
+  private final val lowerChar =
+    CharPredicate.LowerAlpha ++ "ë" ++ sciCharsExtended ++ charMiscoded
+  private final val anyVisibleChar = upperChar ++ lowerChar ++ CharPredicate.Visible -- wildcardCh
 
 }
