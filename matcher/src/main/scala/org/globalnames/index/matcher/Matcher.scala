@@ -78,9 +78,10 @@ class Matcher @Inject()(canonicalNamesFut: Future[CanonicalNames]) extends Loggi
     def genusAndInfraspeciesOnly(name: parser.Result): Option[CanonicalNameSplit] = {
       name.canonical.flatMap { can =>
         val canSplit = can.value.fastSplit(' ')
-        (canSplit.headOption, canSplit.lastOption) match {
-          case (Some(hd), Some(tl)) =>
-            val can1 = s"$hd $tl"
+        canSplit match {
+          case splits if splits.size < 3 => None
+          case splits =>
+            val can1 = s"${splits.head} ${splits.last}"
             val cns = CanonicalNameSplit(
               nameProvidedUuid = name.preprocessorResult.id,
               namePartialStr = can1,
