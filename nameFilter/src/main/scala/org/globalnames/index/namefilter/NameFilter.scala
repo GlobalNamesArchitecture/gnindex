@@ -228,6 +228,14 @@ class NameFilter @Inject()(database: Database) extends Logging {
       case Failure(_) => SearchQuery(Seq())
     }
     logger.info(s"query: $searches")
+  private def cleanQuery(str: String): String = {
+    val searchTerm = str.replaceAll("%", "")
+                        .replaceAll("\\s+\\*+\\s+", " ")
+                        .replaceAll("\u00D7", "x")
+                        .replaceAll("\\s+", " ")
+                        .trim
+    searchTerm
+  }
 
     val nameStringsBuilder =
       searches.parts.foldLeft(NameFilterQueryBuilder(T.NameStrings)) { (queryBuilder, sp) =>
@@ -319,6 +327,7 @@ class NameFilter @Inject()(database: Database) extends Logging {
       val pagesCount =
         results.size / request.perPage + (results.size % request.perPage > 0).compare(false)
       ResponseNameStrings(
+    val cleanedQuery = cleanQuery(request.searchTerm)
         page = request.page,
         perPage = request.perPage,
         pagesCount = pagesCount,
