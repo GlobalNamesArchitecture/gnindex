@@ -20,7 +20,9 @@ object QueryParser {
   private[namefilter] val wordModifierStr = "w"
 
   def parse(query: String): Try[SearchQuery] = {
-    new QueryParser(query).searchQuery.run().map { x => SearchQuery(searchPostprocess(x)) }
+    val parser = new QueryParser(query)
+    val partsTry = parser.searchQuery.run()
+    partsTry.map { x => SearchQuery(searchPostprocess(x)) }
   }
 
   private def searchPostprocess(partsAst: Seq[AST.SearchPart]) = {
@@ -38,9 +40,15 @@ object QueryParser {
         case `wordModifierStr` => WordModifier
         case _ => UnknownModifier(partAst.modifier.value)
       }
-      SearchPart(modifier, partAst.words.map { w => Word(w.value, w.wildcard) })
+      val words = partAst.words.map { w => Word(w.value, w.wildcard) }
+      SearchPart(modifier, words)
     }
-    searchParts
+    val searchPartsFiltered = searchParts.filter { p =>
+      val hasWords = p.words.nonEmpty
+      val firstWordIsWildcardedAndShort = p.words(0).wildcard && p.words(0).value.length < 4
+      hasWords && !firstWordIsWildcardedAndShort
+    }
+    searchPartsFiltered
   }
 
   object AST {
