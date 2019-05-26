@@ -221,13 +221,6 @@ class NameFilter @Inject()(database: Database) extends Logging {
     database.run(queryJoined.result)
   }
 
-  def resolveString(request: Request): TwitterFuture[ResponseNameStrings] = {
-    val searchTerm = request.searchTerm.replaceAll("\u00D7", "x")
-    val searches = QueryParser.parse(searchTerm) match {
-      case Success(x) => x
-      case Failure(_) => SearchQuery(Seq())
-    }
-    logger.info(s"query: $searches")
   private def cleanQuery(str: String): String = {
     val searchTerm = str.replaceAll("%", "")
                         .replaceAll("\\s+\\*+\\s+", " ")
@@ -237,8 +230,9 @@ class NameFilter @Inject()(database: Database) extends Logging {
     searchTerm
   }
 
-    val nameStringsBuilder =
-      searches.parts.foldLeft(NameFilterQueryBuilder(T.NameStrings)) { (queryBuilder, sp) =>
+  private def buildNameStringsQuery(searches: SearchQuery) = {
+    val nameStringsQuery = searches.parts.foldLeft(NameFilterQueryBuilder(T.NameStrings)) {
+      (queryBuilder, sp) =>
         sp.modifier match {
           case ExactModifier =>
             val word = sp.words.map { _.value }.mkString(" ")
@@ -301,42 +295,63 @@ class NameFilter @Inject()(database: Database) extends Logging {
             queryBuilder
         }
       }
-    val nameStrings = nameStringsBuilder.qry
-    val matchKind = MatchKind.Unknown(thrift.Unknown())
+    nameStringsQuery
+  }
 
-    val resultFuture = queryComplete(nameStrings, request.dataSourceIds).map { dbResults =>
-      val results = dbResults.map { dbResult =>
-        val matchType = MatchType(kind = matchKind, score = 0,
-          kindString = MatchKindTransform.kindName(matchKind, advancedResolution = true))
-        DBResultObj.create(dbResult, matchType)
-      }
-      .groupBy { r => r.name.uuid }
-      .values.flatMap { results =>
-        val resultsVec = results.toVector
-        for (response <- results.headOption) yield {
-          ResultNameStrings(
-            name = response.name,
-            canonicalName = response.canonicalName,
-            results = resultsVec.sortBy { r => r.dataSource }(util.DataSource.ordering.reverse)
-          )
-        }
-      }
-      .toVector
-      .sortBy { r => r.name.value }
-
-      val pagesCount =
-        results.size / request.perPage + (results.size % request.perPage > 0).compare(false)
-      ResponseNameStrings(
+  def resolveString(request: Request): TwitterFuture[ResponseNameStrings] = {
     val cleanedQuery = cleanQuery(request.searchTerm)
+    val searches = QueryParser.parse(cleanedQuery) match {
+      case Success(x) => x
+      case Failure(_) => SearchQuery(Seq())
+    }
+    logger.info(s"query: $searches")
+
+    if (searches.parts.isEmpty) {
+      val res = ResponseNameStrings(
         page = request.page,
         perPage = request.perPage,
-        pagesCount = pagesCount,
-        resultsCount = results.size,
-        resultNameStrings =
-          results.slice(request.perPage * request.page, request.perPage * (request.page + 1))
+        pagesCount = 0,
+        resultsCount = 0,
+        resultNameStrings = Seq()
       )
+      TwitterFuture.value(res)
+    } else {
+      val nameStrings = buildNameStringsQuery(searches).qry
+      val matchKind = MatchKind.Unknown(thrift.Unknown())
+
+      val resultFuture = queryComplete(nameStrings, request.dataSourceIds).map { dbResults =>
+        val results = dbResults.map { dbResult =>
+          val matchType = MatchType(kind = matchKind, score = 0,
+            kindString = MatchKindTransform.kindName(matchKind, advancedResolution = true))
+          DBResultObj.create(dbResult, matchType)
+        }
+        .groupBy { r => r.name.uuid }
+        .values.flatMap { results =>
+          val resultsVec = results.toVector
+          for (response <- results.headOption) yield {
+            ResultNameStrings(
+              name = response.name,
+              canonicalName = response.canonicalName,
+              results = resultsVec.sortBy { r => r.dataSource }(util.DataSource.ordering.reverse)
+            )
+          }
+        }
+        .toVector
+        .sortBy { r => r.name.value }
+
+        val pagesCount =
+          results.size / request.perPage + (results.size % request.perPage > 0).compare(false)
+        ResponseNameStrings(
+          page = request.page,
+          perPage = request.perPage,
+          pagesCount = pagesCount,
+          resultsCount = results.size,
+          resultNameStrings =
+            results.slice(request.perPage * request.page, request.perPage * (request.page + 1))
+        )
+      }
+      resultFuture.as[TwitterFuture[ResponseNameStrings]]
     }
-    resultFuture.as[TwitterFuture[ResponseNameStrings]]
   }
 }
 
