@@ -45,8 +45,8 @@ final case class ResultScores(nameInputParsed: NameInputParsed, result: Result) 
     * | FuzzyPartialAbbreviatedMatch | 0.5, 0.25                     |
     */
   private def computeScoreMessage(result: Result, authorScore: AuthorScore): String \/ Double = {
-    val nameType = result.canonicalName.map { canonicalName =>
-      StringUtils.countMatches(canonicalName.value, ' ') + 1
+    val nameType = nameInputParsed.parsed.result.normalized.map { normalized =>
+      StringUtils.countMatches(normalized, ' ') + 1
     }
 
     nameType match {
