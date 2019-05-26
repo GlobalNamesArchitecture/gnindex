@@ -57,6 +57,11 @@ class ServerFeatureSpec extends WordSpecConfig with FeatureTestMixin {
     )
   )
 
+  protected override def afterAll(): Unit = {
+    super.afterAll()
+    server.close()
+  }
+
   val client: MatcherService[Future] =
     server.thriftClient[MatcherService[Future]](clientId = "matcherClient")
 

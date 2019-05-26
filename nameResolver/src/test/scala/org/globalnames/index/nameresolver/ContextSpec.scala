@@ -32,6 +32,12 @@ class ContextSpec extends WordSpecConfig with FeatureTestMixin {
     )
   )
 
+  protected override def afterAll(): Unit = {
+    super.afterAll()
+    matcherServer.close()
+    server.close()
+  }
+
   val client: NameResolverService[Future] =
     server.thriftClient[NameResolverService[Future]](clientId = "nameResolverClient")
 

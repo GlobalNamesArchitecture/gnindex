@@ -31,6 +31,12 @@ class DataSourceByIdSpec extends FunSpecConfig with FeatureTestMixin {
     )
   )
 
+  protected override def afterAll(): Unit = {
+    super.afterAll()
+    matcherServer.close()
+    server.close()
+  }
+
   val nameFilterClient: NameFilterService[Future] =
     server.thriftClient[NameFilterService[Future]](clientId = "nameFilterClient")
 

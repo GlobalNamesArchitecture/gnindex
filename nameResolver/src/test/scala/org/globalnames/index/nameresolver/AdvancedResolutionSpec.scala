@@ -39,6 +39,12 @@ class AdvancedResolutionSpec extends FunSpecConfig with FeatureTestMixin {
     Request(names = Seq(NameInput(name)),
             dataSourceIds = dataSources,
             advancedResolution = advancedResolution)
+  protected override def afterAll(): Unit = {
+    super.afterAll()
+    matcherServer.close()
+    server.close()
+  }
+
   }
 
   describe("NameResolver advanced resolution") {

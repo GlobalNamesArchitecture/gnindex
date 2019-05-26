@@ -40,6 +40,12 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
     )
   )
 
+  protected override def afterAll(): Unit = {
+    super.afterAll()
+    matcherServer.close()
+    server.close()
+  }
+
   val nameFilterClient: nf.Service[Future] =
     server.thriftClient[nf.Service[Future]](clientId = "nameFilterClient")
 

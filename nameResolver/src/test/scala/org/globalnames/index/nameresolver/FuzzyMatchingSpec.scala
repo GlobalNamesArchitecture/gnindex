@@ -33,6 +33,12 @@ class FuzzyMatchingSpec extends WordSpecConfig with FeatureTestMixin {
     )
   )
 
+  protected override def afterAll(): Unit = {
+    super.afterAll()
+    matcherServer.close()
+    server.close()
+  }
+
   sealed trait MatchScoreLevel
   case object GoodMatchScore extends MatchScoreLevel
   case object FairMatchScore extends MatchScoreLevel

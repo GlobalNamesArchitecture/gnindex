@@ -37,6 +37,12 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
   val client: NameResolverService[Future] =
     server.thriftClient[NameResolverService[Future]](clientId = "nameResolverClient")
 
+  protected override def afterAll(): Unit = {
+    super.afterAll()
+    matcherServer.close()
+    server.close()
+  }
+
   "index resolve" should {
     val dataSourceId = 1
 
