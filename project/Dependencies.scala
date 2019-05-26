@@ -20,7 +20,7 @@ object Dependencies {
     val parboiled2 = "2.1.4"
     val jodaMapper = "2.3.0"
     val postgres = "42.1.1.jre7"
-    val gnmatcher = "0.1.3-20180616_2132-SNAPSHOT"
+    val gnmatcher = "0.1.3-Advanced-SNAPSHOT"
     val gnparser = "1.0.3-SNAPSHOT"
     val gatling = "2.3.0"
     val twitterBijection = "0.9.5"
