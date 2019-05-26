@@ -6,9 +6,9 @@ import com.google.inject.Stage
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import thrift.{Context, DataSource, DataSourceQuality}
-import thrift.nameresolver.{NameInput, Request, Service => NameResolverService}
 import matcher.{MatcherModule, Server => MatcherServer}
+import thrift.DataSourceQuality
+import thrift.nameresolver.{NameInput, Request, Service => NameResolverService}
 
 class ContextSpec extends WordSpecConfig with FeatureTestMixin {
   override def launchConditions: Boolean = matcherServer.isHealthy
@@ -73,7 +73,7 @@ class ContextSpec extends WordSpecConfig with FeatureTestMixin {
     }
 
     "return Context in response" in {
-      val request = Request(names = Seq(
+      val request = Request(nameInputs = Seq(
         NameInput("Achillea dobrogensis Prod."),
         NameInput("Achillea dobrogensis Prod."),
         NameInput("Achnatherum coreanum (Honda) Ohwi"),
@@ -84,9 +84,9 @@ class ContextSpec extends WordSpecConfig with FeatureTestMixin {
       ), dataSourceIds = Seq(1))
 
       val response = client.nameResolve(request).value
-      response.context.size shouldBe 1
+      response.contexts.size shouldBe 1
 
-      val ctx = response.context.headOption.value
+      val ctx = response.contexts.headOption.value
       ctx.dataSource.id shouldBe 1
       ctx.dataSource.title shouldBe "Catalogue of Life"
       ctx.dataSource.quality shouldBe DataSourceQuality.Curated

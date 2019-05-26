@@ -10,7 +10,7 @@ import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
 import thrift.nameresolver.{NameInput, Service => NameResolverService, Request}
-import matcher.{MatcherModule, Server => MatcherServer}
+import index.{nameresolver => nr, matcher => m}
 
 class ServerFeatureSpec extends WordSpecConfig with FeatureTestMixin {
   override def launchConditions: Boolean = matcherServer.isHealthy
@@ -52,17 +52,17 @@ class ServerFeatureSpec extends WordSpecConfig with FeatureTestMixin {
   }
 
   val matcherServer = new EmbeddedThriftServer(
-    twitterServer = new MatcherServer,
+    twitterServer = new m.Server,
     stage = Stage.PRODUCTION,
     flags = Map(
-      MatcherModule.namesFileKey.name -> canonicalNamesFilePath.toString,
-      MatcherModule.namesWithDatasourcesFileKey.name ->
+      m.MatcherModule.namesFileKey.name -> canonicalNamesFilePath.toString,
+      m.MatcherModule.namesWithDatasourcesFileKey.name ->
         canonicalNamesWithDatasourcesFilePath.toString
     )
   )
 
   override val server = new EmbeddedThriftServer(
-    twitterServer = new Server,
+    twitterServer = new nr.Server,
     stage = Stage.PRODUCTION,
     flags = Map(
       NameResolverModule.matcherServiceAddress.name -> matcherServer.thriftHostAndPort
@@ -82,8 +82,8 @@ class ServerFeatureSpec extends WordSpecConfig with FeatureTestMixin {
   }
 
   "server#nameResolve" in {
-    val request = Request(names = Seq(NameInput("Homo sapiens")))
-    val responses = client.nameResolve(request).value.items
-    responses.headOption.value.total should be > 0
+    val request = Request(nameInputs = Seq(NameInput("Homo sapiens")))
+    val responses = client.nameResolve(request).value
+    responses.responses.headOption.value.total should be > 0
   }
 }

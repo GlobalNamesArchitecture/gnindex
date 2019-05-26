@@ -6,9 +6,8 @@ import com.google.inject.Stage
 import com.twitter.finatra.thrift.EmbeddedThriftServer
 import com.twitter.inject.server.FeatureTestMixin
 import com.twitter.util.Future
-import thrift.MatchKind
-import thrift.nameresolver.{NameInput, Request, Service => NameResolverService}
-import matcher.{MatcherModule, Server => MatcherServer}
+import index.{matcher => m, MatchKindTransform => MKT}
+import thrift.{nameresolver => nr}
 
 import scalaz.syntax.std.option._
 
@@ -16,12 +15,12 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
   override def launchConditions: Boolean = matcherServer.isHealthy
 
   val matcherServer = new EmbeddedThriftServer(
-    twitterServer = new MatcherServer,
+    twitterServer = new m.Server,
     stage = Stage.PRODUCTION,
     flags = Map(
-      MatcherModule.namesFileKey.name ->
+      m.MatcherModule.namesFileKey.name ->
         "db-migration/matcher-data/canonical-names.csv",
-      MatcherModule.namesWithDatasourcesFileKey.name ->
+      m.MatcherModule.namesWithDatasourcesFileKey.name ->
         "db-migration/matcher-data/canonical-names-with-data-sources.csv"
     )
   )
@@ -34,8 +33,8 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
     )
   )
 
-  val client: NameResolverService[Future] =
-    server.thriftClient[NameResolverService[Future]](clientId = "nameResolverClient")
+  val client: nr.Service[Future] =
+    server.thriftClient[nr.Service[Future]](clientId = "nameResolverClient")
 
   protected override def afterAll(): Unit = {
     super.afterAll()
@@ -47,11 +46,11 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
     val dataSourceId = 1
 
     "match 'Homo sapiens Linnaeus, 1758' exactly by name UUID" in {
-      val response = client.nameResolve(Request(
-        names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId))).value.items
+      val response = client.nameResolve(nr.Request(
+        nameInputs = Seq(nr.NameInput("Homo sapiens Linnaeus, 1758")),
+        dataSourceIds = Seq(dataSourceId))).value.responses
       response should have size 1
-      val results = response.headOption.value.results
+      val results = response.headOption.value.resultsScored
       results should have size 1
       val result = results.headOption.value.result
       result.dataSource.id shouldBe dataSourceId
@@ -60,120 +59,90 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
       result.canonicalName.value.valueRanked shouldBe "Homo sapiens"
       result.acceptedName.canonicalName.value.value shouldBe "Homo sapiens"
       result.acceptedName.canonicalName.value.valueRanked shouldBe "Homo sapiens"
-      result.matchType.kind shouldBe MatchKind.ExactNameMatchByUUID
+      MKT.matchKindInfo(result.matchType.kind) shouldBe MKT.ExactMatch
     }
 
     "match 'Homo sapiens XXX, 1999' exactly by canonical UUID" in {
-      val response = client.nameResolve(Request(
-        names = Seq(NameInput("Homo sapiens XXX, 1999")),
-        dataSourceIds = Seq(dataSourceId))).value.items
+      val response = client.nameResolve(nr.Request(
+        nameInputs = Seq(nr.NameInput("Homo sapiens XXX, 1999")),
+        dataSourceIds = Seq(dataSourceId))).value.responses
       response should have size 1
-      val results = response.headOption.value.results
+      val results = response.headOption.value.resultsScored
       results should have size 1
       val result = results.headOption.value
       result.result.dataSource.id shouldBe dataSourceId
       result.result.name.value shouldBe "Homo sapiens Linnaeus, 1758"
       result.result.canonicalName.value.value shouldBe "Homo sapiens"
-      result.result.matchType.kind shouldBe MatchKind.ExactCanonicalNameMatchByUUID
+      MKT.matchKindInfo(result.result.matchType.kind) shouldBe MKT.ExactCanonicalMatch
     }
 
     "preserve suppliedInput" in {
-      val response = client.nameResolve(Request(
-        names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId))).value.items
+      val response = client.nameResolve(nr.Request(
+        nameInputs = Seq(nr.NameInput("Homo sapiens Linnaeus, 1758")),
+        dataSourceIds = Seq(dataSourceId))).value.responses
       response.headOption.value.suppliedInput shouldBe "Homo sapiens Linnaeus, 1758"
     }
 
-    "results and preferredResults should be sorted" when {
-      "look at data source quality in first place" in {
-        val response = client.nameResolve(Request(
-          names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-          preferredDataSourceIds = Seq.range(1, 15))).value.items(0)
-        response.results.map { _.result.dataSource.quality.value } shouldBe sorted
-        response.preferredResults.size should be > 1
-        response.preferredResults.map { _.result.dataSource.quality.value } shouldBe sorted
-      }
+    "results and preferredResults should be sorted according to ordering" in {
+      val response = client.nameResolve(nr.Request(
+        nameInputs = Seq(nr.NameInput("Homo sapiens Linnaeus, 1758")),
+        preferredDataSourceIds = Seq.range(1, 15))).value.responses.head
 
-      "look at score for every group of quality in second place" in {
-        val response = client.nameResolve(Request(
-          names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-          preferredDataSourceIds = Seq.range(1, 15))).value.items(0)
-        for ((_, resByDSqual) <- response.results.groupBy { _.result.dataSource.quality }) {
-          resByDSqual.map { _.score.value }.reverse shouldBe sorted
-        }
-        response.preferredResults.size should be > 1
-        for {
-          (_, resByDSqual) <- response.preferredResults.groupBy { _.result.dataSource.quality }
-        } {
-          resByDSqual.map { _.score.value }.reverse shouldBe sorted
-        }
-      }
+      response.resultsScored.size should be > 1
+      response.resultsScored shouldBe
+        response.resultsScored.sorted(NameResolver.resultScoredOrdering.reverse)
 
-      "look at database records count in third place" in {
-        val response = client.nameResolve(Request(
-          names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-          preferredDataSourceIds = Seq.range(1, 15))).value.items(0)
-        for {
-          (_, resByDSqual) <- response.results.groupBy { _.result.dataSource.quality }
-          (_, resByScore) <- resByDSqual.groupBy { _.score.value }
-        } {
-          resByScore.map { _.result.dataSource.recordCount } shouldBe sorted
-        }
-        response.preferredResults.size should be > 1
-        for {
-          (_, resByDSqual) <- response.preferredResults.groupBy { _.result.dataSource.quality }
-          (_, resByScore) <- resByDSqual.groupBy { _.score.value }
-        } {
-          resByScore.map { _.result.dataSource.recordCount } shouldBe sorted
-        }
-      }
+      response.preferredResultsScored.size should be > 1
+      response.preferredResultsScored shouldBe
+        response.preferredResultsScored.sorted(NameResolver.resultScoredOrdering.reverse)
     }
 
-    "not have suppliedId if not given" in {
-      val response = client.nameResolve(Request(
-        names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-        dataSourceIds = Seq(dataSourceId))).value.items
+    "not have suppliedId if no is given" in {
+      val response = client.nameResolve(nr.Request(
+        nameInputs = Seq(nr.NameInput("Homo sapiens Linnaeus, 1758")),
+        dataSourceIds = Seq(dataSourceId))).value.responses
       response.headOption.value.suppliedId shouldBe None
     }
 
     "preserve suppliedId" in {
       val suppliedId = "abc"
-      val response = client.nameResolve(Request(
-        names = Seq(NameInput("Homo sapiens Linnaeus, 1758", suppliedId = suppliedId.some)),
-        dataSourceIds = Seq(dataSourceId))).value.items
+      val response = client.nameResolve(nr.Request(
+        nameInputs = Seq(nr.NameInput("Homo sapiens Linnaeus, 1758", suppliedId = suppliedId.some)),
+        dataSourceIds = Seq(dataSourceId))).value.responses
       response.headOption.value.suppliedId.value shouldBe suppliedId
     }
 
     "have results from requested data sources" in {
       val inputDataSourceIds = Seq(1, 2, 3)
-      val request = Request(names = Seq(
-        NameInput("Actinodontium rhaphidostegium"),
-        NameInput("Andreaea heinemanii"),
-        NameInput("Homo sapiens"),
-        NameInput("Bryum capillare")
+      val request = nr.Request(nameInputs = Seq(
+        nr.NameInput("Actinodontium rhaphidostegium"),
+        nr.NameInput("Andreaea heinemanii"),
+        nr.NameInput("Homo sapiens"),
+        nr.NameInput("Bryum capillare")
       ), dataSourceIds = inputDataSourceIds)
-      val response = client.nameResolve(request).value.items
+      val response = client.nameResolve(request).value.responses
       val dataSourceIdsResponse =
-        response.flatMap { resp => resp.results.map { res => res.result.dataSource.id }}
+        response.flatMap { resp => resp.resultsScored.map { res => res.result.dataSource.id }}
       dataSourceIdsResponse should contain only (1, 3)
     }
 
     "correctly return canonicalRanked" when {
       "canonicalRanked is same as canonical" in {
-        val request = Request(names = Seq(
-          NameInput("Homo sapiens Linnaeus, 1758")
+        val request = nr.Request(nameInputs = Seq(
+          nr.NameInput("Homo sapiens Linnaeus, 1758")
         ), dataSourceIds = Seq(1))
         val response = client.nameResolve(request).value
-        response.items(0).results(0).result.canonicalName.value.value shouldBe "Homo sapiens"
-        response.items(0).results(0).result.canonicalName.value.valueRanked shouldBe "Homo sapiens"
+        val canonicalName = response.responses.head.resultsScored.head.result.canonicalName.value
+        canonicalName.value shouldBe "Homo sapiens"
+        canonicalName.valueRanked shouldBe "Homo sapiens"
       }
 
       "canonicalRanked differs from canonical" in {
         val name =
           "Gilia ophthalmoides Brand subsp. flavocincta (A. Nelson) A.D. Grant & V.E. Grant"
-        val request = Request(names = Seq(NameInput(name)), dataSourceIds = Seq(169))
+        val request = nr.Request(nameInputs = Seq(nr.NameInput(name)), dataSourceIds = Seq(169))
         val response = client.nameResolve(request).value
-        val result = response.items(0).results(0).result
+        val result = response.responses.head.resultsScored.head.result
         val canonicalName = result.canonicalName.value
         canonicalName.value shouldNot be (canonicalName.valueRanked)
         canonicalName.value shouldBe "Gilia ophthalmoides flavocincta"
@@ -183,66 +152,71 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
 
     "handle preferred data sources" when {
       "data sources are provided" in {
-        val inputDataSourceIds = Seq(1, 2)
-        val preferredDataSourceIds = Seq(3, 4)
-        val request = Request(
-          names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
+        val inputDataSourceIds = Seq(1)
+        val preferredDataSourceIds = Seq(4)
+        val request = nr.Request(
+          nameInputs = Seq(nr.NameInput("Homo sapiens")),
           dataSourceIds = inputDataSourceIds,
           preferredDataSourceIds = preferredDataSourceIds)
-        val response = client.nameResolve(request).value.items.headOption.value
+        val response = client.nameResolve(request).value.responses.headOption.value
 
-        val dataSourceIdsResponse = response.results.map { _.result.dataSource.id }
-        val preferredDataSourceIdsResponse = response.preferredResults.map { _.result.dataSource.id}
-        dataSourceIdsResponse should not be empty
-        preferredDataSourceIdsResponse should not be empty
-        (inputDataSourceIds ++ preferredDataSourceIds) should contain allElementsOf
-          dataSourceIdsResponse
-        preferredDataSourceIds should contain allElementsOf preferredDataSourceIdsResponse
+        val dataSourceIdsResponse = response.resultsScored.map { _.result.dataSource.id }
+        dataSourceIdsResponse should contain allElementsOf inputDataSourceIds
+        dataSourceIdsResponse shouldNot contain allElementsOf preferredDataSourceIds
+
+        val preferredDataSourceIdsResponse =
+          response.preferredResultsScored.map { _.result.dataSource.id}
+        preferredDataSourceIdsResponse should contain allElementsOf preferredDataSourceIds
+        preferredDataSourceIdsResponse shouldNot contain allElementsOf inputDataSourceIds
       }
 
       "no data sources are provided" in {
-        val preferredDataSourceIds = Seq(3, 4)
-        val request = Request(
-          names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
+        val preferredDataSourceIds = Seq(1, 4, 8)
+        val request = nr.Request(
+          nameInputs = Seq(nr.NameInput("Homo sapiens Linnaeus, 1758")),
           preferredDataSourceIds = preferredDataSourceIds)
-        val response = client.nameResolve(request).value.items.headOption.value
+        val response = client.nameResolve(request).value.responses.headOption.value
 
-        val dataSourceIdsResponse = response.results.map { _.result.dataSource.id }
-        val preferredDataSourceIdsResponse = response.preferredResults.map { _.result.dataSource.id}
+        val dataSourceIdsResponse = response.resultsScored.map { _.result.dataSource.id }
         dataSourceIdsResponse should not be empty
+
+        val preferredDataSourceIdsResponse =
+          response.preferredResultsScored.map { _.result.dataSource.id}
         preferredDataSourceIdsResponse should not be empty
-        preferredDataSourceIds should contain allElementsOf dataSourceIdsResponse
         preferredDataSourceIds should contain allElementsOf preferredDataSourceIdsResponse
+        dataSourceIdsResponse should contain allElementsOf preferredDataSourceIdsResponse
       }
     }
 
     "handle `bestMatch`" when {
       "looking at core results" in {
         val responseBestMatch = client.nameResolve(
-          Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-                  bestMatchOnly = true)).value.items(0)
+          nr.Request(nameInputs = Seq(nr.NameInput("Homo sapiens Linnaeus, 1758")),
+                     bestMatchOnly = true)
+        ).value.responses.head
         val responseAll = client.nameResolve(
-          Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")))).value.items(0)
+          nr.Request(nameInputs = Seq(nr.NameInput("Homo sapiens Linnaeus, 1758")))
+        ).value.responses.head
 
-        responseBestMatch.results.size shouldBe 1
-        responseAll.results.size should be > 1
+        responseBestMatch.resultsScored.size shouldBe 1
+        responseAll.resultsScored.size should be > 1
 
-        responseBestMatch.results(0) shouldBe responseAll.results(0)
+        responseBestMatch.resultsScored.head shouldBe responseAll.resultsScored.head
       }
 
       "looking at results from preferred data sources" in {
         val prefDSs = Seq.range(1, 15)
         val responseBestMatch = client.nameResolve(
-          Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-                  bestMatchOnly = true,
-                  preferredDataSourceIds = prefDSs)).value.items(0)
+          nr.Request(nameInputs = Seq(nr.NameInput("Homo sapiens Linnaeus, 1758")),
+                     bestMatchOnly = true,
+                     preferredDataSourceIds = prefDSs)).value.responses.head
         val responseAll = client.nameResolve(
-          Request(names = Seq(NameInput("Homo sapiens Linnaeus, 1758")),
-                  preferredDataSourceIds = prefDSs)).value.items(0)
+          nr.Request(nameInputs = Seq(nr.NameInput("Homo sapiens Linnaeus, 1758")),
+                     preferredDataSourceIds = prefDSs)).value.responses.head
 
-        responseBestMatch.preferredResults.size should be <= prefDSs.size
-        responseAll.preferredResults should contain
-          allElementsOf(responseBestMatch.preferredResults)
+        responseBestMatch.preferredResultsScored.size should be <= prefDSs.size
+        responseAll.preferredResultsScored should contain
+          allElementsOf(responseBestMatch.preferredResultsScored)
       }
     }
 
@@ -257,12 +231,12 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
           // scalastyle:on non.ascii.character.disallowed
         )
 
-        val request = Request(names = synonymNames.map { n => NameInput(value = n) },
-                              dataSourceIds = Seq(8))
+        val request = nr.Request(nameInputs = synonymNames.map { n => nr.NameInput(value = n) },
+                                 dataSourceIds = Seq(8))
         val response = client.nameResolve(request).value
 
-        response.items.count { _.results.nonEmpty } shouldBe synonymNames.size
-        val synonymStatuses = response.items.flatMap { _.results.map { _.result.synonym } }
+        response.responses.count { _.resultsScored.nonEmpty } shouldBe synonymNames.size
+        val synonymStatuses = response.responses.flatMap { _.resultsScored.map { _.result.synonym }}
         synonymStatuses should contain only true
       }
 
@@ -276,18 +250,18 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
           "Hypechiniscus gladiator subsp. gladiator (Murray, 1905)"
         )
 
-        val request = Request(
-          names = nonSynonymNames.map { n => NameInput(value = n) },
+        val request = nr.Request(
+          nameInputs = nonSynonymNames.map { n => nr.NameInput(value = n) },
           dataSourceIds = Seq(1)
         )
         val response = client.nameResolve(request).value
 
-        response.items.count { _.results.nonEmpty } shouldBe nonSynonymNames.size
-        val synonymStatuses = response.items.flatMap { _.results.map { _.result.synonym } }
+        response.responses.count { _.resultsScored.nonEmpty } shouldBe nonSynonymNames.size
+        val synonymStatuses = response.responses.flatMap { _.resultsScored.map { _.result.synonym }}
         synonymStatuses should contain only false
 
-        for { item <- response.items
-              result <- item.results } {
+        for { item <- response.responses
+              result <- item.resultsScored } {
           result.result.acceptedName.name shouldBe result.result.name
           result.result.acceptedName.canonicalName shouldBe result.result.canonicalName
           result.result.acceptedName.taxonId shouldBe result.result.taxonId
@@ -297,26 +271,27 @@ class SimpleMatchScenariosSpec extends WordSpecConfig with FeatureTestMixin {
     }
 
     "reduces score when first word is not normalized" in {
-      val correctNameResponses = client.nameResolve(Request(
-        names = Seq(NameInput("Homo sapiens"))
+      val correctNameResponses = client.nameResolve(nr.Request(
+        nameInputs = Seq(nr.NameInput("Homo sapiens"))
       )).value
 
-      val incorrectGenusNameResponses = client.nameResolve(Request(
-        names = Seq(NameInput("HomO sapiens"))
+      val incorrectGenusNameResponses = client.nameResolve(nr.Request(
+        nameInputs = Seq(nr.NameInput("HomO sapiens"))
       )).value
 
-      correctNameResponses.items.size shouldBe incorrectGenusNameResponses.items.size
-      correctNameResponses.items.size should be > 0
+      correctNameResponses.responses.size shouldBe incorrectGenusNameResponses.responses.size
+      correctNameResponses.responses should not be empty
       for {
         (correctNameResponse, incorrectGenusNameResponse) <-
-          correctNameResponses.items.zip(incorrectGenusNameResponses.items)
+          correctNameResponses.responses.zip(incorrectGenusNameResponses.responses)
       } {
-        correctNameResponse.results.size shouldBe incorrectGenusNameResponse.results.size
-        correctNameResponse.results.size should be > 0
+        correctNameResponse.resultsScored.size shouldBe
+          incorrectGenusNameResponse.resultsScored.size
+        correctNameResponse.resultsScored should not be empty
 
         for {
           (correctName, incorrectGenusName) <-
-            correctNameResponse.results.zip(incorrectGenusNameResponse.results)
+            correctNameResponse.resultsScored.zip(incorrectGenusNameResponse.resultsScored)
         } {
           correctName.result.name.uuid shouldBe incorrectGenusName.result.name.uuid
           correctName.score.value should be > incorrectGenusName.score.value

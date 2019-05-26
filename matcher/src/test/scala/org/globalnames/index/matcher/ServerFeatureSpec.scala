@@ -70,10 +70,10 @@ class ServerFeatureSpec extends WordSpecConfig with FeatureTestMixin {
   }
 
   "service#findMatches returns results" in {
-    val word = "Abacetus cyclomux"
+    val word = "Abacetus cyclomem"
     val matches = client.findMatches(Seq(word), advancedResolution = true).value
     matches.size shouldBe 1
-    matches.headOption.value.results.map { _.nameMatched.value } should
-      contain only "Abacetus cyclomus"
+    matches.headOption.value.results.map { _.nameMatched.value }.distinct should
+      contain only "Abacetus cyclomous"
   }
 }

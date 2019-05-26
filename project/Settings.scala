@@ -146,8 +146,9 @@ object Settings {
   )
 
   lazy val testSettings = Seq(
-    fork in Test := false,
-    parallelExecution in Test := false
+    parallelExecution in Global := false,
+    fork in ThisBuild in Test := false,
+    parallelExecution in ThisBuild in Test := false
   )
 
   lazy val itSettings = Defaults.itSettings ++ Seq(

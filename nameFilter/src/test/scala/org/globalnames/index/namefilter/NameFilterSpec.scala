@@ -14,7 +14,6 @@ import thrift.namefilter.{Request, ResponseNameStrings}
 import util.UuidEnhanced._
 import matcher.{MatcherModule, Server => MatcherServer}
 
-/*
 class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
 
   import QueryParser._
@@ -51,8 +50,12 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
 
   case class ExpectedValue(nameUuid: UUID)
 
-  def project(result: ResponseNameStrings): ExpectedValue = {
-    ExpectedValue(result.name.uuid)
+  def resultUuids(result: ResponseNameStrings): Seq[ExpectedValue] = {
+    result.resultNameStrings.map { rns => ExpectedValue(rns.name.uuid) }
+  }
+
+  def resultsCount(result: ResponseNameStrings): Seq[Int] = {
+    result.resultNameStrings.map { rns => rns.results.size }
   }
 
   def names(uuid: String): ExpectedValue = {
@@ -64,8 +67,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves exact") {
         val request = Request(searchTerm = s"$canonicalModifierStr:Aaadonta constricta")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 7
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(5, 2)
+        resultUuids(result) should contain only(
           names(u"b2cf575f-ec53-50ec-96b4-da94de2d926f"),
           names(u"e529d978-6a13-578b-b3eb-bd9b8ad50a53")
         )
@@ -74,8 +77,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves exact with multiple spaces input") {
         val request = Request(searchTerm = s"$canonicalModifierStr:  \t  Aaadonta   constricta    ")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 7
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(5, 2)
+        resultUuids(result) should contain only(
           names(u"b2cf575f-ec53-50ec-96b4-da94de2d926f"),
           names(u"e529d978-6a13-578b-b3eb-bd9b8ad50a53")
         )
@@ -84,20 +87,24 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves exact with wildcard inside input") {
         val request = Request(searchTerm = s"$canonicalModifierStr:Aaadonta %constricta")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe Seq(5, 2)
+        resultUuids(result) should contain only(
+          names(u"b2cf575f-ec53-50ec-96b4-da94de2d926f"),
+          names(u"e529d978-6a13-578b-b3eb-bd9b8ad50a53")
+        )
       }
 
       it("resolves exact with wildcard as input") {
         val request = Request(searchTerm = s"$canonicalModifierStr:%")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
 
       it("resolves wildcard") {
         val request = Request(searchTerm = s"$canonicalModifierStr:Aaadonta constricta ba*")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 2
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(1, 1)
+        resultUuids(result) should contain only(
           names(u"5a68f4ec-6121-553e-8843-3d602089ec88"),
           names(u"073bab60-1816-5b5c-b018-87b4193db6f7")
         )
@@ -106,13 +113,13 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves no mathches when string request of length less than 4 is provided") {
         val request = Request(searchTerm = s"$canonicalModifierStr:Aaa")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
 
       it("returns no wildcarded matches when empty string is provided") {
         val request = Request(searchTerm = s"$canonicalModifierStr:")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
     }
 
@@ -120,8 +127,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves") {
         val request = Request(searchTerm = s"$authorModifierStr:Abakar-Ousman")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 15
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(1, 4, 1, 4, 1, 4)
+        resultUuids(result) should contain only(
           names(u"4168bf10-7462-53c6-b350-f6052c082965"),
           names(u"5272e0e6-ad53-5f1e-826b-8a024b01ce27"),
           names(u"8898d85f-49a9-5029-aea9-9fbed1467d46"),
@@ -134,7 +141,7 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("returns no matches when empty string is provided") {
         val request = Request(searchTerm = s"$authorModifierStr:")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
     }
 
@@ -142,8 +149,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves") {
         val request = Request(searchTerm = s"$yearModifierStr:1753")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 9
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(3, 3, 1, 2)
+        resultUuids(result) should contain only(
           names(u"00091866-0b4e-5934-bb64-0e6cdd4187c1"),
           names(u"000ec063-ea1b-5ce0-b8c5-f94b310fc25d"),
           names(u"00123893-2568-56e6-844c-5204b282c87c"),
@@ -154,13 +161,13 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("returns no matches on non-existing year") {
         val request = Request(searchTerm = s"$yearModifierStr:3000")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
 
       it("returns no matches when empty string is provided") {
         val request = Request(searchTerm = s"$yearModifierStr:")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
     }
 
@@ -168,8 +175,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves") {
         val request = Request(searchTerm = s"$uninomialModifierStr:Aalenirhynchia")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 8
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(2, 1, 1, 3, 1)
+        resultUuids(result) should contain only(
           names(u"05375e93-f74c-5bf4-8815-1cc363c1b98c"),
           names(u"14414d49-b321-5aa3-9da1-32ca0ba45614"),
           names(u"278b8361-cdb1-5a0b-8e21-9bba57880121"),
@@ -181,7 +188,7 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("returns no matches when empty string is provided") {
         val request = Request(searchTerm = s"$uninomialModifierStr:")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
     }
 
@@ -189,8 +196,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves") {
         val request = Request(searchTerm = s"$genusModifierStr:Buxela")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 5
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(2, 1, 2)
+        resultUuids(result) should contain only(
           names(u"94fc8bf8-098c-5d49-a766-b7a71296024a"),
           names(u"c91b7662-42ea-59ae-8b08-91832939f5e1"),
           names(u"d710a5b8-ecd8-5222-a57f-21c1e8aa9166")
@@ -200,8 +207,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves with wildcard") {
         val request = Request(searchTerm = s"$genusModifierStr:Buxet*")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 21
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(2, 4, 3, 2, 2, 4, 4)
+        resultUuids(result) should contain only(
           names(u"231467e3-5822-5ce6-8a93-8bf539957900"),
           names(u"7a74b27e-51f5-5b09-b2d6-43264cc812ca"),
           names(u"4323d4d8-1e8d-5e4a-966a-e3f831d2c3eb"),
@@ -215,8 +222,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves lowercase") {
         val request = Request(searchTerm = s"$uninomialModifierStr:buxela")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 13
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(4, 3, 2, 4)
+        resultUuids(result) should contain only(
           names(u"2fb5da60-3b02-5605-9411-a6634c4d535a"),
           names(u"b7ea5458-c845-50cc-bb4e-dac4b662c456"),
           names(u"d2c76b8f-f558-5df9-a96c-e900df95e188"),
@@ -227,19 +234,19 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves binomial") {
         val request = Request(searchTerm = s"$uninomialModifierStr:Aalenirhynchia ab")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
 
       it("returns no matches on non-existing input") {
         val request = Request(searchTerm = s"$genusModifierStr:Aalenirhynchia1")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
 
       it("returns no matches when empty string is provided") {
         val request = Request(searchTerm = s"$genusModifierStr:")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
     }
 
@@ -247,8 +254,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves") {
         val request = Request(searchTerm = s"$speciesModifierStr:cynoscion")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 9
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(2, 1, 6)
+        resultUuids(result) should contain only(
           names(u"173848c3-baa3-5662-ba1c-40b1a363e182"),
           names(u"47712a8d-2dd2-5e0a-b980-f1e47e38d498"),
           names(u"90efc796-95c8-59a4-b5e1-971853e50696")
@@ -258,7 +265,7 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("returns no matches when empty string is provided") {
         val request = Request(searchTerm = s"$speciesModifierStr:")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
     }
 
@@ -266,8 +273,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves") {
         val request = Request(searchTerm = s"$subSpeciesModifierStr:Albiflorum")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 2
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(1, 1)
+        resultUuids(result) should contain only(
           names(u"000c1fa5-1592-586d-a72a-a86edffbb13f"),
           names(u"0004b821-9a29-504e-a3b6-2f6964a3eee8")
         )
@@ -276,7 +283,7 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("returns no matches when empty string is provided") {
         val request = Request(searchTerm = s"$subSpeciesModifierStr:")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
     }
 
@@ -285,34 +292,34 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
         val request =
           Request(searchTerm = s"$nameStringModifierStr:Aaadonta constricta babelthuapi")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 1
-        result.map { project } should contain only
+        resultsCount(result) shouldBe Seq(1)
+        resultUuids(result) should contain only
           names(u"5a68f4ec-6121-553e-8843-3d602089ec88")
       }
 
       it("returns no matches when empty string is provided") {
         val request = Request(searchTerm = s"$nameStringModifierStr:")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
 
       it("resolves exact with non-existing input") {
         val request = Request(searchTerm = s"$nameStringModifierStr:Pararara")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
 
       it("resolves no matches when empty string is provided") {
         val request = Request(searchTerm = s"$nameStringModifierStr:")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
 
       it("resolves wildcard") {
         val request = Request(searchTerm = s"$nameStringModifierStr:Aaadonta constricta komak*")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 2
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(1, 1)
+        resultUuids(result) should contain only(
           names(u"51b7b1b2-07ba-5a0e-a65d-c5ca402b58de"),
           names(u"edd01cc8-0e7a-5370-8d90-173d24c9341c")
         )
@@ -321,20 +328,20 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("returns no wildcarded matches when empty string is provided") {
         val request = Request(searchTerm = s"$nameStringModifierStr:")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
 
       it("resolves nothing wildcard with non-existing stirng") {
         val request = Request(searchTerm = s"$nameStringModifierStr:Pararara*")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
 
       it("resolves wildcard with wildcard in begin of input") {
         val request = Request(searchTerm = s"$nameStringModifierStr:%Aaadonta constricta ba*")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 2
-        result.map { project } should contain only(
+        resultsCount(result) shouldBe Seq(1, 1)
+        resultUuids(result) should contain only(
           names(u"073bab60-1816-5b5c-b018-87b4193db6f7"),
           names(u"5a68f4ec-6121-553e-8843-3d602089ec88")
         )
@@ -343,21 +350,17 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves wildcard with wildcard in middle of input") {
         val request = Request(searchTerm = s"$nameStringModifierStr:Aaadonta constricta * ba*")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 11
-        result.map { project } should contain only(
-          names(u"073bab60-1816-5b5c-b018-87b4193db6f7"),
-          names(u"51b7b1b2-07ba-5a0e-a65d-c5ca402b58de"),
+        resultsCount(result) shouldBe Seq(1, 1)
+        resultUuids(result) should contain only(
           names(u"5a68f4ec-6121-553e-8843-3d602089ec88"),
-          names(u"b2cf575f-ec53-50ec-96b4-da94de2d926f"),
-          names(u"e529d978-6a13-578b-b3eb-bd9b8ad50a53"),
-          names(u"edd01cc8-0e7a-5370-8d90-173d24c9341c")
+          names(u"073bab60-1816-5b5c-b018-87b4193db6f7")
         )
       }
 
       it("resolves no matches when string request of length less than 4 is provided") {
         val request = Request(searchTerm = s"$nameStringModifierStr:Aaa*")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 0
+        resultsCount(result) shouldBe empty
       }
     }
 
@@ -365,8 +368,8 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
       it("resolves") {
         val request = Request(searchTerm = s"$exactStringModifierStr:Aalenirhynchia")
         val result = nameFilterClient.nameString(request = request).value
-        result.size shouldBe 2
-        result.map { project } should contain only
+        resultsCount(result) shouldBe Seq(2)
+        resultUuids(result) should contain only
           names(u"c96fd1c5-c5cb-50ed-afd1-63bd1368896b")
       }
     }
@@ -378,12 +381,11 @@ class NameFilterSpec extends FunSpecConfig with FeatureTestMixin {
         responses.size shouldBe 1
         for (response <- responses) {
           (response.uuid: UUID) shouldBe uuid
-          response.names.size shouldBe 2
-          response.names.map { _.dataSource.id } should contain only (168, 169)
-          response.names.map { _.name.uuid: UUID } should contain only uuid
+          response.results.size shouldBe 2
+          response.results.map { _.dataSource.id } should contain only (168, 169)
+          response.results.map { _.name.uuid: UUID } should contain only uuid
         }
       }
     }
   }
 }
-*/
