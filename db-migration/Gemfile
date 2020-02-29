@@ -11,5 +11,5 @@ group :development do
 end
 
 group :test do
-  gem 'rake', '~> 11.1'
+  gem 'rake', '~> 12.3'
 end
