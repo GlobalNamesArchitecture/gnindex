@@ -41,6 +41,11 @@ pgpass*
 .ensime*
 .tags
 
+# Metals
+.bloop
+.metals
+project/metals.sbt
+
 # Play Framework
 RUNNING_PID
 
