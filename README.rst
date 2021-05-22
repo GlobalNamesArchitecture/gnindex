@@ -1,8 +1,8 @@
 IMPORTANT
 =========
 
-This project is archived and will not be developed further. Use [GNames](https://github.com/gnames/gnames) and
-[GNverifier](https://github.com/gnames/gnverifier) for the same functionality.
+This project is archived and will not be developed further. Use `GNames <https://github.com/gnames/gnames>`_ and
+`GNverifier <https://github.com/gnames/gnverifier>`_ for the same functionality.
 
 
 .. image:: https://api.codacy.com/project/badge/Grade/2ad5b690419b4f869add628d7b022a17
