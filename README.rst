@@ -1,4 +1,5 @@
-## IMPORTANT
+IMPORTANT
+=========
 
 This project is archived and will not be developed further. Use [GNames](https://github.com/gnames/gnames) and
 [GNverifier](https://github.com/gnames/gnverifier) for the same functionality.
